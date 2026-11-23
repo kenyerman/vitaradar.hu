@@ -54,6 +54,11 @@ h1, h2, h3 { font-family: var(--mono); }
 .brand-name { font: 700 22px/1 var(--mono); letter-spacing: -.3px; text-shadow: var(--glow); }
 .brand-name::after { content: "_"; animation: blink 1s steps(1) infinite; margin-left: 1px; }
 .brand-tld { color: var(--green-soft); }
+/* BETA under the name, at its bottom left: out of the flow, so the header keeps its height and the name its width */
+.brand-name { position: relative; }
+.brand-beta { position: absolute; left: 1px; top: calc(100% + 4px); padding: 2px 4px 1px; border: 1px solid var(--line);
+  background: rgba(0, 255, 65, .08); color: var(--green); font: 700 9px/1 var(--mono); letter-spacing: 1.6px;
+  text-shadow: none; }
 @keyframes blink { 50% { opacity: 0; } }
 .tagline { margin: 0; color: var(--muted); font-size: 12px; letter-spacing: 1.2px; text-transform: uppercase; }
 .nav { display: flex; gap: 4px; margin-left: auto; }
