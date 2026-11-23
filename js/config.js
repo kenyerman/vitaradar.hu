@@ -1,8 +1,10 @@
 // Public web config of the vitaradar.hu Firebase app. These values are not secrets: every Firebase website ships
 // them. What protects the data is the Firestore security rules (kept with the backend): the public data is read-only.
+// authDomain is our own subdomain (Firebase Hosting serves the sign-in helper there), so Google's account chooser
+// names auth.vitaradar.hu instead of parlament-factcheck.firebaseapp.com.
 export const firebaseConfig = {
   "apiKey": "AIzaSyBuAd6Zk3R_tiPEOHwfJhIvClEAMSgLIKw",
-  "authDomain": "parlament-factcheck.firebaseapp.com",
+  "authDomain": "auth.vitaradar.hu",
   "projectId": "parlament-factcheck",
   "appId": "1:347862343261:web:55323d17521fda9c9337b4",
   "messagingSenderId": "347862343261",

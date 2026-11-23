@@ -5,9 +5,9 @@
 
 import { onAuthStateChanged, getIdToken } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { auth, db, appCheckHeaders, signInWithGoogle, signOut } from "./firebase.js?v=202611231830";
-import { apiUrl, avatarUrl, photoPrefix } from "./config.js?v=202611231830";
-import { el, initials, huDate } from "./common.js?v=202611231830";
+import { auth, db, appCheckHeaders, signInWithGoogle, signOut } from "./firebase.js?v=202611231928";
+import { apiUrl, avatarUrl, photoPrefix } from "./config.js?v=202611231928";
+import { el, initials, huDate } from "./common.js?v=202611231928";
 
 export const account = {
   user: null, registered: false, a18: false, profile: null, private: null, ready: false,

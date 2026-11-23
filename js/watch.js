@@ -5,9 +5,9 @@
 // and the speaker card follows the video. ?t= opens the video at that second (the MP page's fact links).
 
 import { doc, getDoc, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { db, el, badge, sourceList, setPhoto, hms, huDate, mpHref, watchLiveBadge } from "./common.js?v=202611231830";
-import { mountAccount } from "./account.js?v=202611231830";
-import { factSocial } from "./social.js?v=202611231830";
+import { db, el, badge, sourceList, setPhoto, hms, huDate, mpHref, watchLiveBadge } from "./common.js?v=202611231928";
+import { mountAccount } from "./account.js?v=202611231928";
+import { factSocial } from "./social.js?v=202611231928";
 import { watchHref } from "./links.js?v=202611232039";
 
 watchLiveBadge();
