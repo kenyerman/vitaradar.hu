@@ -11,6 +11,7 @@ import { db, el, badge, sourceList, setPhoto, hms, huDate, mpHref, watchLiveBadg
 import { mountAccount } from "./account.js?v=202611241300";
 import { factSocial } from "./social.js?v=202611241300";
 import { watchHref } from "./links.js?v=202611241300";
+import { cdnReady, cdnUrl, cdnXhr } from "./cdn.js?v=202611241300";
 
 watchLiveBadge();
 mountAccount();
@@ -154,13 +155,14 @@ async function load() {
     try { mps.set(id, (await getDoc(doc(db, "mps", id))).data() || {}); } catch { /* the card shows initials */ }
   }));
 
-  play(a.video);
+  await cdnReady();  // the recording is on cdn.vitaradar.hu, which needs its cookie
+  play(cdnUrl(a.video));
 }
 
 function play(url) {
   const start = () => { if (startAt) video.currentTime = startAt; tick(); };
   if (window.Hls && Hls.isSupported()) {
-    const hls = new Hls({ startPosition: startAt || -1 });
+    const hls = new Hls({ startPosition: startAt || -1, xhrSetup: cdnXhr });
     hls.loadSource(url);
     hls.attachMedia(video);
     hls.on(Hls.Events.MANIFEST_PARSED, () => { note(null); start(); if (startAt) video.play().catch(() => {}); });

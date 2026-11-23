@@ -12,6 +12,9 @@ import { mountAccount } from "./account.js?v=202611241300";
 import { factSocial } from "./social.js?v=202611241300";
 import { mountChat } from "./chat.js?v=202611241300";
 import { mountGame } from "./game.js?v=202611241300";
+import { cdnReady, cdnUrl, cdnXhr } from "./cdn.js?v=202611241300";
+
+cdnReady();  // the stream is on cdn.vitaradar.hu, which needs its cookie: get it before the player asks
 
 const $ = (id) => document.getElementById(id);
 const video = $("video");
@@ -78,8 +81,8 @@ function loadStream(url) {
   if (hls) { hls.destroy(); hls = null; }
   note("várakozás az adásra…");
   if (window.Hls && Hls.isSupported()) {
-    hls = new Hls({ liveSyncDurationCount: 3, manifestLoadingMaxRetry: 6, levelLoadingMaxRetry: 6 });
-    hls.loadSource(url);
+    hls = new Hls({ liveSyncDurationCount: 3, manifestLoadingMaxRetry: 6, levelLoadingMaxRetry: 6, xhrSetup: cdnXhr });
+    hls.loadSource(cdnUrl(url));
     hls.attachMedia(video);
     hls.on(Hls.Events.MANIFEST_PARSED, () => { note(null); video.play().catch(() => {}); });
     hls.on(Hls.Events.ERROR, (_, e) => {
@@ -91,7 +94,7 @@ function loadStream(url) {
       setTimeout(() => { if (live.url === url && live.active && failed) loadStream(url); }, 8000);
     });
   } else if (video.canPlayType("application/vnd.apple.mpegurl")) {  // Safari plays HLS itself
-    video.src = url;
+    video.src = cdnUrl(url);
     video.addEventListener("loadedmetadata", () => { note(null); video.play().catch(() => {}); }, { once: true });
     video.addEventListener("error", () => {
       failed = true;

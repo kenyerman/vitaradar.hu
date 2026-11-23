@@ -4,6 +4,7 @@ import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.14.1/
 import { db, el, hms, huDate, watchLiveBadge } from "./common.js?v=202611241300";
 import { mountAccount } from "./account.js?v=202611241300";
 import { watchHref } from "./links.js?v=202611241300";
+import { cdnReady, cdnUrl } from "./cdn.js?v=202611241300";
 
 watchLiveBadge();
 mountAccount();
@@ -42,7 +43,7 @@ function card(a) {
     img.loading = "lazy";
     img.alt = "";
     img.onerror = () => img.remove();
-    img.src = a.poster;
+    cdnReady().then(() => { img.src = cdnUrl(a.poster); });  // cdn.vitaradar.hu, after its cookie
     poster.append(img);
   }
   poster.append(el("span", "arch-len", hms(a.duration_s)));

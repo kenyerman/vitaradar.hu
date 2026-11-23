@@ -8,6 +8,7 @@ import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/fire
 import { auth, db, appCheckHeaders, signInWithGoogle, signOut } from "./firebase.js?v=202611241300";
 import { apiUrl, avatarUrl, photoPrefix } from "./config.js?v=202611241300";
 import { el, initials, huDate } from "./common.js?v=202611241300";
+import { cdnReady, cdnUrl } from "./cdn.js?v=202611241300";
 
 export const account = {
   user: null, registered: false, a18: false, profile: null, private: null, ready: false,
@@ -234,8 +235,8 @@ export function avatar(url, name, size = 32) {
     const img = el("img");
     img.alt = "";
     img.loading = "lazy";
-    img.src = src;
     img.onerror = () => { img.remove(); box.textContent = initials(name); };
+    cdnReady().then(() => { img.src = cdnUrl(src); });  // from cdn.vitaradar.hu once its cookie is set
     box.append(img);
   } else {
     box.textContent = initials(name);

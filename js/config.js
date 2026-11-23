@@ -12,7 +12,7 @@ export const firebaseConfig = {
 };
 
 // Used until the live feed names the stream itself (live/current.hls_url).
-export const defaultStream = "https://storage.googleapis.com/parlament-factcheck-live/live/live.m3u8";
+export const defaultStream = "https://cdn.vitaradar.hu/live/live.m3u8";
 
 // reCAPTCHA Enterprise site key for App Check (public by design; it only works on this site's domains).
 export const recaptchaSiteKey = "6LedwC4uAAAAAHMtCo5sAB-qFvfLRedBJBZqIrIS";
