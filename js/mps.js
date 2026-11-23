@@ -30,12 +30,22 @@ function card(m) {
   const ini = el("span", "initials");
   thumb.append(img, ini);
   setPhoto(img, ini, m.photo, m.name);
-  const body = el("div");
-  body.append(el("h3", null, m.name), el("p", "meta", [m.party, m.role].filter(Boolean).join(" · ")), bar(t));
-  const nums = el("p", "nums");
-  nums.append(el("span", "c-true", `${t.true} igaz`), el("span", "c-false", `${t.false} hamis`),
-    el("span", "c-unverifiable", `${t.unverifiable} n.e.`), el("span", "c-fallacy", `${t.fallacy} h.é.`));
-  body.append(nums, el("p", "meta", `${m.claims || 0} állítás · ${m.speeches || 0} felszólalás`));
+  // one line per item: name, party, role, the verdict bar, then each count on its own row
+  const body = el("div", "mp-body");
+  const party = el("p", "mp-party", m.party || "–"), role = el("p", "mp-role", m.role || "–");
+  party.title = m.party || "";
+  role.title = m.role || "";  // cut to one line with "…"; the full text on hover
+  body.append(el("h3", null, m.name), party, role, bar(t));
+  const stats = el("dl", "mp-stats");
+  for (const [label, value, cls] of [
+    ["igaz", t.true, "c-true"], ["nem ellenőrizhető", t.unverifiable, "c-unverifiable"], ["hamis", t.false, "c-false"],
+    ["hibás érvelés", t.fallacy, "c-fallacy"], ["állítás összesen", m.claims || 0, ""], ["felszólalás", m.speeches || 0, ""],
+  ]) {
+    const row = el("div");
+    row.append(el("dt", null, label), el("dd", cls, String(value)));
+    stats.append(row);
+  }
+  body.append(stats);
   a.append(thumb, body);
   li.append(a);
   return li;
