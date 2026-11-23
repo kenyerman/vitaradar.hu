@@ -187,6 +187,6 @@ export function watchLiveBadge() {
   onSnapshot(doc(db, "live", "current"), (snap) => {
     const on = Boolean((snap.data() || {}).active);
     badgeEl.dataset.state = on ? "on" : "off";
-    text.textContent = on ? "élő · késleltetve" : "nincs adás";
+    text.textContent = on ? "LIVE" : "nincs adás";
   });
 }

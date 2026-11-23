@@ -504,13 +504,15 @@ a.ext { color: var(--cyan); text-decoration: underline dotted; overflow-wrap: an
 .msg-block:hover { color: var(--false); }
 @media (hover: none) { .msg-block { opacity: .5; } }
 
-/* games (js/game.js): the challenge popup and the speech tip in a dock at the bottom right, the points in the header */
+/* games (js/game.js): a dock along the bottom: the speech tip on the left, the challenge popup on the right */
 @keyframes bump { 30% { transform: scale(1.18); background: rgba(0, 255, 65, .22); } }
 @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 
-.game-dock { position: fixed; z-index: 40; right: 20px; bottom: 20px; width: min(400px, calc(100vw - 32px));
-  display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+.game-dock { position: fixed; z-index: 40; left: 20px; right: 20px; bottom: 20px; display: flex; align-items: flex-end;
+  gap: 16px; pointer-events: none; }
 .game-dock > * { pointer-events: auto; }
+.game-pop { order: 2; margin-left: auto; width: min(400px, 100%); }
+.tip-box { order: 1; width: min(360px, 100%); }
 .game-pop, .tip-box { background: var(--panel-solid); border-color: var(--green); padding: 12px 14px 14px; display: grid; gap: 8px;
   box-shadow: var(--glow), 0 14px 40px rgba(0, 0, 0, .85); animation: rise .25s ease-out; }
 .game-pop[data-kind="fallacy"] { border-color: var(--fallacy); }
@@ -557,6 +559,18 @@ a.ext { color: var(--cyan); text-decoration: underline dotted; overflow-wrap: an
   border: 1px dashed var(--line); font-size: 12px; color: var(--text); }
 .game-upsell .btn { padding: 6px 10px; font-size: 11px; flex: none; }
 
+.tip-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text);
+  letter-spacing: .4px; }
+.tip-box .game-time { margin-left: 0; }
+.tip-points { color: var(--true); text-shadow: var(--glow); }
+.tip-toggle { flex: none; align-self: center; width: 26px; height: 22px; padding: 0; background: transparent;
+  border: 1px solid var(--line); color: var(--green); font: 700 12px/1 var(--mono); cursor: pointer; }
+.tip-toggle:hover, .tip-toggle:focus-visible { border-color: var(--green); box-shadow: var(--glow); outline: none; }
+.tip-sum { margin: 0; display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; color: var(--muted); }
+.tip-sum b { font: 700 15px/1 var(--mono); }
+.tip-body { display: grid; gap: 8px; }
+.tip-box[data-folded="true"] { padding: 8px 12px; gap: 6px; }
+.tip-box[data-folded="true"] .tip-body, .tip-box[data-folded="false"] .tip-sum { display: none; }
 .tip-q { margin: 0; font-size: 13px; color: var(--text); }
 .tip-grid { display: grid; gap: 6px; }
 .tip-row { display: grid; grid-template-columns: 1fr 34px 44px 34px; align-items: center; gap: 6px; }
@@ -567,20 +581,17 @@ a.ext { color: var(--cyan); text-decoration: underline dotted; overflow-wrap: an
 .tip-step:disabled { opacity: .4; cursor: default; }
 .tip-val { text-align: center; font: 700 20px/1 var(--mono); }
 .tip-send { width: 100%; }
-.tip-box[data-state="sent"] .tip-send { display: none; }
-.tip-line { margin-top: 12px; padding: 10px 12px; display: grid; gap: 3px; font-size: 12px; }
-.tip-line p { margin: 0; }
-.tip-line-head { color: var(--green); letter-spacing: 1px; text-transform: uppercase; font-weight: 700; font-size: 11px; }
-.tip-line-mine { color: var(--text); }
-.tip-line-actual { color: var(--text); }
-.tip-line .game-won { font-size: 15px; }
-.tip-line .game-upsell { margin-top: 4px; }
+.tip-box:not([data-state="open"]) .tip-send, .tip-box:not([data-state="open"]) .game-bar { display: none; }
+.tip-box .game-won { font-size: 15px; }
 
-@media (max-width: 860px) {  /* on a phone the dock must not hide the video: while a question is open, the tip is a bar */
-  .game-dock { left: 8px; right: 8px; bottom: 8px; width: auto; gap: 6px; }
+@media (max-width: 860px) {  /* on a phone the dock must not hide the video: one above the other, the tip a bar below */
+  .game-dock { left: 8px; right: 8px; bottom: 8px; flex-direction: column; align-items: stretch; gap: 6px; }
+  .game-pop, .tip-box { width: auto; margin-left: 0; }
+  .game-pop { order: 1; }
   .game-pop[data-state="open"] .game-upsell { display: none; }
   .game-dock:has(> .game-pop:not([hidden])[data-state="open"]) > .tip-box { padding: 8px 12px; }
-  .game-dock:has(> .game-pop:not([hidden])[data-state="open"]) > .tip-box > :not(.game-head) { display: none; }
+  .game-dock:has(> .game-pop:not([hidden])[data-state="open"]) > .tip-box .tip-body { display: none; }
+  .game-dock:has(> .game-pop:not([hidden])[data-state="open"]) > .tip-box .tip-sum { display: flex; }
 }
 @media (prefers-reduced-motion: reduce) {
   .game-pop, .tip-box, .acct-points.bump, .game-won { animation: none; }

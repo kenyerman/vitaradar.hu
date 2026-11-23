@@ -25,7 +25,7 @@ const MAX_SHOWN = 200;
 
 mountAccount();
 mountChat($("stage"));
-const game = mountGame({ now: streamNow, aside: document.querySelector(".speaker-col") });  // challenges, tips, points
+const game = mountGame({ now: streamNow });  // challenges and speech tips
 
 let live = { session: null, active: false, url: null };
 let claims = new Map();  // id -> fact document
@@ -109,7 +109,7 @@ function note(text) {
 
 function setBadge() {
   els.badge.dataset.state = live.active ? "on" : "off";
-  els.badgeText.textContent = live.active ? "élő · késleltetve" : "nincs adás";
+  els.badgeText.textContent = live.active ? "LIVE" : "nincs adás";
 }
 
 // The date (ms) of the frame on screen, on the stream's clock; null when it is unknown.

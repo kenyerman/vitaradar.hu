@@ -48,10 +48,12 @@ parliament's stream ──► fact-check pipeline (GPU VM) ──► HLS video p
 - **Games** (`js/game.js`): on a fact the pipeline is sure of, a 10-second "true or false?" or a 15-second "which
   fallacy?" question pops up as the claim is said, at least 45 seconds apart and about every 3 minutes at most (when
   there is something sure to ask about); the fact itself stays "being checked" until the answer
-  window is over, then everyone sees the result and how the other players answered. At the start of a speech, players
-  have 20 seconds to tip its number of true, false and fallacious claims. Right answers and close tips earn points
+  window is over, and the result, with how the other players answered, shows as the countdown ends. At the start of a
+  speech, players have 20 seconds to tip its number of true, false and fallacious claims; the tip then stays at the
+  bottom left, folded into a bar that opens, until the speech is scored. Right answers and close tips earn points
   (`users/{uid}.points`). The answer key never reaches the browser before the window closes: the pipeline keeps it,
-  the user API accepts answers only in time, and the pipeline settles each game. Visitors can play along, unscored.
+  the user API accepts answers only in time (8 seconds past the lock on the stream's clock, about a player's delay),
+  and the pipeline settles each game the moment the answers close. Visitors can play along, unscored.
 - **Protected:** the page uses Firebase App Check with reCAPTCHA Enterprise (invisible, score-based), so only this
   site, not scripts, can use the search; Firestore's security rules make the public data read-only for browsers. The
   Firebase config and the reCAPTCHA site key in `js/config.js` are public by design.
