@@ -41,7 +41,13 @@ onSnapshot(doc(db, "live", "current"), (snap) => {
   setBadge();
   if (d.session && d.session !== live.session) follow(d.session);
   const url = d.hls_url || defaultStream;
-  if (url !== live.url || (live.active && failed)) loadStream(url);  // a new stream, or the broadcast (re)started
+  // Nothing on air: the bucket still holds the last broadcast's playlist, which must not play as if it were live.
+  // A viewer who was watching when the broadcast ended keeps playing its last minute (the delay) to the end.
+  if (!live.active) {
+    if (!live.url) note("most nincs élő adás");
+    return;
+  }
+  if (url !== live.url || failed) loadStream(url);  // a new stream, or the broadcast (re)started
 }, (err) => console.warn("live feed:", err));
 
 function follow(session) {
