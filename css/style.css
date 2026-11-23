@@ -213,7 +213,8 @@ input.field { flex: 1; min-width: 200px; }
 .dd-list { position: absolute; z-index: 20; top: calc(100% + 4px); left: 0; right: 0; margin: 0; padding: 4px 0; list-style: none;
   background: var(--panel-solid); border: 1px solid var(--green); box-shadow: var(--glow), 0 12px 30px rgba(0, 0, 0, .7);
   max-height: 320px; overflow: auto; outline: none; }
-.dd-option { padding: 8px 12px 8px 30px; font-size: 14px; color: var(--text); cursor: pointer; position: relative; }
+.dd-list { min-width: max-content; }  /* options never wrap; the list may be wider than its button */
+.dd-option { padding: 8px 24px 8px 30px; font-size: 14px; color: var(--text); cursor: pointer; position: relative; white-space: nowrap; }
 .dd-option::before { content: ""; position: absolute; left: 12px; color: var(--green); }
 .dd-option[aria-selected="true"] { color: var(--green); }
 .dd-option[aria-selected="true"]::before { content: "✓"; }
