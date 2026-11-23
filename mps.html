@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="hu">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Képviselők – Vitaradar</title>
+  <meta name="description" content="Az Országgyűlés képviselőinek ellenőrzött állításai és minősítései.">
+  <meta name="theme-color" content="#000000">
+  <meta property="og:title" content="Vitaradar – élő tényellenőrzés">
+  <meta property="og:description" content="Az Országgyűlés élőben, az elhangzó állítások ellenőrzésével.">
+  <link rel="icon" href="img/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <canvas id="rain" aria-hidden="true"></canvas>
+  <header class="site-header">
+    <div class="wrap header-row">
+      <a class="brand" href="./" aria-label="Vitaradar kezdőlap">
+        <img src="img/logo.svg" alt="" width="32" height="32">
+        <span class="brand-name">vitaradar<span class="brand-tld">.ai</span></span>
+      </a>
+      <p class="tagline">Országgyűlés // élő tényellenőrzés</p>
+      <nav class="nav" aria-label="Fő menü">
+        <a href="./">Élő adás</a>
+        <a href="mps.html" aria-current="page">Képviselők</a>
+      </nav>
+      <span id="live-badge" class="live-badge" data-state="off"><span class="dot"></span><span id="live-text">nincs adás</span></span>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <h1 class="page-title">Képviselők</h1>
+    <p class="page-sub">// minden képviselő, akinek a felszólalásait ellenőriztük: állítások, minősítések, felszólalások</p>
+    <div class="toolbar">
+      <input id="filter" class="field" type="search" placeholder="> név vagy párt…" aria-label="Szűrés név vagy párt szerint">
+      <select id="sort" class="field" aria-label="Rendezés">
+        <option value="claims">legtöbb állítás</option>
+        <option value="false">legtöbb hamis</option>
+        <option value="true_share">legmagasabb igaz arány</option>
+        <option value="recent">legutóbb felszólalt</option>
+        <option value="name">név szerint</option>
+      </select>
+    </div>
+    <ol id="mps" class="mp-grid"></ol>
+    <p id="mps-empty" class="empty" hidden>még nincs adat</p>
+  </main>
+  <footer class="site-footer">
+    <div class="wrap footer-row">
+      <p>© <span id="year">2026</span> vitaradar.ai. Minden jog fenntartva.</p>
+      <p class="muted">Felvétel: Országgyűlés. A minősítéseket mesterséges intelligencia készíti automatikusan, ezért tévedhet.</p>
+      <p class="muted"><a href="https://github.com/kenyerman/vitaradar.ai">&gt; forráskód a GitHubon</a></p>
+    </div>
+  </footer>
+
+  <script type="module" src="js/mps.js"></script>
+</body>
+</html>

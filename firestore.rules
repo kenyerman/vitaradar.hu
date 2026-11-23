@@ -1,7 +1,8 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // vitaradar.ai: the live stream's state, facts and speakers are public to read; only the VM writes (server side).
+    // vitaradar.ai: anyone may read; only the server writes (the fact-check pipeline, server side).
+    // The live stream's state, facts and speakers.
     match /live/{doc} {
       allow read: if true;
       allow write: if false;
@@ -14,6 +15,16 @@ service cloud.firestore {
         allow write: if false;
       }
     }
+    // The MP history: profiles with totals, and their speeches with claims.
+    match /mps/{mp} {
+      allow read: if true;
+      allow write: if false;
+    }
+    match /speeches/{speech} {
+      allow read: if true;
+      allow write: if false;
+    }
+    // Search passages with their vectors: read only by the search function (server side).
     match /{document=**} {
       allow read, write: if false;
     }

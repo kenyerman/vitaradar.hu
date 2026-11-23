@@ -1,15 +1,13 @@
-// vitaradar.ai: the parliament's live stream with its fact-checks. Plain JavaScript, no build step.
+// vitaradar.ai live page: the parliament's stream with its fact-checks. Plain JavaScript, no build step.
 //
 // The stream runs a broadcast delay behind the live sitting, and every viewer's player sits a little behind the
 // stream's newest piece. So a fact must not appear when the server publishes it (that can be a minute early) but
 // when this viewer's video reaches the moment the speaker said it. The server times everything on the stream's own
 // clock (EXT-X-PROGRAM-DATE-TIME in the playlist), and the page compares that with the date of the frame on screen.
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-import { getFirestore, doc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { firebaseConfig, defaultStream } from "./config.js";
-
-const db = getFirestore(initializeApp(firebaseConfig));
+import { doc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { defaultStream } from "./config.js";
+import { db, el, badge, sourceList, setPhoto, mpHref } from "./common.js";
 
 const $ = (id) => document.getElementById(id);
 const video = $("video");
@@ -17,10 +15,8 @@ const els = {
   facts: $("facts"), empty: $("facts-empty"), count: $("fact-count"), note: $("player-note"),
   badge: $("live-badge"), badgeText: $("live-text"), speaker: $("speaker"), img: $("speaker-img"),
   initials: $("speaker-initials"), name: $("speaker-name"), party: $("speaker-party"), role: $("speaker-role"),
+  more: $("speaker-more"),
 };
-$("year").textContent = String(new Date().getFullYear());
-
-const LABEL = { true: "Igaz", false: "Hamis", unverifiable: "Nem ellenőrizhető", pending: "Ellenőrzés…", fallacy: "Hibás érvelés" };
 const MAX_SHOWN = 200;
 
 let live = { session: null, active: false, url: null };
@@ -45,6 +41,7 @@ function follow(session) {
   live.session = session;
   claims = new Map();
   turns = [];
+  shown.clear();
   els.facts.replaceChildren();
   unsub = [
     onSnapshot(collection(db, "sessions", session, "claims"), (snap) => {
@@ -64,7 +61,7 @@ function loadStream(url) {
   live.url = url;
   failed = false;
   if (hls) { hls.destroy(); hls = null; }
-  note("Várakozás az adásra…");
+  note("várakozás az adásra…");
   if (window.Hls && Hls.isSupported()) {
     hls = new Hls({ liveSyncDurationCount: 3, manifestLoadingMaxRetry: 6, levelLoadingMaxRetry: 6 });
     hls.loadSource(url);
@@ -74,16 +71,19 @@ function loadStream(url) {
       if (!e.fatal) return;
       if (e.type === Hls.ErrorTypes.MEDIA_ERROR) { hls.recoverMediaError(); return; }
       failed = true;
-      note(live.active ? "Az adás pillanatnyilag nem érhető el, újrapróbálkozás…" : "Most nincs élő adás.");
+      note(live.active ? "az adás pillanatnyilag nem érhető el, újrapróbálkozás…" : "most nincs élő adás");
       // retry only while a broadcast runs; otherwise the live feed reloads the stream when one starts
       setTimeout(() => { if (live.url === url && live.active && failed) loadStream(url); }, 8000);
     });
   } else if (video.canPlayType("application/vnd.apple.mpegurl")) {  // Safari plays HLS itself
     video.src = url;
     video.addEventListener("loadedmetadata", () => { note(null); video.play().catch(() => {}); }, { once: true });
-    video.addEventListener("error", () => { failed = true; note(live.active ? "Az adás pillanatnyilag nem érhető el." : "Most nincs élő adás."); }, { once: true });
+    video.addEventListener("error", () => {
+      failed = true;
+      note(live.active ? "az adás pillanatnyilag nem érhető el" : "most nincs élő adás");
+    }, { once: true });
   } else {
-    note("Ez a böngésző nem tudja lejátszani az adást.");
+    note("ez a böngésző nem tudja lejátszani az adást");
   }
 }
 
@@ -120,19 +120,18 @@ function clock(ms) {
   return new Date(ms).toLocaleTimeString("hu-HU", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 }
 
-function el(tag, cls, text) {
-  const e = document.createElement(tag);
-  if (cls) e.className = cls;
-  if (text != null) e.textContent = text;
-  return e;
-}
-
 function buildFact(c) {
   const li = el("li", "fact");
-  li.dataset.kind = c.kind || "claim";
   const top = el("div", "fact-top");
-  const badge = el("span", "verdict");
-  top.append(badge, el("span", "fact-who", c.speaker || ""), el("time", "fact-time", clock(c.show_at)));
+  const who = el("span", "fact-who");
+  if (c.speaker_id && c.speaker) {
+    const a = el("a", null, c.speaker);
+    a.href = mpHref(c.speaker_id);
+    who.append(a);
+  } else {
+    who.textContent = c.speaker || "";
+  }
+  top.append(el("span", "verdict"), who, el("time", "fact-time", clock(c.show_at)));
   li.append(top, el("p", "fact-bullet", c.bullet || c.claim));
   if (c.claim && c.claim !== c.bullet) li.append(el("p", "fact-claim", c.claim));
   li.append(el("p", "fact-expl"), el("ul", "fact-sources"));
@@ -141,27 +140,11 @@ function buildFact(c) {
 
 function fillVerdict(li, c, v) {
   li.dataset.verdict = v;
-  const badge = li.querySelector(".verdict");
-  badge.dataset.v = v;
-  badge.textContent = c.kind === "conclusion" && v !== "pending" ? `Következtetés: ${LABEL[v] || v}` : (LABEL[v] || v);
+  li.querySelector(".verdict").replaceWith(badge(v === "fallacy" ? "fallacy" : v, c.kind === "fallacy" ? "fallacy" : c.kind));
   const expl = li.querySelector(".fact-expl");
   expl.textContent = v === "pending" ? "" : (c.explanation || "");
   expl.hidden = !expl.textContent;
-  const list = li.querySelector(".fact-sources");
-  list.replaceChildren();
-  if (v !== "pending") {
-    for (const s of c.sources || []) {
-      if (!/^https?:\/\//.test(s.url || "")) continue;
-      const a = el("a", null, s.title || new URL(s.url).hostname);
-      a.href = s.url;
-      a.target = "_blank";
-      a.rel = "noopener noreferrer";
-      const item = el("li");
-      item.append(a);
-      list.append(item);
-    }
-  }
-  list.hidden = !list.children.length;
+  li.querySelector(".fact-sources").replaceWith(sourceList(v === "pending" ? [] : c.sources));
 }
 
 function render() {
@@ -194,7 +177,7 @@ function render() {
     prev = s.li;
   }
   els.empty.hidden = visible.length > 0;
-  els.count.textContent = visible.length ? `${visible.length} db` : "";
+  els.count.textContent = visible.length ? `[${String(visible.length).padStart(2, "0")}]` : "";
   for (const k of Object.keys(tally)) $(`n-${k}`).textContent = String(tally[k]);
 
   renderSpeaker(now);
@@ -209,21 +192,15 @@ function renderSpeaker(now) {
   speakerKey = key;
   els.speaker.dataset.empty = String(!t);
   els.name.textContent = t ? (t.name || "Ismeretlen felszólaló") : "–";
+  const known = Boolean(t && t.speaker_id && t.speaker_id !== "?");
+  if (known) { els.name.href = mpHref(t.speaker_id); els.more.href = mpHref(t.speaker_id); }
+  else { els.name.removeAttribute("href"); }
+  els.more.hidden = !known;
   els.party.textContent = t ? (t.party || "") : "";
+  els.party.hidden = !els.party.textContent;
   els.role.textContent = t ? (t.role || "") : "";
   els.speaker.style.setProperty("--party", t && t.color ? t.color : "");
-  const initials = t && t.name ? t.name.split(/\s+/).map((w) => w[0]).slice(0, 2).join("") : "";
-  els.initials.textContent = initials;
-  if (t && t.photo) {
-    els.img.onload = () => { els.img.hidden = false; els.initials.hidden = true; };
-    els.img.onerror = () => { els.img.hidden = true; els.initials.hidden = false; };
-    els.img.alt = t.name || "";
-    els.img.src = t.photo;
-  } else {
-    els.img.hidden = true;
-    els.img.removeAttribute("src");
-    els.initials.hidden = false;
-  }
+  setPhoto(els.img, els.initials, t && t.photo, t && t.name);
 }
 
 setBadge();

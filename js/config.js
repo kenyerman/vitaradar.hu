@@ -11,3 +11,6 @@ export const firebaseConfig = {
 
 // Used until the live feed names the stream itself (live/current.hls_url).
 export const defaultStream = "https://storage.googleapis.com/parlament-factcheck-live/live/live.m3u8";
+
+// The speech search (functions/search), a Cloud Run function in the same project.
+export const searchUrl = "https://europe-west4-parlament-factcheck.cloudfunctions.net/vitaradar-search";
