@@ -7,7 +7,7 @@
 
 import { doc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { defaultStream } from "./config.js";
-import { db, el, badge, sourceList, setPhoto, mpHref } from "./common.js?v=202611231625";
+import { db, el, badge, sourceList, setPhoto, mpHref } from "./common.js?v=202611231631";
 
 const $ = (id) => document.getElementById(id);
 const video = $("video");

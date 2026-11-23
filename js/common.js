@@ -68,9 +68,10 @@ export function sourceList(sources) {
 
 // ------------------------------------------------------------------ portraits
 // A person's portrait: their cut-out (background removed, img/mps/<parliament id>.webp) in front of an animated
-// green background drawn by CSS (.portrait in style.css). Its look varies per person: the sweep's centre, speed and
-// direction, the hue, the ring spacing and the scanline speed come from a hash of their id. Fallbacks: the official
-// photo, then the initials. The party's colour shows at the bottom; without a party, nothing does.
+// green background drawn by CSS (.portrait in style.css): a radar sweeping around the portrait's centre, behind static
+// scanlines. Its look varies per person: the sweep's speed and direction, the hue and the ring spacing come from a
+// hash of their id. Fallbacks: the official photo, then the initials. The party's colour shows at the bottom; without
+// a party, nothing does.
 
 const OFFICIAL = /\/kepviselo-kepek\/([A-Za-z0-9]+)$/;
 
@@ -84,10 +85,9 @@ function portraitLook(root, id) {
   const h = hash(id || "?");
   const pick = (shift, lo, hi) => lo + (((h >>> shift) & 0xff) / 255) * (hi - lo);
   const vars = {
-    "--ox": `${pick(0, 30, 70).toFixed(0)}%`, "--oy": `${pick(8, 18, 42).toFixed(0)}%`,
     "--sweep-t": `${pick(16, 4, 9).toFixed(1)}s`, "--sweep-dir": (h & 0x1000000) ? "reverse" : "normal",
+    "--sweep-delay": `-${pick(0, 0, 9).toFixed(1)}s`,  // not all in step
     "--hue": pick(24, 122, 150).toFixed(0), "--rings": `${pick(4, 9, 20).toFixed(0)}px`,
-    "--scan-t": `${pick(12, 3, 7).toFixed(1)}s`, "--scan-delay": `-${pick(20, 0, 6).toFixed(1)}s`,
   };
   for (const [k, v] of Object.entries(vars)) root.style.setProperty(k, v);
 }
@@ -109,7 +109,8 @@ export function setPhoto(img, fallback, url, name, { id, color } = {}) {
   root.classList.add("portrait");
   portraitLook(root, id || name);
   root.prepend(layer(root, "pt-sweep"));
-  for (const cls of ["pt-party", "pt-lines", "pt-band"]) layer(root, cls);
+  root.querySelector(":scope > .pt-band")?.remove();  // the moving scanline band is gone
+  for (const cls of ["pt-party", "pt-lines"]) layer(root, cls);
   if (color) { root.style.setProperty("--party", color); root.dataset.party = "1"; }
   else { root.style.removeProperty("--party"); delete root.dataset.party; }
   if (seen) seen.observe(root);

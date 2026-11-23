@@ -196,13 +196,13 @@ input.field { flex: 1; min-width: 200px; }
 .mp-stats dd.c-unverifiable { color: var(--unverifiable); } .mp-stats dd.c-fallacy { color: var(--fallacy); }
 
 /* portraits (setPhoto in js/common.js): the cut-out in front of an animated background drawn here, per person.
-   Layers: the box's own background (glow, radar rings, faint grid) < .pt-sweep (a turning radar sweep) < the person
-   < .pt-party (the party's colour rising from the bottom) < .pt-lines (scanlines) < .pt-band (a bright band moving
-   down). The look varies with the variables setPhoto sets from the person's id. */
+   Layers: the box's own background (glow, radar rings, faint grid, all around the centre) < .pt-sweep (a radar sweep
+   turning around the centre) < the person < .pt-party (the party's colour rising from the bottom) < .pt-lines (static
+   scanlines). The sweep's speed and direction, the hue and the ring spacing vary with the variables setPhoto sets. */
 .portrait { position: relative; overflow: hidden; isolation: isolate;
   background:
-    radial-gradient(circle at var(--ox, 50%) var(--oy, 32%), hsl(var(--hue, 135) 100% 45% / .30), transparent 62%),
-    repeating-radial-gradient(circle at var(--ox, 50%) var(--oy, 32%),
+    radial-gradient(circle at 50% 50%, hsl(var(--hue, 135) 100% 45% / .30), transparent 62%),
+    repeating-radial-gradient(circle at 50% 50%,
       transparent 0 calc(var(--rings, 14px) - 1px), hsl(var(--hue, 135) 100% 50% / .14) calc(var(--rings, 14px) - 1px) var(--rings, 14px)),
     linear-gradient(90deg, hsl(var(--hue, 135) 100% 50% / .06) 1px, transparent 1px) 0 0 / 12px 100%,
     #010a04; }
@@ -210,24 +210,20 @@ input.field { flex: 1; min-width: 200px; }
 .portrait > img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .portrait.cutout > img { object-position: center bottom;
   filter: drop-shadow(0 0 5px hsl(var(--hue, 135) 100% 50% / .55)) saturate(.9) contrast(1.05); }
-.pt-sweep { position: absolute; z-index: 1; left: var(--ox, 50%); top: var(--oy, 32%); width: 320%; aspect-ratio: 1;
-  translate: -50% -50%; pointer-events: none;
+.pt-sweep { position: absolute; z-index: 1; left: 50%; top: 50%; width: 220%; aspect-ratio: 1; translate: -50% -50%;
+  pointer-events: none;
   background: conic-gradient(from 0deg, transparent 0deg 290deg, hsl(var(--hue, 135) 100% 50% / .10) 320deg,
     hsl(var(--hue, 135) 100% 55% / .38) 356deg, hsl(var(--hue, 135) 100% 75% / .7) 360deg);
-  animation: pt-spin var(--sweep-t, 6s) linear infinite var(--sweep-dir, normal); }
+  animation: pt-spin var(--sweep-t, 6s) linear var(--sweep-delay, 0s) infinite var(--sweep-dir, normal); }
 .pt-party { position: absolute; inset: 0; z-index: 3; pointer-events: none; display: none;
   background: linear-gradient(to top, color-mix(in srgb, var(--party) 55%, transparent) 0, transparent 34%);
   box-shadow: inset 0 -3px 0 var(--party); }
 .portrait[data-party] > .pt-party { display: block; }
 .pt-lines { position: absolute; inset: 0; z-index: 4; pointer-events: none;
   background: repeating-linear-gradient(to bottom, transparent 0 2px, rgba(0, 0, 0, .28) 2px 3px); }
-.pt-band { position: absolute; left: 0; right: 0; top: -100%; height: 200%; z-index: 5; pointer-events: none;
-  background: linear-gradient(to bottom, transparent 0 44%, hsl(var(--hue, 135) 100% 60% / .18) 50%, transparent 56% 100%);
-  animation: pt-band var(--scan-t, 5s) linear infinite var(--scan-delay, 0s); }
 @keyframes pt-spin { to { rotate: 360deg; } }
-@keyframes pt-band { from { translate: 0 0; } to { translate: 0 50%; } }
-.portrait.off > .pt-sweep, .portrait.off > .pt-band { animation-play-state: paused; }  /* off screen */
-@media (prefers-reduced-motion: reduce) { .pt-sweep, .pt-band { animation: none; } }
+.portrait.off > .pt-sweep { animation-play-state: paused; }  /* off screen */
+@media (prefers-reduced-motion: reduce) { .pt-sweep { animation: none; } }
 
 /* dropdown (js/dropdown.js): the site's own listbox in place of the browser's <select> */
 .dd { position: relative; min-width: 240px; }

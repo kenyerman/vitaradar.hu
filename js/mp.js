@@ -2,7 +2,7 @@
 
 import { doc, getDoc, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { searchUrl } from "./config.js";
-import { db, el, badge, sourceList, setPhoto, hms, huDate, watchLiveBadge } from "./common.js?v=202611231625";
+import { db, el, badge, sourceList, setPhoto, hms, huDate, watchLiveBadge } from "./common.js?v=202611231631";
 
 watchLiveBadge();
 const $ = (id) => document.getElementById(id);
