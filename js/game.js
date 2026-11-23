@@ -89,7 +89,8 @@ class ChallengeView {
   hide() { this.box.hidden = true; this.ch = null; }
 
   show(session, ch, now) {
-    if (!this.ch || this.ch.id !== ch.id) this.build(session, ch);
+    const key = `${session}/${ch.id}`;  // built once per challenge: a brief hide must not swap the buttons under a click
+    if (this.built !== key) { this.build(session, ch); this.built = key; }
     this.ch = ch;
     this.now = now;
     this.update();
@@ -204,7 +205,8 @@ class TipView {
   hide() { this.box.hidden = true; this.tip = null; }
 
   show(session, tip, now) {
-    if (!this.tip || this.tip.id !== tip.id) this.build(session, tip);
+    const key = `${session}/${tip.id}`;  // built once per tip, so the chosen counts survive a brief hide
+    if (this.built !== key) { this.build(session, tip); this.built = key; }
     this.tip = tip;
     this.now = now;
     this.update();
