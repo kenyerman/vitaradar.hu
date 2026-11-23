@@ -1,4 +1,4 @@
-// vitaradar.ai MP page: one MP's fact-checked speeches, their overall scores, and a search over what they said.
+// vitaradar.hu MP page: one MP's fact-checked speeches, their overall scores, and a search over what they said.
 
 import { doc, getDoc, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { searchUrl } from "./config.js";

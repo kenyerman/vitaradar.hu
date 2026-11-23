@@ -1,4 +1,4 @@
-// vitaradar.ai MP list: everyone whose speeches were fact-checked, with their totals.
+// vitaradar.hu MP list: everyone whose speeches were fact-checked, with their totals.
 
 import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { dropdown } from "./dropdown.js?v=202611231606";

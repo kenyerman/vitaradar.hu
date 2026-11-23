@@ -1,4 +1,4 @@
-"""vitaradar.ai speech search: what did this MP say about ...?
+"""vitaradar.hu speech search: what did this MP say about ...?
 
 GET /?mp=<mp id>&q=<question>  ->  {"hits": [{speech_id, session, date, at_s, text, score}, ...]}
 
@@ -21,7 +21,7 @@ from google.cloud.firestore_v1.vector import Vector
 
 PROJECT = os.environ.get("PROJECT", "parlament-factcheck")
 LOCATION, MODEL = "europe-west4", "text-multilingual-embedding-002"
-ORIGINS = {"https://kenyerman.github.io", "https://vitaradar.ai", "https://www.vitaradar.ai", "http://localhost:8099"}
+ORIGINS = {"https://kenyerman.github.io", "https://vitaradar.hu", "https://www.vitaradar.hu", "http://localhost:8099"}
 MAX_Q, LIMIT = 300, 8
 
 db = firestore.Client(project=PROJECT)
@@ -38,7 +38,7 @@ def embed_query(q: str) -> list[float]:
 
 
 def _reply(body: dict, status: int, origin: str):
-    headers = {"Access-Control-Allow-Origin": origin if origin in ORIGINS else "https://kenyerman.github.io",
+    headers = {"Access-Control-Allow-Origin": origin if origin in ORIGINS else "https://vitaradar.hu",
                "Vary": "Origin", "Access-Control-Allow-Methods": "GET, OPTIONS", "Access-Control-Max-Age": "3600",
                "Content-Type": "application/json; charset=utf-8"}
     if status == 200:

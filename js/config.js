@@ -1,4 +1,4 @@
-// Public web config of the vitaradar.ai Firebase app. These values are not secrets: every Firebase website ships
+// Public web config of the vitaradar.hu Firebase app. These values are not secrets: every Firebase website ships
 // them. What protects the data is the Firestore security rules (firestore.rules): the live feed is read-only.
 export const firebaseConfig = {
   "apiKey": "AIzaSyBuAd6Zk3R_tiPEOHwfJhIvClEAMSgLIKw",

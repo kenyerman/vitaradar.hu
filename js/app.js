@@ -1,4 +1,4 @@
-// vitaradar.ai live page: the parliament's stream with its fact-checks. Plain JavaScript, no build step.
+// vitaradar.hu live page: the parliament's stream with its fact-checks. Plain JavaScript, no build step.
 //
 // The stream runs a broadcast delay behind the live sitting, and every viewer's player sits a little behind the
 // stream's newest piece. So a fact must not appear when the server publishes it (that can be a minute early) but

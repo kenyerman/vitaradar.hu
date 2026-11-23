@@ -1,4 +1,4 @@
-# vitaradar.ai
+# vitaradar.hu
 
 The public website of Vitaradar: the Hungarian Parliament's live stream with automatic fact-checks. Below the video,
 each claim appears with its verdict (true, false, unverifiable, fallacy) the moment it is said in the video, and the
@@ -53,5 +53,5 @@ Then open http://localhost:8099/.
 ## License
 
 - The code in this repository is [MIT](LICENSE).
-- The fact-check texts, the Vitaradar name and logo, and the video stream: © vitaradar.ai, all rights reserved.
+- The fact-check texts, the Vitaradar name and logo, and the video stream: © vitaradar.hu, all rights reserved.
 - The footage is the Hungarian Parliament's (Országgyűlés).

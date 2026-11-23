@@ -1,7 +1,7 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // vitaradar.ai: anyone may read; only the server writes (the fact-check pipeline, server side).
+    // vitaradar.hu: anyone may read; only the server writes (the fact-check pipeline, server side).
     // The live stream's state, facts and speakers.
     match /live/{doc} {
       allow read: if true;
