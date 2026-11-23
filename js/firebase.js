@@ -7,8 +7,11 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import { initializeAppCheck, ReCaptchaEnterpriseProvider, getToken } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut as fbSignOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-import { firebaseConfig, recaptchaSiteKey } from "./config.js?v=202611241300";
+import {
+  initializeAuth, indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence,
+  browserPopupRedirectResolver, GoogleAuthProvider, signInWithPopup, signOut as fbSignOut,
+} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import { firebaseConfig, recaptchaSiteKey } from "./config.js?v=202611240052";
 
 export const app = initializeApp(firebaseConfig);
 
@@ -32,13 +35,17 @@ export async function appCheckHeaders() {
 }
 
 // ------------------------------------------------------------------ sign-in (Google only)
-export const auth = getAuth(app);
+// getAuth() would also load the sign-in helper (an iframe from auth.vitaradar.hu, about 95 KB) on every page view;
+// set up like this, with getAuth's own storage order, it loads only when someone signs in.
+export const auth = initializeAuth(app, {
+  persistence: [indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence],
+});
 auth.languageCode = "hu";
 
 export function signInWithGoogle() {
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: "select_account" });
-  return signInWithPopup(auth, provider);
+  return signInWithPopup(auth, provider, browserPopupRedirectResolver);
 }
 
 export function signOut() {

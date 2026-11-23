@@ -6,13 +6,13 @@
 // clock (EXT-X-PROGRAM-DATE-TIME in the playlist), and the page compares that with the date of the frame on screen.
 
 import { doc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { defaultStream } from "./config.js?v=202611241300";
-import { db, el, badge, sourceList, setPhoto, mpHref } from "./common.js?v=202611241300";
-import { mountAccount } from "./account.js?v=202611241300";
-import { factSocial } from "./social.js?v=202611241300";
-import { mountChat } from "./chat.js?v=202611241300";
-import { mountGame } from "./game.js?v=202611241300";
-import { cdnReady, cdnUrl, cdnXhr } from "./cdn.js?v=202611241300";
+import { defaultStream } from "./config.js?v=202611240052";
+import { db, el, badge, sourceList, setPhoto, mpHref } from "./common.js?v=202611240052";
+import { mountAccount } from "./account.js?v=202611240052";
+import { factSocial } from "./social.js?v=202611240052";
+import { mountChat } from "./chat.js?v=202611240052";
+import { mountGame } from "./game.js?v=202611240052";
+import { cdnReady, cdnUrl, cdnXhr } from "./cdn.js?v=202611240052";
 
 cdnReady();  // the stream is on cdn.vitaradar.hu, which needs its cookie: get it before the player asks
 
@@ -75,12 +75,30 @@ function follow(session) {
 }
 
 // ------------------------------------------------------------------ video
-function loadStream(url) {
+// hls.js (about 100 KB) plays the stream where the browser can't; it loads only once there is a broadcast to play.
+const HLS_JS = "https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js";
+let hlsLib = null;
+function loadHls() {
+  if (window.Hls) return Promise.resolve(window.Hls);
+  return hlsLib ||= new Promise((resolve) => {
+    const s = document.createElement("script");
+    s.src = HLS_JS;
+    s.onload = () => resolve(window.Hls || null);
+    s.onerror = () => { hlsLib = null; s.remove(); resolve(null); };  // Safari can still play it itself
+    document.head.append(s);
+  });
+}
+let loads = 0;
+
+async function loadStream(url) {
   live.url = url;
   failed = false;
   if (hls) { hls.destroy(); hls = null; }
   note("várakozás az adásra…");
-  if (window.Hls && Hls.isSupported()) {
+  const load = ++loads;
+  const Hls = await loadHls();
+  if (load !== loads) return;  // a newer stream came in meanwhile
+  if (Hls && Hls.isSupported()) {
     hls = new Hls({ liveSyncDurationCount: 3, manifestLoadingMaxRetry: 6, levelLoadingMaxRetry: 6, xhrSetup: cdnXhr });
     hls.loadSource(cdnUrl(url));
     hls.attachMedia(video);

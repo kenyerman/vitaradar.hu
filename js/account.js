@@ -5,10 +5,10 @@
 
 import { onAuthStateChanged, getIdToken } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { auth, db, appCheckHeaders, signInWithGoogle, signOut } from "./firebase.js?v=202611241300";
-import { apiUrl, avatarUrl, photoPrefix } from "./config.js?v=202611241300";
-import { el, initials, huDate } from "./common.js?v=202611241300";
-import { cdnReady, cdnUrl } from "./cdn.js?v=202611241300";
+import { auth, db, appCheckHeaders, signInWithGoogle, signOut } from "./firebase.js?v=202611240052";
+import { apiUrl, avatarUrl, photoPrefix } from "./config.js?v=202611240052";
+import { el, initials, huDate } from "./common.js?v=202611240052";
+import { cdnReady, cdnUrl } from "./cdn.js?v=202611240052";
 
 export const account = {
   user: null, registered: false, a18: false, profile: null, private: null, ready: false,
@@ -349,14 +349,21 @@ export function blockUser(uid, nick) {
 }
 
 // ------------------------------------------------------------------ the header's account button
+const ACCT_KEY = "vr-acct";  // "out", "reg" or "in": read by the inline script in each page's head
+
 export function mountAccount() {
   const row = document.querySelector(".site-header .header-row");
   if (!row) return;
-  const box = el("div", "acct");
-  row.append(box);
+  // The page has the box already, with a placeholder the size of the last known state (html[data-acct], set in the
+  // page's head from localStorage), so nothing in the header moves when the real button arrives.
+  let box = row.querySelector(":scope > .acct");
+  if (!box) { box = el("div", "acct"); row.append(box); }
   let stopPoints = null;
   onAccount((a) => {
     if (stopPoints) { stopPoints(); stopPoints = null; }
+    const known = !a.user ? "out" : a.registered ? "in" : "reg";
+    document.documentElement.dataset.acct = known;
+    try { localStorage.setItem(ACCT_KEY, known); } catch { /* no storage: the placeholder stays the visitor's */ }
     box.replaceChildren();
     if (!a.user) {
       const b = el("button", "btn acct-btn", "Belépés");

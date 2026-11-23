@@ -1,9 +1,9 @@
 // vitaradar.hu MP list: everyone whose speeches were fact-checked, with their totals.
 
 import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { dropdown } from "./dropdown.js?v=202611241300";
-import { db, el, setPhoto, mpHref, watchLiveBadge } from "./common.js?v=202611241300";
-import { mountAccount } from "./account.js?v=202611241300";
+import { dropdown } from "./dropdown.js?v=202611240052";
+import { db, el, setPhoto, mpHref, watchLiveBadge } from "./common.js?v=202611240052";
+import { mountAccount } from "./account.js?v=202611240052";
 
 watchLiveBadge();
 mountAccount();
@@ -33,6 +33,11 @@ function bar(t) {
   return b;
 }
 
+// 199 cards would fetch every picture at once: each card's picture loads when the card comes within 600px of the screen.
+const near = "IntersectionObserver" in window ? new IntersectionObserver((entries) => {
+  for (const e of entries) if (e.isIntersecting) { near.unobserve(e.target); e.target.loadPhoto(); }
+}, { rootMargin: "600px 0px" }) : null;
+
 function card(m) {
   const t = { true: 0, false: 0, unverifiable: 0, fallacy: 0, ...(m.totals || {}) };
   const li = el("li");
@@ -42,13 +47,18 @@ function card(m) {
   const img = el("img"); img.hidden = true;
   const ini = el("span", "initials");
   thumb.append(img, ini);
-  setPhoto(img, ini, m.photo, m.name, { id: m.id, color: m.color });
+  // the picture loads once its card nears the screen (see `near`); until then the initials show
+  setPhoto(img, ini, near ? null : m.photo, m.name, { id: m.id, color: m.color });
+  if (near && m.photo) {
+    thumb.loadPhoto = () => setPhoto(img, ini, m.photo, m.name, { id: m.id, color: m.color });
+    near.observe(thumb);
+  }
   // one line per item: name, party, role, the verdict bar, then each count on its own row
   const body = el("div", "mp-body");
   const party = el("p", "mp-party", m.party || "–"), role = el("p", "mp-role", m.role || "–");
   party.title = m.party || "";
   role.title = m.role || "";  // cut to one line with "…"; the full text on hover
-  body.append(el("h3", null, m.name), party, role, bar(t));
+  body.append(el("h2", null, m.name), party, role, bar(t));  // h2: the page's h1 is right above
   const stats = el("dl", "mp-stats");
   for (const [label, value, cls] of [
     ["igaz", t.true, "c-true"], ["nem ellenőrizhető", t.unverifiable, "c-unverifiable"], ["hamis", t.false, "c-false"],
@@ -79,6 +89,7 @@ function render() {
       if (by === "true_share") return (b.true_share ?? -1) - (a.true_share ?? -1);
       return (b.claims || 0) - (a.claims || 0);
     });
+  if (near) near.disconnect();  // the old cards go
   list.replaceChildren(...shown.map(card));
   empty.hidden = shown.length > 0;
   const withData = mps.filter(hasData).length;

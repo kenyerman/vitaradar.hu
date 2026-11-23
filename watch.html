@@ -11,14 +11,29 @@
   <link rel="icon" href="img/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap">
-  <link rel="stylesheet" href="css/style.css?v=202611241410">
+  <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap"></noscript>
+  <!-- the header's account slot keeps the size of the last known state (js/account.js stores it) -->
+  <script>try{document.documentElement.dataset.acct=localStorage.getItem("vr-acct")||"out"}catch(e){}</script>
+  <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js">
+  <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check.js">
+  <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js">
+  <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js">
+  <link rel="modulepreload" href="js/firebase.js?v=202611240052">
+  <link rel="modulepreload" href="js/config.js?v=202611240052">
+  <link rel="modulepreload" href="js/common.js?v=202611240052">
+  <link rel="modulepreload" href="js/account.js?v=202611240052">
+  <link rel="modulepreload" href="js/cdn.js?v=202611240052">
+  <link rel="modulepreload" href="js/presence.js?v=202611240052">
+  <link rel="modulepreload" href="js/menu.js?v=202611240052">
+  <link rel="stylesheet" href="css/style.css?v=202611240052">
 </head>
 <body>
   <canvas id="rain" aria-hidden="true"></canvas>
   <header class="site-header">
     <div class="wrap header-row">
-      <a class="brand" href="./" aria-label="Vitaradar kezdőlap">
+      <a class="brand" href="./" aria-label="vitaradar.hu kezdőlap">
         <img src="img/logo.svg" alt="" width="32" height="32">
         <span class="brand-name">vitaradar<span class="brand-tld">.hu</span></span>
       </a>
@@ -29,6 +44,9 @@
         <a href="archive.html" aria-current="page">Archívum</a>
       </nav>
       <span id="live-badge" class="live-badge" data-state="off"><span class="dot"></span><span id="live-text">nincs adás</span></span>
+      <span id="online" class="online-badge" data-state="loading" role="status"><span class="dot" aria-hidden="true"></span><span class="online-n">– online</span></span>
+      <div id="acct" class="acct"><span class="acct-skel" aria-hidden="true"><span class="btn acct-btn skel-out">Belépés</span><span class="btn acct-btn skel-reg">Regisztráció<span class="acct-more"> befejezése</span></span><span class="acct-me skel-in"><span class="avatar"></span></span></span></div>
+      <button type="button" class="menu-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Menü"><span class="menu-bars" aria-hidden="true"><span></span><span></span><span></span></span></button>
     </div>
   </header>
 
@@ -102,7 +120,7 @@
       <p class="muted"><a href="https://github.com/kenyerman/vitaradar.hu">&gt; forráskód a GitHubon</a></p>
     </div>
   </footer>
-  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js"></script>
-  <script type="module" src="js/watch.js?v=202611241300"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js"></script>
+  <script type="module" src="js/watch.js?v=202611240052"></script>
 </body>
 </html>

@@ -1,10 +1,10 @@
 // vitaradar.hu archive: the past streams, newest sitting day first, each run a card that opens the replay.
 
 import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { db, el, hms, huDate, watchLiveBadge } from "./common.js?v=202611241300";
-import { mountAccount } from "./account.js?v=202611241300";
-import { watchHref } from "./links.js?v=202611241300";
-import { cdnReady, cdnUrl } from "./cdn.js?v=202611241300";
+import { db, el, hms, huDate, watchLiveBadge } from "./common.js?v=202611240052";
+import { mountAccount } from "./account.js?v=202611240052";
+import { watchHref } from "./links.js?v=202611240052";
+import { cdnReady, cdnUrl } from "./cdn.js?v=202611240052";
 
 watchLiveBadge();
 mountAccount();
@@ -32,7 +32,7 @@ function bar(t) {
   return b;
 }
 
-function card(a) {
+function card(a, i) {  // i: its place in the list (runs.map)
   const t = { true: 0, false: 0, unverifiable: 0, fallacy: 0, ...(a.counts || {}) };
   const li = el("li");
   const link = el("a", "arch-card panel");
@@ -40,7 +40,8 @@ function card(a) {
   const poster = el("div", "arch-poster");
   if (a.poster) {
     const img = el("img");
-    img.loading = "lazy";
+    if (i < 2) img.fetchPriority = i === 0 ? "high" : "auto";  // the first posters are on screen at once: no lazy loading
+    else img.loading = "lazy";
     img.alt = "";
     img.onerror = () => img.remove();
     cdnReady().then(() => { img.src = cdnUrl(a.poster); });  // cdn.vitaradar.hu, after its cookie

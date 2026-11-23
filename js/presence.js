@@ -3,8 +3,8 @@
 // live stream. The browser keeps a random id (several tabs count once); App Check still guards the call, and the ID
 // token, when someone is signed in, only marks them as signed in.
 
-import { auth, appCheckHeaders } from "./firebase.js?v=202611241300";
-import { apiUrl } from "./config.js?v=202611241300";
+import { auth, appCheckHeaders } from "./firebase.js?v=202611240052";
+import { apiUrl } from "./config.js?v=202611240052";
 
 const EVERY_MS = 30_000;
 const KEY = "vr-presence-id";
@@ -29,6 +29,8 @@ function pageName() {
     || "other";
 }
 
+// The badge is in the page from the start ("– online", data-state="loading"), so the header doesn't move when the
+// first count arrives; pages without it get one here.
 function badge() {
   let b = document.getElementById("online");
   if (b) return b;
@@ -37,13 +39,14 @@ function badge() {
   b = document.createElement("span");
   b.id = "online";
   b.className = "online-badge";
-  b.hidden = true;
+  b.dataset.state = "loading";
   b.setAttribute("role", "status");
   const dot = document.createElement("span");
   dot.className = "dot";
   dot.setAttribute("aria-hidden", "true");
   const n = document.createElement("span");
   n.className = "online-n";
+  n.textContent = "– online";
   b.append(dot, n);
   live.after(b);
   return b;
@@ -56,7 +59,16 @@ function show(c) {
   b.title = `${c.online} látogató van most az oldalon: ${c.signed_in} bejelentkezve, `
     + `${c.online - c.signed_in} vendég; ${c.live} nézi az élő adást.`;
   b.setAttribute("aria-label", b.title);
-  b.hidden = false;
+  b.dataset.state = "on";
+}
+
+function unknown() {  // no figure rather than a wrong one; the badge keeps its place
+  const b = badge();
+  if (!b) return;
+  b.querySelector(".online-n").textContent = "– online";
+  b.title = "Most nem tudjuk, hányan vannak az oldalon.";
+  b.setAttribute("aria-label", b.title);
+  b.dataset.state = "unknown";
 }
 
 const id = browserId();
@@ -76,8 +88,7 @@ async function beat() {
     if (!r.ok) throw new Error(String(r.status));
     show(await r.json());
   } catch (e) {
-    const b = document.getElementById("online");
-    if (b) b.hidden = true;  // no figure rather than a wrong one
+    unknown();
     console.warn("presence:", e);
   } finally {
     busy = false;

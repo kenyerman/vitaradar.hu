@@ -15,14 +15,18 @@ function mountMenu() {
   if (!nav) return;
   const live = document.getElementById("live-badge");
 
-  const button = document.createElement("button");
-  button.type = "button";
-  button.className = "menu-btn";
-  button.setAttribute("aria-haspopup", "dialog");
-  button.setAttribute("aria-expanded", "false");
+  // the page has the button already (so the header is laid out right from the first paint); older copies get one here
+  let button = row.querySelector(":scope > .menu-btn");
+  if (!button) {
+    button = document.createElement("button");
+    button.type = "button";
+    button.className = "menu-btn";
+    button.setAttribute("aria-haspopup", "dialog");
+    button.setAttribute("aria-expanded", "false");
+    button.innerHTML = '<span class="menu-bars" aria-hidden="true"><span></span><span></span><span></span></span>';
+    row.append(button);
+  }
   button.setAttribute("aria-controls", "menu");
-  button.innerHTML = '<span class="menu-bars" aria-hidden="true"><span></span><span></span><span></span></span>';
-  row.append(button);
 
   const backdrop = document.createElement("div");
   backdrop.className = "menu-backdrop";

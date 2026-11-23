@@ -6,10 +6,10 @@
 // reader blocked are not shown.
 
 import { collection, doc, query, orderBy, limit, onSnapshot, writeBatch, serverTimestamp, Timestamp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { db, el } from "./common.js?v=202611241300";
-import { account, onAccount, onBlocks, isBlocked, avatar, toast, blockUser } from "./account.js?v=202611241300";
-import { userCard } from "./usercard.js?v=202611241300";
-import { linkify, locked, LOREM, LOREM_NICKS } from "./social.js?v=202611241300";
+import { db, el } from "./common.js?v=202611240052";
+import { account, onAccount, onBlocks, isBlocked, avatar, toast, blockUser } from "./account.js?v=202611240052";
+import { userCard } from "./usercard.js?v=202611240052";
+import { linkify, locked, LOREM, LOREM_NICKS } from "./social.js?v=202611240052";
 
 const MAX = 300;
 const GAP = 2000;            // ms between two messages (the rules allow one every 2 s)
@@ -39,9 +39,12 @@ function fakeChat() {
 // stage: the box the chat column joins (next to the player).
 export function mountChat(stage) {
   stage.dataset.chat = "on";
-  const col = el("aside", "chat panel");
-  col.setAttribute("aria-label", "Chat");
-  stage.append(col);
+  let col = stage.querySelector(":scope > .chat");  // in the page already, so the player has its final size from the start
+  if (!col) {
+    col = el("aside", "chat panel");
+    col.setAttribute("aria-label", "Chat");
+    stage.append(col);
+  }
   let state = null, stop = null;
   onAccount((a) => {
     const uid = a.registered && a.a18 && a.user ? a.user.uid : null;

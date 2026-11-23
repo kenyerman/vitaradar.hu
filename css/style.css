@@ -72,6 +72,25 @@ h1, h2, h3 { font-family: var(--mono); }
 .online-badge .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; box-shadow: 0 0 6px currentColor;
   animation: pulse-dot 2s ease-in-out infinite; }
 @keyframes pulse-dot { 50% { opacity: .35; } }
+/* The header's slots that fill in after load (js/presence.js, js/account.js, js/menu.js) are in the page from the
+   start, at their final size, so nothing in the header moves when their data arrives. */
+#live-text, .online-n { display: inline-block; min-width: calc(6em + 12px); text-align: center; }  /* 10 monospace characters with their letter-spacing: "nincs adás", "999 online" (em, not ch: ch follows whichever font has loaded) */
+.online-badge[data-state="loading"], .online-badge[data-state="unknown"] { color: var(--muted); }
+.online-badge[data-state="loading"] .dot, .online-badge[data-state="unknown"] .dot { animation: none; box-shadow: none; }
+/* the account slot's placeholder: the last known state's button (html[data-acct], set in each page's head), dimmed */
+.acct-skel { display: inline-flex; pointer-events: none; opacity: .45; }
+.acct-skel > * { display: none !important; }
+html:not([data-acct="in"]):not([data-acct="reg"]) .acct-skel > .skel-out,
+html[data-acct="reg"] .acct-skel > .skel-reg { display: inline-block !important; }
+html[data-acct="in"] .acct-skel > .skel-in { display: inline-flex !important; }
+/* the footer starts below the fold, so content arriving after load doesn't push it around in view */
+main { min-height: 100vh; }
+@media (max-width: 860px) {  /* these live in the phone menu's panel (js/menu.js moves them there) */
+  .header-row > .nav, .header-row > .live-badge, .header-row > .online-badge { display: none; }
+}
+@media (max-width: 340px) {
+  html[data-acct="reg"] .header-row:has(.acct-skel) .brand-name { display: none; }
+}
 
 /* panels: a thin neon frame with corner brackets */
 .panel { position: relative; background: var(--panel); border: 1px solid var(--line); }
@@ -187,7 +206,7 @@ input.field { flex: 1; min-width: 200px; }
 .mp-thumb { width: 64px; height: 80px; background: #031208; display: grid; place-items: center; overflow: hidden; }
 .mp-thumb .initials { font-size: 22px; }
 /* one line per item */
-.mp-body h3 { margin: 0; min-height: 2.6em; font-size: 14px; line-height: 1.3; color: #eafff0; text-transform: uppercase; }
+.mp-body h2 { margin: 0; min-height: 2.6em; font-size: 14px; line-height: 1.3; color: #eafff0; text-transform: uppercase; }
 .mp-party, .mp-role { margin: 0; font-size: 12px; line-height: 1.6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mp-party { color: var(--green); }
 .mp-role { color: var(--muted); }
@@ -263,6 +282,9 @@ input.field { flex: 1; min-width: 200px; }
 .scores dd { margin: 4px 0 0; font: 700 26px/1 var(--mono); }
 .scores small { display: block; margin-top: 4px; font-size: 11px; color: var(--muted); font-weight: 400; }
 .facts-line { margin: 10px 0 0; color: var(--muted); font-size: 13px; }
+/* the MP page's head keeps its height while js/mp.js fills it in (name, party and role, the totals line) */
+.mp-head .meta, #mp-line { min-height: 1.55em; }
+@media (max-width: 560px) { .mp-head h1 { min-height: 2.4em; } .mp-head .meta { min-height: 3.1em; } #mp-line { min-height: 4.65em; } }
 .mp-section { margin-top: 26px; }
 .search-form { display: flex; gap: 10px; flex-wrap: wrap; }
 .hits { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 10px; }
@@ -653,6 +675,8 @@ a.ext { color: var(--cyan); text-decoration: underline dotted; overflow-wrap: an
 .arch-body .bar { margin: 6px 0; }
 .crumbs { margin: 0 0 8px; font-size: 13px; }
 .watch-tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 12px 0 0; }
+#w-sub { min-height: 1.55em; }  /* js/watch.js fills it in: the player below keeps its place */
+@media (max-width: 420px) { #w-sub { min-height: 3.1em; } }  /* two lines there */
 .t-btn { flex: none; background: transparent; border: 1px solid var(--line); color: var(--green); font: 700 12px var(--mono);
   padding: 4px 8px; cursor: pointer; }
 .t-btn:hover:not(:disabled) { border-color: var(--green); box-shadow: var(--glow); }
@@ -670,6 +694,8 @@ a.ext { color: var(--cyan); text-decoration: underline dotted; overflow-wrap: an
 .speaker-list li.now { border-color: var(--green); color: #eafff0; }
 a.fact-time { color: var(--green); }
 a.fact-time:hover { text-shadow: var(--glow); }
+/* a finger-sized target (24px) without changing the line: the padding is taken back by the margin */
+a.fact-time { display: inline-block; padding-top: 4px; padding-bottom: 4px; margin-top: -4px; margin-bottom: -4px; }
 
 /* profile cards (js/usercard.js): a user's stats when their name is hovered, focused or tapped */
 .ucard-trigger { cursor: pointer; }
