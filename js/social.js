@@ -9,8 +9,9 @@
 // disappear for the user who blocked them.
 
 import { collection, query, where, orderBy, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { db, el } from "./common.js?v=202611231928";
-import { account, onAccount, onBlocks, isBlocked, api, needAccount, avatar, dialog, toast, blockUser } from "./account.js?v=202611231928";
+import { db, el } from "./common.js?v=202611241130";
+import { account, onAccount, onBlocks, isBlocked, api, needAccount, avatar, dialog, toast, blockUser } from "./account.js?v=202611241130";
+import { userCard } from "./usercard.js?v=202611241130";
 
 export const MAX_COMMENT = 250;
 const MAX_DEPTH = 2;          // a comment, a reply, a reply to the reply
@@ -408,7 +409,7 @@ function commentNode(c, key) {
     const time = el("time", "cmt-time", ago(t));
     time.dateTime = new Date(t).toISOString();
     time.title = new Date(t).toLocaleString("hu-HU");
-    head.append(avatar(cur.photo, cur.nick, 22), el("span", "cmt-nick", cur.nick || "?"), time);
+    head.append(avatar(cur.photo, cur.nick, 22), userCard(el("span", "cmt-nick", cur.nick || "?"), cur.deleted ? null : cur.uid), time);
     text.replaceChildren(...linkify(String(cur.text || "")));
     actions.append(voteButtons(`m:${cur.id}`, "Egyetértek", "Nem értek egyet"));
     if ((cur.depth || 0) < MAX_DEPTH) {

@@ -6,9 +6,9 @@
 // clock (the date of the frame on screen), so a question pops up when this viewer's video shows the claim, whatever
 // their delay. Answers and tips go through the user API; visitors play along, unscored, and are asked to sign in.
 
-import { collection, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { db, el } from "./common.js?v=202611231928";
-import { account, onAccount, api, needAccount, toast } from "./account.js?v=202611231928";
+import { collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { db, el } from "./common.js?v=202611241130";
+import { account, onAccount, api, needAccount, toast } from "./account.js?v=202611241130";
 
 const TRUTH = { true: "IGAZ", false: "HAMIS" };
 const MASKED = "Hibás érvelés?";
@@ -44,35 +44,6 @@ function bar() {
   const b = el("div", "game-bar");
   b.append(el("span"));
   return b;
-}
-
-// ------------------------------------------------------------------ points balance (header)
-function mountPoints() {
-  const row = document.querySelector(".site-header .header-row");
-  if (!row) return;
-  const chip = el("button", "points-chip");
-  chip.type = "button";
-  chip.hidden = true;
-  chip.title = "Pontjaid: a kihívásokban és a tippekben gyűjtöd őket";
-  chip.addEventListener("click", () => {
-    if (needAccount()) toast("Pontot az élő adás kihívásaiért és a felszólalásokra adott tippekért kapsz.");
-  });
-  row.insertBefore(chip, row.querySelector(".acct"));
-  let stop = null;
-  onAccount((a) => {
-    if (stop) { stop(); stop = null; }
-    chip.hidden = !a.registered;
-    if (!a.registered) return;
-    chip.textContent = "◆ … pont";
-    stop = onSnapshot(doc(db, "users", a.user.uid), (snap) => {
-      const p = Number((snap.data() || {}).points || 0);
-      if (chip.dataset.points && Number(chip.dataset.points) < p) {
-        chip.classList.remove("bump"); void chip.offsetWidth; chip.classList.add("bump");
-      }
-      chip.dataset.points = String(p);
-      chip.textContent = `◆ ${p.toLocaleString("hu-HU")} pont`;
-    }, (e) => console.warn("points:", e));
-  });
 }
 
 // ------------------------------------------------------------------ a challenge (in the dock)
@@ -325,7 +296,6 @@ class TipView {
 // ------------------------------------------------------------------ the games of the live session
 // mountGame({now, aside}): now() is the date (ms) of the frame on screen, aside the speaker's column.
 export function mountGame({ now: streamNow, aside }) {
-  mountPoints();
   const dock = el("div", "game-dock");
   document.body.append(dock);
   const pop = new ChallengeView(dock);

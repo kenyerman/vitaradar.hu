@@ -5,17 +5,25 @@
 
 import { onAuthStateChanged, getIdToken } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { auth, db, appCheckHeaders, signInWithGoogle, signOut } from "./firebase.js?v=202611231928";
-import { apiUrl, avatarUrl, photoPrefix } from "./config.js?v=202611231928";
-import { el, initials, huDate } from "./common.js?v=202611231928";
+import { auth, db, appCheckHeaders, signInWithGoogle, signOut } from "./firebase.js?v=202611241130";
+import { apiUrl, avatarUrl, photoPrefix } from "./config.js?v=202611241130";
+import { el, initials, huDate } from "./common.js?v=202611241130";
 
 export const account = {
   user: null, registered: false, a18: false, profile: null, private: null, ready: false,
   blocked: {},           // uid -> nick: users whose comments and chat messages this user does not see
+  points: null,          // the game points (users/{uid}.points), shown on the header's avatar
   flagged: new Set(),    // comment ids this user flagged
 };
 const listeners = new Set();
 const blockListeners = new Set();
+const pointListeners = new Set();
+// Called whenever the user's points change (the header avatar's corner badge).
+export function onPoints(fn) {
+  pointListeners.add(fn);
+  if (account.points != null) fn(account.points);
+  return () => pointListeners.delete(fn);
+}
 
 // Called whenever the blocked users or the flagged comments change (another tab included).
 export function onBlocks(fn) {
@@ -29,12 +37,18 @@ function watchPrivate(uid) {  // users/{uid}: readable by its owner only (rules)
   if (stopPrivate) { stopPrivate(); stopPrivate = null; }
   account.blocked = {};
   account.flagged = new Set();
+  account.points = null;
   if (!uid) { blockListeners.forEach((fn) => fn(account)); return; }
   stopPrivate = onSnapshot(doc(db, "users", uid), (snap) => {
     const d = snap.data() || {};
     account.blocked = d.blocked && typeof d.blocked === "object" ? d.blocked : {};
     account.flagged = new Set(Array.isArray(d.flagged) ? d.flagged : []);
     blockListeners.forEach((fn) => { try { fn(account); } catch (e) { console.warn(e); } });
+    const points = Number(d.points || 0);
+    if (points !== account.points) {
+      account.points = points;
+      pointListeners.forEach((fn) => { try { fn(points); } catch (e) { console.warn(e); } });
+    }
   }, (e) => console.warn("account data:", e));
 }
 
@@ -171,9 +185,9 @@ let registering = null;
 export function openRegister(suggest) {
   if (registering || account.registered || !account.user) return;
   const today = new Date();
-  const name = input("text", { maxlength: "60", autocomplete: "name", required: "" });
-  name.value = (suggest.name || account.user.displayName || "").slice(0, 60);
-  const nick = input("text", { maxlength: "24", autocomplete: "nickname", required: "", pattern: "[0-9A-Za-zÁÉÍÓÖŐÚÜŰáéíóöőúüű_.\\-]{3,24}" });
+  const name = input("text", { maxlength: "150", autocomplete: "name", required: "" });
+  name.value = (suggest.name || account.user.displayName || "").slice(0, 150);
+  const nick = input("text", { maxlength: "40", autocomplete: "nickname", required: "", pattern: "[0-9A-Za-zÁÉÍÓÖŐÚÜŰáéíóöőúüű_.\\-]{3,40}" });
   const born = input("date", { required: "", max: isoDay(today), min: "1900-01-01" });
   const ok = input("checkbox", { required: "" });
   const consent = el("label", "fld check");
@@ -181,7 +195,7 @@ export function openRegister(suggest) {
     "az e-mail címemet és a születési dátumomat. Az e-mail címemet és a születési dátumomat senki más nem látja."));
   const dlg = dialog("Regisztráció", [
     el("p", "dlg-text", "A szavazáshoz és a hozzászóláshoz hozd létre a profilodat. A chat 18 év felettieknek szól."),
-    field("Teljes név", name), field("Becenév", nick, "3–24 karakter: betű, szám, pont, kötőjel, aláhúzás. Ezt látják mások."),
+    field("Teljes név", name), field("Becenév", nick, "3–40 karakter: betű, szám, pont, kötőjel, aláhúzás. Ezt látják mások."),
     field("Születési dátum", born, "Legalább 16 évesnek kell lenned."), consent,
   ], [
     { label: "Mégse", value: "cancel", onClick: () => dlg.close() },
@@ -243,9 +257,9 @@ function openProfile() {
   const pic = el("div", "profile-pic");
   pic.append(avatar(p.photo && p.photo["256"], p.nick, 96));
   const file = input("file", { accept: "image/jpeg,image/png,image/webp" });
-  const name = input("text", { maxlength: "60", required: "" });
+  const name = input("text", { maxlength: "150", required: "" });
   name.value = p.name || "";
-  const nick = input("text", { maxlength: "24", required: "" });
+  const nick = input("text", { maxlength: "40", required: "" });
   nick.value = p.nick || "";
   const locked = (value) => {  // private and fixed: shown, never sent back
     const i = input("text", { disabled: "", readonly: "" });
@@ -339,7 +353,9 @@ export function mountAccount() {
   if (!row) return;
   const box = el("div", "acct");
   row.append(box);
+  let stopPoints = null;
   onAccount((a) => {
+    if (stopPoints) { stopPoints(); stopPoints = null; }
     box.replaceChildren();
     if (!a.user) {
       const b = el("button", "btn acct-btn", "Belépés");
@@ -354,10 +370,24 @@ export function mountAccount() {
     } else {
       const b = el("button", "acct-me");
       b.type = "button";
-      b.title = "Profil";
-      b.append(avatar(a.profile?.photo && a.profile.photo["64"], a.profile?.nick, 28), el("span", "acct-nick", a.profile?.nick || ""));
+      const pts = el("span", "acct-points");
+      pts.hidden = true;
+      b.append(avatar(a.profile?.photo && a.profile.photo["64"], a.profile?.nick, 32), pts);
+      const label = (p) => {
+        b.title = p == null ? "Profil" : `Profil · ${p.toLocaleString("hu-HU")} pont`;
+        b.setAttribute("aria-label", b.title);
+      };
+      label(null);
       b.addEventListener("click", openProfile);
       box.append(b);
+      stopPoints = onPoints((p) => {  // the corner badge: just the number, bumped when it grows
+        const before = pts.hidden ? null : Number(pts.dataset.points);
+        pts.dataset.points = String(p);
+        pts.textContent = p.toLocaleString("hu-HU");
+        pts.hidden = false;
+        label(p);
+        if (before != null && p > before) { pts.classList.remove("bump"); void pts.offsetWidth; pts.classList.add("bump"); }
+      });
     }
   });
 }
