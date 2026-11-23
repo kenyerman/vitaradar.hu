@@ -11,6 +11,7 @@ import { db, el, badge, sourceList, setPhoto, mpHref } from "./common.js?v=20261
 import { mountAccount } from "./account.js?v=202611231830";
 import { factSocial } from "./social.js?v=202611231830";
 import { mountChat } from "./chat.js?v=202611231830";
+import { mountGame } from "./game.js?v=202611231830";
 
 const $ = (id) => document.getElementById(id);
 const video = $("video");
@@ -24,6 +25,7 @@ const MAX_SHOWN = 200;
 
 mountAccount();
 mountChat($("stage"));
+const game = mountGame({ now: streamNow, aside: document.querySelector(".speaker-col") });  // challenges, tips, points
 
 let live = { session: null, active: false, url: null };
 let claims = new Map();  // id -> fact document
@@ -49,6 +51,7 @@ function follow(session) {
   turns = [];
   shown.clear();
   els.facts.replaceChildren();
+  game.follow(session);
   unsub = [
     onSnapshot(collection(db, "sessions", session, "claims"), (snap) => {
       snap.docChanges().forEach((ch) => {
@@ -161,6 +164,7 @@ function render() {
   const now = streamNow();
   const visible = [...claims.values()]
     .filter((c) => now == null || c.show_at <= now)
+    .map((c) => game.mask(c, now))  // a challenge's fact stays "being checked" until the game is over
     .sort((a, b) => b.show_at - a.show_at)
     .slice(0, MAX_SHOWN);
 
@@ -177,10 +181,13 @@ function render() {
       s = { li: buildFact(c), verdict: null };
       shown.set(c.id, s);
     }
-    if (s.verdict !== v) {
+    const text = c.bullet || c.claim;
+    if (s.verdict !== v || s.text !== text) {
       if (s.verdict) { s.li.classList.remove("flash"); void s.li.offsetWidth; s.li.classList.add("flash"); }
+      if (s.text != null && s.text !== text) s.li.querySelector(".fact-bullet").textContent = text;  // a fallacy named
       fillVerdict(s.li, c, v);
       s.verdict = v;
+      s.text = text;
     }
     const want = prev ? prev.nextSibling : els.facts.firstChild;
     if (want !== s.li) els.facts.insertBefore(s.li, want);

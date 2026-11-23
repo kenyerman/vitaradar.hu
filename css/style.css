@@ -489,3 +489,92 @@ a.ext { color: var(--cyan); text-decoration: underline dotted; overflow-wrap: an
 .msg:hover .msg-block, .msg-block:focus-visible { opacity: 1; }
 .msg-block:hover { color: var(--false); }
 @media (hover: none) { .msg-block { opacity: .5; } }
+
+/* games (js/game.js): the challenge popup and the speech tip in a dock at the bottom right, the points in the header */
+.points-chip { background: transparent; border: 1px solid var(--line); color: var(--green); font: 700 12px/1 var(--mono);
+  padding: 8px 10px; cursor: pointer; letter-spacing: .6px; white-space: nowrap; text-shadow: var(--glow); }
+.points-chip:hover, .points-chip:focus-visible { border-color: var(--green); box-shadow: var(--glow); outline: none; }
+.points-chip.bump { animation: bump .6s ease-out; }
+@keyframes bump { 30% { transform: scale(1.18); background: rgba(0, 255, 65, .22); } }
+@keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+
+.game-dock { position: fixed; z-index: 40; right: 20px; bottom: 20px; width: min(400px, calc(100vw - 32px));
+  display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+.game-dock > * { pointer-events: auto; }
+.game-pop, .tip-box { background: var(--panel-solid); border-color: var(--green); padding: 12px 14px 14px; display: grid; gap: 8px;
+  box-shadow: var(--glow), 0 14px 40px rgba(0, 0, 0, .85); animation: rise .25s ease-out; }
+.game-pop[data-kind="fallacy"] { border-color: var(--fallacy); }
+.game-head { display: flex; align-items: baseline; gap: 10px; font: 700 11px/1.2 var(--mono); letter-spacing: 1px; }
+.game-tag { color: var(--green); text-shadow: var(--glow); }
+.game-pop[data-kind="fallacy"] .game-tag { color: var(--fallacy); text-shadow: 0 0 8px rgba(199, 125, 255, .45); }
+.game-time { margin-left: auto; color: var(--unverifiable); font-size: 14px; }
+.game-worth { color: var(--muted); }
+.game-time:empty + .game-worth { margin-left: auto; }
+.game-q { margin: 0; font-size: 15px; color: var(--text); letter-spacing: .3px; }
+.game-quote { margin: 0; padding: 6px 0 6px 10px; border-left: 2px solid var(--line); color: var(--text); font-size: 13px;
+  font-style: italic; max-height: 7.5em; overflow-y: auto; }
+.game-who { margin: -4px 0 0; color: var(--muted); font-size: 12px; text-align: right; }
+.game-who:empty { display: none; }
+.game-summary { margin: 0; font-size: 12px; color: var(--muted); }
+.game-summary::before { content: "» "; }
+.game-bar { height: 4px; background: rgba(0, 255, 65, .08); }
+.game-bar span { display: block; height: 100%; background: var(--unverifiable); transition: width .2s linear; }
+.game-options { display: grid; gap: 6px; }
+.game-pop[data-kind="truth"] .game-options { grid-template-columns: 1fr 1fr; }
+.game-opt { --share: 0%; position: relative; display: flex; justify-content: space-between; align-items: center; gap: 8px;
+  background: linear-gradient(90deg, rgba(0, 255, 65, .14) var(--share), transparent var(--share)) rgba(0, 0, 0, .5);
+  border: 1px solid var(--line); color: var(--text); font: 700 13px/1.2 var(--mono); padding: 10px 12px; cursor: pointer;
+  text-align: left; letter-spacing: .4px; transition: border-color .15s, box-shadow .15s; }
+.game-opt:not(:disabled):hover, .game-opt:focus-visible { border-color: var(--green); box-shadow: var(--glow); outline: none; }
+.game-opt:disabled { cursor: default; }
+.game-opt.picked { border-color: var(--cyan); box-shadow: 0 0 8px rgba(0, 229, 255, .4); }
+.game-opt.picked .opt-label::before { content: "> "; color: var(--cyan); }
+.game-opt.right { border-color: var(--true); color: var(--true); box-shadow: 0 0 10px rgba(0, 255, 65, .45); }
+.game-opt.wrong { border-color: var(--false); color: var(--false); box-shadow: none; }
+.game-pop[data-state="result"] .game-opt:not(.right):not(.picked) { opacity: .6; }
+.opt-count { font-size: 12px; color: var(--muted); }
+.game-status { margin: 0; font-size: 13px; color: var(--muted); }
+.game-status[data-right="true"] { color: var(--true); font-weight: 700; text-shadow: var(--glow); }
+.game-status[data-right="false"] { color: var(--false); font-weight: 700; }
+.game-after { display: grid; gap: 6px; }
+.game-after:empty { display: none; }
+.game-same, .game-expl { margin: 0; font-size: 12px; color: var(--text); }
+.game-expl { color: var(--muted); }
+.game-expl::before { content: "» "; }
+.game-won { margin: 0; font: 700 18px/1.2 var(--mono); color: var(--true); text-shadow: var(--glow); transform-origin: left center;
+  animation: won .5s ease-out; }
+@keyframes won { from { opacity: 0; transform: scale(.6); } to { opacity: 1; transform: none; } }
+.game-upsell { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 10px;
+  border: 1px dashed var(--line); font-size: 12px; color: var(--text); }
+.game-upsell .btn { padding: 6px 10px; font-size: 11px; flex: none; }
+
+.tip-q { margin: 0; font-size: 13px; color: var(--text); }
+.tip-grid { display: grid; gap: 6px; }
+.tip-row { display: grid; grid-template-columns: 1fr 34px 44px 34px; align-items: center; gap: 6px; }
+.tip-name { font-size: 12px; letter-spacing: .8px; text-transform: uppercase; color: var(--muted); }
+.tip-step { background: transparent; border: 1px solid var(--line); color: var(--green); font: 700 16px/1 var(--mono);
+  height: 32px; cursor: pointer; }
+.tip-step:not(:disabled):hover { border-color: var(--green); box-shadow: var(--glow); }
+.tip-step:disabled { opacity: .4; cursor: default; }
+.tip-val { text-align: center; font: 700 20px/1 var(--mono); }
+.tip-send { width: 100%; }
+.tip-box[data-state="sent"] .tip-send { display: none; }
+.tip-line { margin-top: 12px; padding: 10px 12px; display: grid; gap: 3px; font-size: 12px; }
+.tip-line p { margin: 0; }
+.tip-line-head { color: var(--green); letter-spacing: 1px; text-transform: uppercase; font-weight: 700; font-size: 11px; }
+.tip-line-mine { color: var(--text); }
+.tip-line-actual { color: var(--text); }
+.tip-line .game-won { font-size: 15px; }
+.tip-line .game-upsell { margin-top: 4px; }
+
+@media (max-width: 860px) {  /* on a phone the dock must not hide the video: while a question is open, the tip is a bar */
+  .game-dock { left: 8px; right: 8px; bottom: 8px; width: auto; gap: 6px; }
+  .game-quote { max-height: 4.5em; }
+  .game-pop[data-state="open"] .game-upsell { display: none; }
+  .game-dock:has(> .game-pop:not([hidden])[data-state="open"]) > .tip-box { padding: 8px 12px; }
+  .game-dock:has(> .game-pop:not([hidden])[data-state="open"]) > .tip-box > :not(.game-head) { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .game-pop, .tip-box, .points-chip.bump, .game-won { animation: none; }
+  .game-bar span { transition: none; }
+}
