@@ -6,7 +6,9 @@ import { db, el, setPhoto, mpHref, watchLiveBadge } from "./common.js";
 watchLiveBadge();
 const list = document.getElementById("mps"), empty = document.getElementById("mps-empty");
 const filter = document.getElementById("filter"), sort = document.getElementById("sort");
+const onlyData = document.getElementById("only-data"), count = document.getElementById("mps-count");
 let mps = [];
+const hasData = (m) => m.has_data ?? (m.speeches || 0) > 0;
 
 function bar(t) {
   const b = el("div", "bar");
@@ -23,7 +25,7 @@ function bar(t) {
 function card(m) {
   const t = { true: 0, false: 0, unverifiable: 0, fallacy: 0, ...(m.totals || {}) };
   const li = el("li");
-  const a = el("a", "mp-card panel");
+  const a = el("a", hasData(m) ? "mp-card panel" : "mp-card panel no-data");
   a.href = mpHref(m.id);
   const thumb = el("div", "mp-thumb");
   const img = el("img"); img.hidden = true;
@@ -54,9 +56,12 @@ function card(m) {
 function render() {
   const q = filter.value.trim().toLowerCase();
   const by = sort.value;
+  const only = onlyData.getAttribute("aria-pressed") === "true";
   const shown = mps
-    .filter((m) => !q || `${m.name} ${m.party} ${m.faction}`.toLowerCase().includes(q))
+    .filter((m) => !q || `${m.name} ${m.party} ${m.faction} ${m.role}`.toLowerCase().includes(q))
+    .filter((m) => !only || hasData(m))
     .sort((a, b) => {
+      if (hasData(a) !== hasData(b)) return hasData(a) ? -1 : 1;  // those we have data on first
       if (by === "name") return a.name.localeCompare(b.name, "hu");
       if (by === "recent") return (b.last_date || "").localeCompare(a.last_date || "");
       if (by === "false") return ((b.totals || {}).false || 0) - ((a.totals || {}).false || 0);
@@ -65,9 +70,15 @@ function render() {
     });
   list.replaceChildren(...shown.map(card));
   empty.hidden = shown.length > 0;
+  const withData = mps.filter(hasData).length;
+  count.textContent = `// ${shown.length} képviselő látszik · ${mps.length}-ből ${withData} felszólalásait ellenőriztük`;
 }
 
 filter.addEventListener("input", render);
+onlyData.addEventListener("click", () => {
+  onlyData.setAttribute("aria-pressed", String(onlyData.getAttribute("aria-pressed") !== "true"));
+  render();
+});
 sort.addEventListener("change", render);
 getDocs(collection(db, "mps")).then((snap) => {
   mps = snap.docs.map((d) => d.data());
