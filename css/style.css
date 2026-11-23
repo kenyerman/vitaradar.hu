@@ -66,6 +66,12 @@ h1, h2, h3 { font-family: var(--mono); }
 .live-badge .dot { width: 8px; height: 8px; background: currentColor; }
 .live-badge[data-state="on"] { color: #ff4d4d; border-color: rgba(255, 77, 77, .5); background: rgba(255, 77, 77, .08); }
 .live-badge[data-state="on"] .dot { animation: blink 1s steps(1) infinite; }
+/* who is on the site now (js/presence.js), next to the live badge */
+.online-badge { display: inline-flex; align-items: center; gap: 8px; padding: 5px 10px; border: 1px solid var(--line-dim);
+  font: 700 11px/1 var(--mono); letter-spacing: 1.2px; text-transform: uppercase; color: var(--green); cursor: default; }
+.online-badge .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; box-shadow: 0 0 6px currentColor;
+  animation: pulse-dot 2s ease-in-out infinite; }
+@keyframes pulse-dot { 50% { opacity: .35; } }
 
 /* panels: a thin neon frame with corner brackets */
 .panel { position: relative; background: var(--panel); border: 1px solid var(--line); }
@@ -358,7 +364,7 @@ details[open] > summary .lvl-title::before { content: "▾ "; }
   .scores { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .fact, .fact.flash, .live-badge .dot, .verdict::after, .brand-name::after { animation: none !important; }
+  .fact, .fact.flash, .live-badge .dot, .online-badge .dot, .verdict::after, .brand-name::after { animation: none !important; }
 }
 
 /* accounts (js/account.js), votes and comments (js/social.js), the live chat (js/chat.js) */

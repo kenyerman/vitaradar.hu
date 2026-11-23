@@ -1,0 +1,90 @@
+// Who is on the site right now, visitors included: a heartbeat to the user API (/presence) about every 30 s, answered
+// with the counts. The header shows "N online", and its tooltip says how many are signed in and how many watch the
+// live stream. The browser keeps a random id (several tabs count once); App Check still guards the call, and the ID
+// token, when someone is signed in, only marks them as signed in.
+
+import { auth, appCheckHeaders } from "./firebase.js?v=202611231928";
+import { apiUrl } from "./config.js?v=202611231928";
+
+const EVERY_MS = 30_000;
+const KEY = "vr-presence-id";
+
+function browserId() {
+  const fresh = () => {
+    const b = crypto.getRandomValues(new Uint8Array(16));
+    return btoa(String.fromCharCode(...b)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  };
+  try {
+    let id = localStorage.getItem(KEY);
+    if (!id || !/^[A-Za-z0-9_-]{16,64}$/.test(id)) { id = fresh(); localStorage.setItem(KEY, id); }
+    return id;
+  } catch {
+    return fresh();  // no storage (private window): this tab counts on its own
+  }
+}
+
+function pageName() {
+  const p = location.pathname.split("/").pop() || "index.html";
+  return { "index.html": "live", "mps.html": "mps", "mp.html": "mp", "archive.html": "archive", "watch.html": "watch" }[p]
+    || "other";
+}
+
+function badge() {
+  let b = document.getElementById("online");
+  if (b) return b;
+  const live = document.getElementById("live-badge");
+  if (!live) return null;
+  b = document.createElement("span");
+  b.id = "online";
+  b.className = "online-badge";
+  b.hidden = true;
+  b.setAttribute("role", "status");
+  const dot = document.createElement("span");
+  dot.className = "dot";
+  dot.setAttribute("aria-hidden", "true");
+  const n = document.createElement("span");
+  n.className = "online-n";
+  b.append(dot, n);
+  live.after(b);
+  return b;
+}
+
+function show(c) {
+  const b = badge();
+  if (!b) return;
+  b.querySelector(".online-n").textContent = `${c.online} online`;
+  b.title = `${c.online} látogató van most az oldalon: ${c.signed_in} bejelentkezve, `
+    + `${c.online - c.signed_in} vendég; ${c.live} nézi az élő adást.`;
+  b.setAttribute("aria-label", b.title);
+  b.hidden = false;
+}
+
+const id = browserId();
+const page = pageName();
+let busy = false;
+
+async function beat() {
+  if (busy) return;
+  busy = true;
+  try {
+    const headers = { ...(await appCheckHeaders()), "Content-Type": "application/json" };
+    const user = auth.currentUser;
+    if (user) {
+      try { headers.Authorization = `Bearer ${await user.getIdToken()}`; } catch { /* counted as a visitor */ }
+    }
+    const r = await fetch(`${apiUrl}/presence`, { method: "POST", headers, body: JSON.stringify({ id, page }) });
+    if (!r.ok) throw new Error(String(r.status));
+    show(await r.json());
+  } catch (e) {
+    const b = document.getElementById("online");
+    if (b) b.hidden = true;  // no figure rather than a wrong one
+    console.warn("presence:", e);
+  } finally {
+    busy = false;
+  }
+}
+
+beat();
+setInterval(beat, EVERY_MS);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) beat(); });
+auth.onAuthStateChanged(() => beat());  // signing in or out changes the signed-in count
