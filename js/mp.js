@@ -7,6 +7,7 @@ import { db, el, badge, sourceList, setPhoto, hms, huDate, watchLiveBadge } from
 import { mountAccount } from "./account.js?v=202611231830";
 import { factSocial } from "./social.js?v=202611231830";
 import { calendar } from "./calendar.js?v=202611231830";
+import { watchHref } from "./links.js?v=202611232039";
 
 watchLiveBadge();
 mountAccount();
@@ -38,6 +39,18 @@ function nums(t) {
   return n;
 }
 
+// the fact's moment: a link into the archive's replay when the run's video has it, else its time in the sitting
+function factTime(c, session) {
+  if (session && c.video_s != null) {
+    const a = el("a", "fact-time", `▶ ${hms(c.video_s)}`);
+    a.href = watchHref(session, c.video_s);
+    a.title = "visszanézés ettől a pillanattól";
+    a.addEventListener("click", (e) => e.stopPropagation());  // follow the link, don't fold the fact
+    return a;
+  }
+  return el("span", "fact-time", `T+${hms(c.at_s)}`);
+}
+
 // level 3: a fact. Collapsed it shows the verdict and the headline; open, the claim, the explanation and the sources.
 function factItem(c, session) {
   const li = el("li", "fact");
@@ -45,7 +58,7 @@ function factItem(c, session) {
   li.dataset.verdict = v;
   const det = el("details", "fact-d");
   const sum = el("summary", "fact-sum");
-  sum.append(badge(v, c.kind), el("span", "fact-bullet", c.bullet || c.claim), el("span", "fact-time", `T+${hms(c.at_s)}`));
+  sum.append(badge(v, c.kind), el("span", "fact-bullet", c.bullet || c.claim), factTime(c, session));
   const body = el("div", "fact-body");
   if (c.claim && c.claim !== c.bullet) body.append(el("p", "fact-claim", c.claim));
   if (c.explanation) body.append(el("p", "fact-expl", c.explanation));
@@ -68,6 +81,11 @@ function speechItem(s, open) {
   sum.append(el("span", "lvl-title", `T+${hms(s.start_s)} → T+${hms(s.end_s)}`),
     el("span", "meta", `${hms(s.duration_s)} perc · ${(s.claims || []).length} állítás`), nums(t), b);
   const body = el("div", "speech-body");
+  if (s.video_start_s != null) {  // the whole speech in the archive's replay
+    const w = el("a", "t-btn", `▶ visszanézés (${hms(s.video_start_s)})`);
+    w.href = watchHref(s.session, s.video_start_s);
+    body.append(w);
+  }
   const list = el("ol", "facts");
   (s.claims || []).slice().sort((a, b2) => a.at_s - b2.at_s).forEach((c) => list.append(factItem(c, s.session)));
   if (list.children.length) body.append(list);
@@ -216,6 +234,13 @@ $("search").addEventListener("submit", async (ev) => {
       const a = el("a", null, `${huDate(h.date)} · T+${hms(h.at_s)}`);
       a.href = `#speech-${h.speech_id}`;
       top.append(el("span", "hit-score", `${Math.round(h.score * 100)}% egyezés`), a);
+      const at = h.video_s ?? h.at_s;  // the passage's moment in the archive's video
+      if (h.session && at != null) {
+        const w = el("a", "fact-time", `▶ ${hms(at)}`);
+        w.href = watchHref(h.session, at);
+        w.title = "visszanézés ettől a pillanattól";
+        top.append(w);
+      }
       li.append(top, el("p", null, h.text));
       hits.append(li);
     }

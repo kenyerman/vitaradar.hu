@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="hu">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Visszanézés – Vitaradar</title>
+  <meta name="description" content="Egy korábbi közvetítés visszanézése az elhangzott állításokkal és minősítéseikkel.">
+  <meta name="theme-color" content="#000000">
+  <meta property="og:title" content="Vitaradar – élő tényellenőrzés">
+  <meta property="og:description" content="Az Országgyűlés élőben, az elhangzó állítások ellenőrzésével.">
+  <link rel="icon" href="img/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap">
+  <link rel="stylesheet" href="css/style.css?v=202611232039">
+</head>
+<body>
+  <canvas id="rain" aria-hidden="true"></canvas>
+  <header class="site-header">
+    <div class="wrap header-row">
+      <a class="brand" href="./" aria-label="Vitaradar kezdőlap">
+        <img src="img/logo.svg" alt="" width="32" height="32">
+        <span class="brand-name">vitaradar<span class="brand-tld">.hu</span></span>
+      </a>
+      <p class="tagline">Országgyűlés // élő tényellenőrzés</p>
+      <nav class="nav" aria-label="Fő menü">
+        <a href="./">Élő adás</a>
+        <a href="mps.html">Képviselők</a>
+        <a href="archive.html" aria-current="page">Archívum</a>
+      </nav>
+      <span id="live-badge" class="live-badge" data-state="off"><span class="dot"></span><span id="live-text">nincs adás</span></span>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <p class="crumbs"><a href="archive.html">&lt; archívum</a></p>
+    <h1 id="w-title" class="page-title">Visszanézés</h1>
+    <p id="w-sub" class="page-sub"></p>
+    <section class="player panel" aria-label="Felvétel">
+      <video id="video" controls playsinline preload="metadata"></video>
+      <div id="player-note" class="player-note">betöltés…</div>
+    </section>
+    <div class="watch-tools">
+      <button id="copy-link" class="btn" type="button">link ehhez a pillanathoz</button>
+      <button id="to-now" class="btn toggle" type="button" aria-pressed="true">aktuális állítás követése</button>
+      <span id="copied" class="count" hidden>kimásolva</span>
+    </div>
+
+    <section class="below">
+      <div class="facts-col">
+        <div class="section-head"><h2>Állítások</h2><span id="fact-count" class="count"></span></div>
+        <ol id="facts" class="facts"></ol>
+        <p id="facts-empty" class="empty" hidden>ehhez a részhez nincsenek ellenőrzött állítások</p>
+      </div>
+      <aside class="speaker-col" aria-label="A felszólaló">
+        <div class="section-head"><h2>Felszólal</h2></div>
+        <div id="speaker" class="speaker panel" data-empty="true">
+          <div class="speaker-photo">
+            <img id="speaker-img" alt="" hidden>
+            <span id="speaker-initials" class="initials"></span>
+          </div>
+          <div class="speaker-text">
+            <p class="speaker-name"><a id="speaker-name">–</a></p>
+            <p id="speaker-party" class="speaker-party" hidden></p>
+            <p id="speaker-role" class="speaker-role"></p>
+          </div>
+        </div>
+        <div class="section-head speeches-head"><h2>Felszólalások</h2></div>
+        <ol id="speakers" class="speaker-list"></ol>
+      </aside>
+    </section>
+  </main>
+  <footer class="site-footer">
+    <div class="wrap footer-row">
+      <p>© <span id="year">2026</span> vitaradar.hu. Minden jog fenntartva.</p>
+      <p class="muted">Felvétel: Országgyűlés. A minősítéseket mesterséges intelligencia készíti automatikusan, ezért tévedhet.</p>
+      <p class="muted"><a href="https://github.com/kenyerman/vitaradar.hu">&gt; forráskód a GitHubon</a></p>
+    </div>
+  </footer>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js"></script>
+  <script type="module" src="js/watch.js?v=202611232039></script>
+</body>
+</html>
