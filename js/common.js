@@ -66,14 +66,67 @@ export function sourceList(sources) {
   return list;
 }
 
-// Photo with initials as the fallback (the photos may be unavailable).
-export function setPhoto(img, fallback, url, name) {
+// ------------------------------------------------------------------ portraits
+// A person's portrait: their cut-out (background removed, img/mps/<parliament id>.webp) in front of an animated
+// green background drawn by CSS (.portrait in style.css). Its look varies per person: the sweep's centre, speed and
+// direction, the hue, the ring spacing and the scanline speed come from a hash of their id. Fallbacks: the official
+// photo, then the initials. The party's colour shows at the bottom; without a party, nothing does.
+
+const OFFICIAL = /\/kepviselo-kepek\/([A-Za-z0-9]+)$/;
+
+function hash(s) {  // FNV-1a, 32 bits
+  let h = 0x811c9dc5;
+  for (const c of String(s)) h = Math.imul(h ^ c.codePointAt(0), 0x01000193) >>> 0;
+  return h;
+}
+
+function portraitLook(root, id) {
+  const h = hash(id || "?");
+  const pick = (shift, lo, hi) => lo + (((h >>> shift) & 0xff) / 255) * (hi - lo);
+  const vars = {
+    "--ox": `${pick(0, 30, 70).toFixed(0)}%`, "--oy": `${pick(8, 18, 42).toFixed(0)}%`,
+    "--sweep-t": `${pick(16, 4, 9).toFixed(1)}s`, "--sweep-dir": (h & 0x1000000) ? "reverse" : "normal",
+    "--hue": pick(24, 122, 150).toFixed(0), "--rings": `${pick(4, 9, 20).toFixed(0)}px`,
+    "--scan-t": `${pick(12, 3, 7).toFixed(1)}s`, "--scan-delay": `-${pick(20, 0, 6).toFixed(1)}s`,
+  };
+  for (const [k, v] of Object.entries(vars)) root.style.setProperty(k, v);
+}
+
+// portraits animate unless they are known to be off screen (then they pause, to spare the CPU)
+const seen = "IntersectionObserver" in window
+  ? new IntersectionObserver((entries) => entries.forEach((e) => e.target.classList.toggle("off", !e.isIntersecting)))
+  : null;
+
+function layer(root, cls) {
+  let e = root.querySelector(`:scope > .${cls}`);
+  if (!e) { e = el("span", cls); e.setAttribute("aria-hidden", "true"); root.append(e); }
+  return e;
+}
+
+// setPhoto(img, initialsEl, photoUrl, name, {id, color}): img and initialsEl sit in the portrait's box.
+export function setPhoto(img, fallback, url, name, { id, color } = {}) {
+  const root = img.parentElement;
+  root.classList.add("portrait");
+  portraitLook(root, id || name);
+  root.prepend(layer(root, "pt-sweep"));
+  for (const cls of ["pt-party", "pt-lines", "pt-band"]) layer(root, cls);
+  if (color) { root.style.setProperty("--party", color); root.dataset.party = "1"; }
+  else { root.style.removeProperty("--party"); delete root.dataset.party; }
+  if (seen) seen.observe(root);
+
   fallback.textContent = initials(name);
-  if (!url) { img.hidden = true; img.removeAttribute("src"); fallback.hidden = false; return; }
-  img.onload = () => { img.hidden = false; fallback.hidden = true; };
-  img.onerror = () => { img.hidden = true; fallback.hidden = false; };
+  const sources = [];
+  const m = url && url.match(OFFICIAL);
+  if (m) sources.push(`img/mps/${m[1]}.webp`);  // our cut-out first, the official photo as it is next
+  if (url) sources.push(url);
+  img.hidden = true;
+  fallback.hidden = false;
+  if (!sources.length) { img.removeAttribute("src"); return; }
+  let i = 0;
+  img.onload = () => { img.hidden = false; fallback.hidden = true; root.classList.toggle("cutout", i === 0 && Boolean(m)); };
+  img.onerror = () => { i += 1; if (i < sources.length) img.src = sources[i]; else { img.hidden = true; fallback.hidden = false; } };
   img.alt = name || "";
-  img.src = url;
+  img.src = sources[0];
 }
 
 // ------------------------------------------------------------------ digital rain (like the stream's overlay)

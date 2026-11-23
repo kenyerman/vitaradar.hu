@@ -2,7 +2,7 @@
 
 import { doc, getDoc, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { searchUrl } from "./config.js";
-import { db, el, badge, sourceList, setPhoto, hms, huDate, watchLiveBadge } from "./common.js?v=202611231606";
+import { db, el, badge, sourceList, setPhoto, hms, huDate, watchLiveBadge } from "./common.js?v=202611231625";
 
 watchLiveBadge();
 const $ = (id) => document.getElementById(id);
@@ -78,7 +78,7 @@ async function load() {
   document.title = `${m.name} – Vitaradar`;
   $("mp-name").textContent = m.name;
   $("mp-meta").textContent = [m.party, m.role].filter(Boolean).join(" · ");
-  setPhoto($("mp-img"), $("mp-initials"), m.photo, m.name);
+  setPhoto($("mp-img"), $("mp-initials"), m.photo, m.name, { id: m.id, color: m.color });
   const t = { true: 0, false: 0, unverifiable: 0, fallacy: 0, ...(m.totals || {}) };
   const checked = t.true + t.false + t.unverifiable;
   for (const k of ["true", "false", "unverifiable"]) {

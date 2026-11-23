@@ -7,7 +7,7 @@
 
 import { doc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { defaultStream } from "./config.js";
-import { db, el, badge, sourceList, setPhoto, mpHref } from "./common.js?v=202611231606";
+import { db, el, badge, sourceList, setPhoto, mpHref } from "./common.js?v=202611231625";
 
 const $ = (id) => document.getElementById(id);
 const video = $("video");
@@ -200,7 +200,7 @@ function renderSpeaker(now) {
   els.party.hidden = !els.party.textContent;
   els.role.textContent = t ? (t.role || "") : "";
   els.speaker.style.setProperty("--party", t && t.color ? t.color : "");
-  setPhoto(els.img, els.initials, t && t.photo, t && t.name);
+  setPhoto(els.img, els.initials, t && t.photo, t && t.name, { id: t && t.speaker_id, color: t && t.color });
 }
 
 setBadge();

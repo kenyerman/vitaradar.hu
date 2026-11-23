@@ -55,3 +55,5 @@ Then open http://localhost:8099/.
 - The code in this repository is [MIT](LICENSE).
 - The fact-check texts, the Vitaradar name and logo, and the video stream: © vitaradar.hu, all rights reserved.
 - The footage is the Hungarian Parliament's (Országgyűlés).
+- The MP portraits in `img/mps/` are the Hungarian Parliament's official photos (parlament.hu), with the
+  background removed by [backgroundremover](https://github.com/nadermx/backgroundremover).

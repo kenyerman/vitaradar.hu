@@ -1,8 +1,8 @@
 // vitaradar.hu MP list: everyone whose speeches were fact-checked, with their totals.
 
 import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { dropdown } from "./dropdown.js?v=202611231606";
-import { db, el, setPhoto, mpHref, watchLiveBadge } from "./common.js?v=202611231606";
+import { dropdown } from "./dropdown.js?v=202611231625";
+import { db, el, setPhoto, mpHref, watchLiveBadge } from "./common.js?v=202611231625";
 
 watchLiveBadge();
 const list = document.getElementById("mps"), empty = document.getElementById("mps-empty");
@@ -40,7 +40,7 @@ function card(m) {
   const img = el("img"); img.hidden = true;
   const ini = el("span", "initials");
   thumb.append(img, ini);
-  setPhoto(img, ini, m.photo, m.name);
+  setPhoto(img, ini, m.photo, m.name, { id: m.id, color: m.color });
   // one line per item: name, party, role, the verdict bar, then each count on its own row
   const body = el("div", "mp-body");
   const party = el("p", "mp-party", m.party || "–"), role = el("p", "mp-role", m.role || "–");
