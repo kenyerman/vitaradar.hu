@@ -35,12 +35,13 @@ parliament's stream ──► fact-check pipeline (GPU VM) ──► HLS video p
 - **MP history:** when a run ends, the pipeline groups it into speeches (one MP's consecutive turns, the chair's
   remarks left out) and writes `speeches/{id}` (claims, verdicts, transcript) and `mps/{id}` (totals).
 - **Search:** each speech is cut into ~120-word passages, embedded with Vertex AI's multilingual model
-  (`text-multilingual-embedding-002`) and stored in `chunks/` with a Firestore vector index. The
-  [search function](functions/search/main.py) embeds the visitor's question with the same model and returns that
-  MP's nearest passages.
-- **Read-only:** the [security rules](firestore.rules) let anyone read the live feed, the MPs and their speeches,
-  and nobody write from a browser; the passages with their vectors are read only by the search function. The
-  Firebase config in `js/config.js` is public by design.
+  (`text-multilingual-embedding-002`) and stored with a Firestore vector index. A small search function embeds the
+  visitor's question with the same model and returns that MP's nearest passages.
+- **Protected:** the page uses Firebase App Check with reCAPTCHA Enterprise (invisible, score-based), so only this
+  site, not scripts, can use the search; Firestore's security rules make the public data read-only for browsers. The
+  Firebase config and the reCAPTCHA site key in `js/config.js` are public by design.
+- **Backend:** the search function, the security rules and the fact-check pipeline are in a private repository;
+  this repository is the website only.
 
 ## Run locally
 

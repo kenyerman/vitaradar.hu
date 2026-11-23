@@ -1,10 +1,9 @@
 // Shared by every page: Firebase, the digital rain behind the page, and small helpers.
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { firebaseConfig } from "./config.js";
+import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { db } from "./firebase.js?v=202611231706";
 
-export const db = getFirestore(initializeApp(firebaseConfig));
+export { db };  // set up once, with App Check, in firebase.js
 
 export const LABEL = {
   true: "IGAZ", false: "HAMIS", unverifiable: "NEM ELLENŐRIZHETŐ", pending: "ELLENŐRZÉS", fallacy: "HIBÁS ÉRVELÉS",

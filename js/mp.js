@@ -2,7 +2,8 @@
 
 import { doc, getDoc, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { searchUrl } from "./config.js";
-import { db, el, badge, sourceList, setPhoto, hms, huDate, watchLiveBadge } from "./common.js?v=202611231631";
+import { appCheckHeaders } from "./firebase.js?v=202611231706";
+import { db, el, badge, sourceList, setPhoto, hms, huDate, watchLiveBadge } from "./common.js?v=202611231706";
 
 watchLiveBadge();
 const $ = (id) => document.getElementById(id);
@@ -117,7 +118,8 @@ $("search").addEventListener("submit", async (ev) => {
   note.hidden = false;
   note.textContent = "keresés…";
   try {
-    const r = await fetch(`${searchUrl}?mp=${encodeURIComponent(id)}&q=${encodeURIComponent(q)}`);
+    const r = await fetch(`${searchUrl}?mp=${encodeURIComponent(id)}&q=${encodeURIComponent(q)}`,
+      { headers: await appCheckHeaders() });  // only the site may search: App Check (reCAPTCHA Enterprise)
     if (!r.ok) throw new Error(String(r.status));
     const data = await r.json();
     note.textContent = data.hits.length ? `${data.hits.length} találat, a legközelebbi jelentésűek elöl` : "nincs találat";
