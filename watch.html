@@ -42,7 +42,7 @@
     </section>
     <div class="watch-tools">
       <button id="copy-link" class="btn" type="button">link ehhez a pillanathoz</button>
-      <button id="to-now" class="btn toggle" type="button" aria-pressed="true">aktuális állítás követése</button>
+      <button id="show-all" class="btn toggle" type="button" aria-pressed="false" title="kikapcsolva csak a videó jelenlegi pontjáig elhangzott állítások látszanak">összes állítás</button>
       <span id="copied" class="count" hidden>kimásolva</span>
     </div>
 
@@ -50,7 +50,7 @@
       <div class="facts-col">
         <div class="section-head"><h2>Állítások</h2><span id="fact-count" class="count"></span></div>
         <ol id="facts" class="facts"></ol>
-        <p id="facts-empty" class="empty" hidden>ehhez a részhez nincsenek ellenőrzött állítások</p>
+        <p id="facts-empty" class="empty" hidden></p>
       </div>
       <aside class="speaker-col" aria-label="A felszólaló">
         <div class="section-head"><h2>Felszólal</h2></div>
@@ -78,6 +78,6 @@
     </div>
   </footer>
   <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js"></script>
-  <script type="module" src="js/watch.js?v=202611232039"></script>
+  <script type="module" src="js/watch.js?v=202611232132"></script>
 </body>
 </html>

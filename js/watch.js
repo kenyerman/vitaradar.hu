@@ -1,8 +1,10 @@
 // vitaradar.hu replay: a past stream (watch.html?s=<session>&t=<seconds>) with its facts and speakers.
 //
-// The archive's video is the stream as it was broadcast, overlay included. Below it every fact of the run is listed
-// at its moment in the video: a click jumps there, the fact being said is highlighted, those still to come are dimmed,
-// and the speaker card follows the video. ?t= opens the video at that second (the MP page's fact links).
+// The archive's video is the stream as it was broadcast, overlay included. Below it the run's facts, newest first,
+// like the live page: by default only those said up to the video's current moment, so new ones appear on top as it
+// plays (and seeking back hides the later ones); "összes állítás" lists every fact, those still to come dimmed. A
+// click on a fact's time jumps there, the latest fact said is highlighted, and the speaker card follows the video.
+// ?t= opens the video at that second (the MP page's fact links).
 
 import { doc, getDoc, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { db, el, badge, sourceList, setPhoto, hms, huDate, mpHref, watchLiveBadge } from "./common.js?v=202611231928";
@@ -17,10 +19,10 @@ const params = new URLSearchParams(location.search);
 const session = params.get("s") || "";
 const startAt = Math.max(0, parseFloat(params.get("t") || "0") || 0);
 const video = $("video");
-let facts = [];      // {c, speech, li}, by time in the video
+let facts = [];      // {c, speech, li}, newest first (those past the end of the video at the top)
 let speakers = [];   // archive doc's speeches: {mp_id, name, party, start_s, end_s}
 const mps = new Map();  // mp id -> mps doc (photo, colour, role)
-let follow = true;
+let showAll = false;  // the "összes állítás" toggle
 
 function note(text) {
   $("player-note").hidden = !text;
@@ -82,22 +84,30 @@ function renderSpeaker(s) {
 }
 
 let current = null;
-function tick() {
-  const t = video.currentTime;
-  let now = null;
-  for (const f of facts) {
-    const future = f.c.video_s == null || f.c.video_s > t + 0.5;
-    f.li.classList.toggle("future", future);
-    if (!future) now = f;
+function renderFacts(t) {
+  let now = null, shown = 0;
+  for (const f of facts) {  // newest first: the first one already said is the latest
+    const said = f.c.video_s != null && f.c.video_s <= t + 0.5;
+    f.li.classList.toggle("future", !said);
+    f.li.hidden = !said && !showAll;
+    if (!f.li.hidden) shown += 1;
+    if (said && !now) now = f;
   }
   if (now !== current) {
     if (current) current.li.classList.remove("now");
     current = now;
-    if (current) {
-      current.li.classList.add("now");
-      if (follow && !video.paused) current.li.scrollIntoView({ block: "nearest", behavior: "smooth" });
-    }
+    if (current) current.li.classList.add("now");
   }
+  $("fact-count").textContent = facts.length
+    ? `[${String(shown).padStart(2, "0")}${shown < facts.length ? `/${String(facts.length).padStart(2, "0")}` : ""}]` : "";
+  $("facts-empty").hidden = shown > 0;
+  $("facts-empty").textContent = facts.length
+    ? "a felvétel ezen pontjáig még nem hangzott el ellenőrzött állítás" : "ehhez a részhez nincsenek ellenőrzött állítások";
+}
+
+function tick() {
+  const t = video.currentTime;
+  renderFacts(t);
   renderSpeaker(speakerAt(t));
 }
 
@@ -130,14 +140,14 @@ async function load() {
     return li;
   }));
 
-  // the facts, by their moment in the video (those past the end of the video last)
+  // the facts, newest first (those said after the end of the video at the very top)
   const speeches = spSnap.docs.map((d) => d.data());
+  const at = (f) => f.c.video_s ?? Number.MAX_SAFE_INTEGER;
   facts = speeches.flatMap((sp) => (sp.claims || []).map((c) => ({ c, speech: sp })))
-    .sort((x, y) => (x.c.video_s ?? Infinity) - (y.c.video_s ?? Infinity));
+    .sort((x, y) => at(y) - at(x));
   for (const f of facts) f.li = factItem(f);
   $("facts").replaceChildren(...facts.map((f) => f.li));
-  $("facts-empty").hidden = facts.length > 0;
-  $("fact-count").textContent = facts.length ? `[${String(facts.length).padStart(2, "0")}]` : "";
+  renderFacts(startAt);  // the speaker card waits for the MPs' photos (play() ticks)
 
   // the MPs' photos and roles for the speaker card
   await Promise.all([...new Set(speakers.map((s) => s.mp_id))].map(async (id) => {
@@ -172,10 +182,10 @@ $("copy-link").addEventListener("click", async () => {
   $("copied").hidden = false;
   setTimeout(() => { $("copied").hidden = true; }, 1800);
 });
-$("to-now").addEventListener("click", () => {
-  follow = !follow;
-  $("to-now").setAttribute("aria-pressed", String(follow));
-  if (follow && current) current.li.scrollIntoView({ block: "nearest", behavior: "smooth" });
+$("show-all").addEventListener("click", () => {
+  showAll = !showAll;
+  $("show-all").setAttribute("aria-pressed", String(showAll));
+  renderFacts(video.currentTime);
 });
 
 load().catch((e) => { note("az adás most nem tölthető be"); console.warn(e); });
