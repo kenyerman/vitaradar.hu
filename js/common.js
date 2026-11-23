@@ -17,8 +17,9 @@ export function el(tag, cls, text) {
   return e;
 }
 
-export function initials(name) {
-  return (name || "").split(/\s+/).filter(Boolean).map((w) => w[0]).slice(0, 2).join("");
+export function initials(name) {  // without titles: "Dr. Ruzsa Diána" -> "RD"
+  return (name || "").split(/\s+/).filter((w) => w && !/^(dr|prof|ifj|id)\.?$/i.test(w))
+    .map((w) => w[0]).slice(0, 2).join("");
 }
 
 export function mpHref(id) {

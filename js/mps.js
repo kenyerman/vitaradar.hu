@@ -1,7 +1,7 @@
 // vitaradar.ai MP list: everyone whose speeches were fact-checked, with their totals.
 
 import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { db, el, setPhoto, mpHref, watchLiveBadge } from "./common.js";
+import { db, el, setPhoto, mpHref, watchLiveBadge } from "./common.js?v=202611231543";
 
 watchLiveBadge();
 const list = document.getElementById("mps"), empty = document.getElementById("mps-empty");
