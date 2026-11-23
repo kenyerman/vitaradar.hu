@@ -4,6 +4,7 @@ import { doc, getDoc, collection, getDocs, query, where } from "https://www.gsta
 import { searchUrl } from "./config.js";
 import { appCheckHeaders } from "./firebase.js?v=202611231706";
 import { db, el, badge, sourceList, setPhoto, hms, huDate, watchLiveBadge } from "./common.js?v=202611231706";
+import { calendar } from "./calendar.js";
 
 watchLiveBadge();
 const $ = (id) => document.getElementById(id);
@@ -24,43 +25,120 @@ function bar(target, t) {
   }
 }
 
-function factCard(c) {
+const COUNTS = () => ({ true: 0, false: 0, unverifiable: 0, fallacy: 0 });
+const weekday = (iso) => new Date(`${iso}T12:00:00`).toLocaleDateString("hu-HU", { weekday: "long" });
+
+function nums(t) {
+  const n = el("span", "nums");
+  n.append(el("span", "c-true", `${t.true} igaz`), el("span", "c-false", `${t.false} hamis`),
+    el("span", "c-unverifiable", `${t.unverifiable} n.e.`), el("span", "c-fallacy", `${t.fallacy} h.é.`));
+  return n;
+}
+
+// level 3: a fact. Collapsed it shows the verdict and the headline; open, the claim, the explanation and the sources.
+function factItem(c, session) {
   const li = el("li", "fact");
   const v = c.kind === "fallacy" ? "fallacy" : c.verdict || "pending";
   li.dataset.verdict = v;
-  const top = el("div", "fact-top");
-  top.append(badge(v, c.kind), el("span", "fact-time", `T+${hms(c.at_s)}`));
-  li.append(top, el("p", "fact-bullet", c.bullet || c.claim));
-  if (c.claim && c.claim !== c.bullet) li.append(el("p", "fact-claim", c.claim));
-  if (c.explanation) li.append(el("p", "fact-expl", c.explanation));
-  li.append(sourceList(c.sources));
+  const det = el("details", "fact-d");
+  const sum = el("summary", "fact-sum");
+  sum.append(badge(v, c.kind), el("span", "fact-bullet", c.bullet || c.claim), el("span", "fact-time", `T+${hms(c.at_s)}`));
+  const body = el("div", "fact-body");
+  if (c.claim && c.claim !== c.bullet) body.append(el("p", "fact-claim", c.claim));
+  if (c.explanation) body.append(el("p", "fact-expl", c.explanation));
+  body.append(sourceList(c.sources));
+  det.append(sum, body);
+  li.append(det);
   return li;
 }
 
-function speechCard(s) {
-  const t = { true: 0, false: 0, unverifiable: 0, fallacy: 0, ...(s.counts || {}) };
-  const card = el("article", "speech panel");
-  card.id = `speech-${s.id}`;
-  const head = el("div", "speech-head");
-  head.append(el("h3", null, `T+${hms(s.start_s)} → T+${hms(s.end_s)}`),
-    el("span", "meta", `${hms(s.duration_s)} perc · T+ = a közvetítés kezdetétől`));
-  const nums = el("span", "nums");
-  nums.append(el("span", "c-true", `${t.true} igaz`), el("span", "c-false", `${t.false} hamis`),
-    el("span", "c-unverifiable", `${t.unverifiable} n.e.`), el("span", "c-fallacy", `${t.fallacy} h.é.`));
-  head.append(nums);
+// level 2: a speech, with its facts (and the transcript, where the run saved one)
+function speechItem(s, open) {
+  const t = { ...COUNTS(), ...(s.counts || {}) };
+  const det = el("details", "speech");
+  det.id = `speech-${s.id}`;
+  det.open = open;
+  const sum = el("summary", "speech-head");
   const b = el("div", "bar");
   bar(b, t);
+  sum.append(el("span", "lvl-title", `T+${hms(s.start_s)} → T+${hms(s.end_s)}`),
+    el("span", "meta", `${hms(s.duration_s)} perc · ${(s.claims || []).length} állítás`), nums(t), b);
+  const body = el("div", "speech-body");
   const list = el("ol", "facts");
-  (s.claims || []).slice().sort((a, b2) => a.at_s - b2.at_s).forEach((c) => list.append(factCard(c)));
-  card.append(head, b, list);
-  if (!(s.claims || []).length) card.append(el("p", "empty", "ebben a felszólalásban nem volt ellenőrizhető állítás"));
+  (s.claims || []).slice().sort((a, b2) => a.at_s - b2.at_s).forEach((c) => list.append(factItem(c, s.session)));
+  if (list.children.length) body.append(list);
+  else body.append(el("p", "empty", "ebben a felszólalásban nem volt ellenőrizhető állítás"));
   if (s.has_transcript && s.text) {
-    const det = el("details");
-    det.append(el("summary", null, `> leirat (${s.words} szó)`), el("p", "transcript", s.text));
-    card.append(det);
+    const tr = el("details", "transcript-d");
+    tr.append(el("summary", null, `leirat (${s.words} szó)`), el("p", "transcript", s.text));
+    body.append(tr);
   }
-  return card;
+  det.append(sum, body);
+  return det;
 }
+
+// level 1: a sitting day, with its speeches
+function dayItem(date, speeches, open) {
+  const t = COUNTS();
+  let claims = 0;
+  for (const s of speeches) {
+    for (const k of Object.keys(t)) t[k] += (s.counts || {})[k] || 0;
+    claims += (s.claims || []).length;
+  }
+  const det = el("details", "day panel");
+  det.id = `day-${date}`;
+  det.dataset.date = date;
+  det.open = open;
+  const sum = el("summary", "day-head");
+  const b = el("div", "bar");
+  bar(b, t);
+  sum.append(el("span", "lvl-title", date ? `${huDate(date)}, ${weekday(date)}` : "ismeretlen nap"),
+    el("span", "meta", `${speeches.length} felszólalás · ${claims} állítás`), nums(t), b);
+  const body = el("div", "day-body");
+  speeches.forEach((s, i) => body.append(speechItem(s, open && i === 0)));
+  det.append(sum, body);
+  return det;
+}
+
+// ------------------------------------------------------------------ days: calendar filter, expand / collapse all
+let cal = null;
+
+function showDay(date) {  // null: all days
+  for (const d of document.querySelectorAll("#speeches > .day")) {
+    d.hidden = Boolean(date) && d.dataset.date !== date;
+    if (date && d.dataset.date === date) d.open = true;
+  }
+  const line = $("day-filter");
+  line.replaceChildren();
+  if (date) {
+    const all = el("button", "linkish", "[ összes nap ]");
+    all.type = "button";
+    all.addEventListener("click", () => { cal.select(null); showDay(null); });
+    line.append(`// ${huDate(date)}, ${weekday(date)} `, all);
+  } else {
+    line.textContent = `// összes nap (${document.querySelectorAll("#speeches > .day").length})`;
+  }
+}
+
+function setAll(open) {
+  for (const d of document.querySelectorAll("#speeches > .day:not([hidden]), #speeches > .day:not([hidden]) details")) {
+    if (!d.classList.contains("transcript-d")) d.open = open;
+  }
+}
+
+// a link to a speech (#speech-…, e.g. from the search): show its day, open the levels above it, scroll to it
+function openTarget() {
+  const target = location.hash && document.getElementById(decodeURIComponent(location.hash.slice(1)));
+  if (!target) return;
+  const day = target.closest(".day");
+  if (day && day.hidden) { cal.select(null); showDay(null); }
+  for (let d = target; d; d = d.parentElement && d.parentElement.closest("details")) d.open = true;
+  target.scrollIntoView({ block: "start" });
+  target.classList.remove("flash");
+  void target.offsetWidth;
+  target.classList.add("flash");
+}
+window.addEventListener("hashchange", openTarget);
 
 async function load() {
   if (!id) { $("mp-name").textContent = "Ismeretlen képviselő"; return; }
@@ -92,20 +170,25 @@ async function load() {
   $("mp-line").textContent = `// ${m.claims || 0} állítás ${m.speeches || 0} felszólalásban, összesen ${hms(m.seconds)} perc` +
     (m.last_date ? ` · utoljára: ${huDate(m.last_date)}` : "");
 
-  // speeches grouped by sitting day
-  const box = $("speeches");
-  box.replaceChildren();
-  let day = null;
+  // days > speeches > facts; the newest day and its first speech open
+  const byDay = new Map();
   for (const s of speeches) {
-    if (s.date !== day) {
-      day = s.date;
-      box.append(el("h3", "page-sub", `// ${huDate(day) || "ismeretlen nap"}`));
-    }
-    box.append(speechCard(s));
+    if (!byDay.has(s.date)) byDay.set(s.date, []);
+    byDay.get(s.date).push(s);
   }
+  for (const list of byDay.values()) list.sort((a, b) => a.start_s - b.start_s);  // in the order they were given
+  const box = $("speeches");
+  box.replaceChildren(...[...byDay.entries()].map(([date, list], i) => dayItem(date, list, i === 0)));
   $("speech-count").textContent = speeches.length ? `[${String(speeches.length).padStart(2, "0")}]` : "";
   $("speeches-empty").hidden = speeches.length > 0;
-  if (location.hash) document.querySelector(location.hash)?.scrollIntoView();
+  $("days-tools").hidden = speeches.length === 0;
+  cal = calendar($("calendar"), {
+    days: new Map([...byDay.entries()].filter(([d]) => d).map(([d, list]) => [d, list.length])),
+    onSelect: (date) => showDay(date),
+    label: "Ülésnapok, amikor felszólalt",
+  });
+  showDay(null);
+  openTarget();
 }
 
 // ------------------------------------------------------------------ search: what did they say about …?
@@ -137,5 +220,8 @@ $("search").addEventListener("submit", async (ev) => {
     console.warn("search:", e);
   }
 });
+
+$("expand-all").addEventListener("click", () => setAll(true));
+$("collapse-all").addEventListener("click", () => setAll(false));
 
 load().catch((e) => { $("mp-name").textContent = "Az adatok most nem tölthetők be"; console.warn(e); });

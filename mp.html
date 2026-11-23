@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap">
-  <link rel="stylesheet" href="css/style.css?v=202611231706">
+  <link rel="stylesheet" href="css/style.css?v=202611231800">
 </head>
 <body>
   <canvas id="rain" aria-hidden="true"></canvas>
@@ -63,7 +63,18 @@
 
     <section class="mp-section">
       <div class="section-head"><h2>Felszólalások</h2><span id="speech-count" class="count"></span></div>
-      <div id="speeches"></div>
+      <div id="days-tools" class="days-tools" hidden>
+        <div id="calendar" class="panel"></div>
+        <div class="days-actions">
+          <p id="day-filter" class="facts-line"></p>
+          <div class="days-buttons">
+            <button id="expand-all" class="btn toggle-plain" type="button">+ mind kinyit</button>
+            <button id="collapse-all" class="btn toggle-plain" type="button">− mind becsuk</button>
+          </div>
+          <p class="hint">// nap › felszólalás › állítás: mindegyik szint kinyitható</p>
+        </div>
+      </div>
+      <div id="speeches" class="days"></div>
       <p id="speeches-empty" class="empty" hidden>még nincs ellenőrzött felszólalása</p>
     </section>
   </main>
@@ -75,6 +86,6 @@
     </div>
   </footer>
 
-  <script type="module" src="js/mp.js?v=202611231706"></script>
+  <script type="module" src="js/mp.js?v=202611231800"></script>
 </body>
 </html>
