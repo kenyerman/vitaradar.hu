@@ -1,0 +1,42 @@
+# Rebuilds sitemap.xml every day from Firestore's public data (tools/sitemap.py) and commits it if it changed, so new
+# replays and MPs with new data get into it. Run it by hand from the Actions tab ("Run workflow") after a sitting.
+name: sitemap
+
+on:
+  schedule:
+    - cron: "23 4 * * *"  # 04:23 UTC daily, after the evening's runs are published
+  workflow_dispatch:
+
+permissions:
+  contents: write  # commit sitemap.xml
+  pages: write     # ask GitHub Pages to rebuild after that commit
+
+concurrency:
+  group: sitemap
+  cancel-in-progress: false
+
+jobs:
+  sitemap:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # each page's lastmod is its last commit
+
+      - name: Rebuild sitemap.xml
+        run: python3 tools/sitemap.py
+
+      - name: Commit and publish if it changed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if git diff --quiet -- sitemap.xml; then
+            echo "sitemap.xml unchanged"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git commit -m "sitemap.xml: refreshed from Firestore" -- sitemap.xml
+          git push origin HEAD:${{ github.ref_name }}
+          # a push made with the workflow's token may not start a Pages build by itself
+          gh api -X POST "repos/${{ github.repository }}/pages/builds" --silent
