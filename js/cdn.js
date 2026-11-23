@@ -9,7 +9,8 @@ import { apiUrl } from "./config.js?v=202611241300";
 import { appCheckHeaders } from "./firebase.js?v=202611241300";
 
 export const CDN = "https://cdn.vitaradar.hu/";
-const ON_SITE = /(^|\.)vitaradar\.hu$/.test(location.hostname);
+const ENABLED = false;  // off until cdn.vitaradar.hu has its certificate; then true
+const ON_SITE = ENABLED && /(^|\.)vitaradar\.hu$/.test(location.hostname);
 const EXP = "vr-cdn-exp";  // when our cookie runs out (unix s): document.cookie can't tell
 const RENEW_S = 600;       // renew this long before
 
