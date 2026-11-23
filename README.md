@@ -45,8 +45,9 @@ parliament's stream ──► fact-check pipeline (GPU VM) ──► HLS video p
   write goes through the backend's user API, which checks rate limits and decides whether a comment is published.
   User text is put on the page as text, never HTML, and links ask before leaving the site.
 - **Live chat** (`js/chat.js`): for registered users over 18, through Firestore; messages are deleted after an hour.
-- **Games** (`js/game.js`): now and then, on a fact the pipeline is sure of, a 5-second "true or false?" or a 7-second
-  "which fallacy?" question pops up as the claim is said; the fact itself stays "being checked" until the answer
+- **Games** (`js/game.js`): on a fact the pipeline is sure of, a 10-second "true or false?" or a 15-second "which
+  fallacy?" question pops up as the claim is said, at least 45 seconds apart and about every 3 minutes at most (when
+  there is something sure to ask about); the fact itself stays "being checked" until the answer
   window is over, then everyone sees the result and how the other players answered. At the start of a speech, players
   have 20 seconds to tip its number of true, false and fallacious claims. Right answers and close tips earn points
   (`users/{uid}.points`). The answer key never reaches the browser before the window closes: the pipeline keeps it,
