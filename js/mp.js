@@ -170,6 +170,7 @@ async function load() {
   ]);
   const m = mpSnap.data();
   const speeches = speechSnap.docs.map((d) => d.data())
+    .filter((s) => !s.replay_only)  // a second run over the same speeches: its facts are on its replay only
     .sort((a, b) => (b.date || "").localeCompare(a.date || "") || b.start_s - a.start_s);
   if (!m) {
     $("mp-name").textContent = "Nincs adat";
