@@ -28,6 +28,7 @@ let claims = new Map();  // id -> fact document
 let turns = [];          // speaker turns, by start_at
 let unsub = [];
 let hls = null;
+let failed = false;  // the stream could not be loaded (not live yet, or not reachable)
 
 // ------------------------------------------------------------------ live feed (Firestore)
 onSnapshot(doc(db, "live", "current"), (snap) => {
@@ -36,7 +37,7 @@ onSnapshot(doc(db, "live", "current"), (snap) => {
   setBadge();
   if (d.session && d.session !== live.session) follow(d.session);
   const url = d.hls_url || defaultStream;
-  if (url !== live.url) loadStream(url);
+  if (url !== live.url || (live.active && failed)) loadStream(url);  // a new stream, or the broadcast (re)started
 }, (err) => console.warn("live feed:", err));
 
 function follow(session) {
@@ -61,6 +62,7 @@ function follow(session) {
 // ------------------------------------------------------------------ video
 function loadStream(url) {
   live.url = url;
+  failed = false;
   if (hls) { hls.destroy(); hls = null; }
   note("Várakozás az adásra…");
   if (window.Hls && Hls.isSupported()) {
@@ -71,13 +73,15 @@ function loadStream(url) {
     hls.on(Hls.Events.ERROR, (_, e) => {
       if (!e.fatal) return;
       if (e.type === Hls.ErrorTypes.MEDIA_ERROR) { hls.recoverMediaError(); return; }
+      failed = true;
       note(live.active ? "Az adás pillanatnyilag nem érhető el, újrapróbálkozás…" : "Most nincs élő adás.");
-      setTimeout(() => { if (live.url === url) loadStream(url); }, 8000);
+      // retry only while a broadcast runs; otherwise the live feed reloads the stream when one starts
+      setTimeout(() => { if (live.url === url && live.active && failed) loadStream(url); }, 8000);
     });
   } else if (video.canPlayType("application/vnd.apple.mpegurl")) {  // Safari plays HLS itself
     video.src = url;
     video.addEventListener("loadedmetadata", () => { note(null); video.play().catch(() => {}); }, { once: true });
-    video.addEventListener("error", () => note("Az adás pillanatnyilag nem érhető el."), { once: true });
+    video.addEventListener("error", () => { failed = true; note(live.active ? "Az adás pillanatnyilag nem érhető el." : "Most nincs élő adás."); }, { once: true });
   } else {
     note("Ez a böngésző nem tudja lejátszani az adást.");
   }
