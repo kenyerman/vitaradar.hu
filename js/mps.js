@@ -1,9 +1,9 @@
 // vitaradar.hu MP list: everyone whose speeches were fact-checked, with their totals.
 
 import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { dropdown } from "./dropdown.js?v=202611231830";
-import { db, el, setPhoto, mpHref, watchLiveBadge } from "./common.js?v=202611231830";
-import { mountAccount } from "./account.js?v=202611231830";
+import { dropdown } from "./dropdown.js?v=202611231928";
+import { db, el, setPhoto, mpHref, watchLiveBadge } from "./common.js?v=202611231928";
+import { mountAccount } from "./account.js?v=202611231928";
 
 watchLiveBadge();
 mountAccount();

@@ -38,7 +38,8 @@ parliament's stream ──► fact-check pipeline (GPU VM) ──► HLS video p
   (`text-multilingual-embedding-002`) and stored with a Firestore vector index. A small search function embeds the
   visitor's question with the same model and returns that MP's nearest passages.
 - **Accounts** (`js/account.js`): Google sign-in only; a profile (name, nick, picture) after a one-time registration,
-  16+ only. E-mail and birth date are visible to their owner only.
+  16+ only. E-mail and birth date are visible to their owner only. The sign-in popup runs on `auth.vitaradar.hu`
+  (Firebase Hosting, connected to the project, DNS a CNAME at DotRoll), so Google's account chooser names our domain.
 - **Votes and comments** (`js/social.js`): thumbs up/down on every fact check and comment; comments (250 characters,
   replies two levels deep) for registered users, who can delete their own, flag others' and block users. Every
   write goes through the backend's user API, which checks rate limits and decides whether a comment is published.

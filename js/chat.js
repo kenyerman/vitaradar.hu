@@ -6,9 +6,9 @@
 // reader blocked are not shown.
 
 import { collection, doc, query, orderBy, limit, onSnapshot, writeBatch, serverTimestamp, Timestamp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { db, el } from "./common.js?v=202611231830";
-import { account, onAccount, onBlocks, isBlocked, avatar, toast, blockUser } from "./account.js?v=202611231830";
-import { linkify, locked, LOREM, LOREM_NICKS } from "./social.js?v=202611231830";
+import { db, el } from "./common.js?v=202611231928";
+import { account, onAccount, onBlocks, isBlocked, avatar, toast, blockUser } from "./account.js?v=202611231928";
+import { linkify, locked, LOREM, LOREM_NICKS } from "./social.js?v=202611231928";
 
 const MAX = 300;
 const GAP = 2000;            // ms between two messages (the rules allow one every 2 s)

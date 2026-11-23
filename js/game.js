@@ -7,8 +7,8 @@
 // their delay. Answers and tips go through the user API; visitors play along, unscored, and are asked to sign in.
 
 import { collection, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { db, el } from "./common.js?v=202611231830";
-import { account, onAccount, api, needAccount, toast } from "./account.js?v=202611231830";
+import { db, el } from "./common.js?v=202611231928";
+import { account, onAccount, api, needAccount, toast } from "./account.js?v=202611231928";
 
 const TRUTH = { true: "IGAZ", false: "HAMIS" };
 const MASKED = "Hibás érvelés?";

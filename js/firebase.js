@@ -8,7 +8,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/fireba
 import { initializeAppCheck, ReCaptchaEnterpriseProvider, getToken } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut as fbSignOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-import { firebaseConfig, recaptchaSiteKey } from "./config.js?v=202611231830";
+import { firebaseConfig, recaptchaSiteKey } from "./config.js?v=202611231928";
 
 export const app = initializeApp(firebaseConfig);
 
