@@ -640,3 +640,58 @@ a.fact-time:hover { text-shadow: var(--glow); }
 .ucard-stats dt { color: var(--muted); }
 .ucard-stats dd { margin: 0; font-weight: 700; color: #eafff0; }
 .ucard-empty { margin: 0; color: var(--muted); font-size: 12px; }
+
+/* the phone menu (js/menu.js): a hamburger in the header; the pages and the live and online badges in a panel that
+   slides in from the right */
+.menu-btn, .menu-panel, .menu-backdrop { display: none; }
+@media (max-width: 860px) {
+  .header-row { gap: 10px; flex-wrap: nowrap; }
+  .brand { flex: none; }
+  .acct-me { margin-right: 10px; }  /* room for the points badge before the hamburger */
+  .acct-more { display: none; }     /* "Regisztráció" only */
+  .menu-btn { order: 4; position: relative; display: inline-grid; place-items: center; flex: none; width: 40px; height: 40px;
+    padding: 0; background: transparent; border: 1px solid var(--line); color: var(--green); cursor: pointer; }
+  .menu-btn:hover, .menu-btn:focus-visible { border-color: var(--green); box-shadow: var(--glow); outline: none; }
+  .menu-bars { display: grid; gap: 4px; width: 18px; }
+  .menu-bars span { height: 2px; background: currentColor; box-shadow: 0 0 6px rgba(0, 255, 65, .6); }
+  .menu-btn[data-live="on"]::after { content: ""; position: absolute; top: -5px; right: -5px; width: 10px; height: 10px;
+    border-radius: 50%; background: #ff4d4d; box-shadow: 0 0 8px #ff4d4d; animation: blink 1s steps(1) infinite; }
+  .menu-backdrop { display: block; position: fixed; inset: 0; z-index: 69; background: rgba(0, 0, 0, .6);
+    backdrop-filter: blur(2px); opacity: 0; visibility: hidden; transition: opacity .28s, visibility 0s .28s; }
+  .menu-backdrop[data-open] { opacity: 1; visibility: visible; transition: opacity .28s; }
+  .menu-panel { display: flex; flex-direction: column; position: fixed; z-index: 70; top: 0; right: 0; bottom: 0;
+    width: min(82vw, 320px); padding-bottom: env(safe-area-inset-bottom); overflow-y: auto; overscroll-behavior: contain;
+    background: var(--panel-solid); border-left: 1px solid var(--green); box-shadow: -10px 0 40px rgba(0, 0, 0, .8), var(--glow);
+    transform: translateX(105%); visibility: hidden;
+    transition: transform .28s cubic-bezier(.2, .8, .2, 1), visibility 0s .28s; }
+  .menu-panel[data-open] { transform: none; visibility: visible; transition: transform .28s cubic-bezier(.2, .8, .2, 1); }
+  .menu-head { display: flex; align-items: center; justify-content: space-between; min-height: 64px; padding: 8px 16px;
+    border-bottom: 1px solid var(--line); }
+  .menu-title { color: var(--muted); font-size: 12px; letter-spacing: 1.2px; text-transform: uppercase; }
+  .menu-close { width: 40px; height: 40px; padding: 0; background: transparent; border: 1px solid var(--line); color: var(--green);
+    font: 700 16px/1 var(--mono); cursor: pointer; }
+  .menu-close:hover, .menu-close:focus-visible { border-color: var(--green); box-shadow: var(--glow); outline: none; }
+  .menu-panel .nav { order: 0; flex-direction: column; gap: 0; margin: 0; padding: 10px 0; }
+  .menu-panel .nav a { padding: 15px 20px; border: 0; border-left: 3px solid transparent; font-size: 15px; letter-spacing: 1.4px; }
+  .menu-panel .nav a::before { content: "> "; color: var(--muted); }
+  .menu-panel .nav a:hover, .menu-panel .nav a:focus-visible { color: var(--green); background: rgba(0, 255, 65, .04); outline: none; }
+  .menu-panel .nav a[aria-current="page"] { border-left-color: var(--green); background: rgba(0, 255, 65, .08); }
+  .menu-panel .nav a[aria-current="page"]::before { color: var(--green); }
+  .menu-status { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; padding: 16px 20px; border-top: 1px solid var(--line-dim); }
+  html.menu-open { overflow: hidden; }
+}
+@media (max-width: 480px) {
+  .header-row, .brand { gap: 8px; }
+  .brand-name { font-size: 17px; }
+  .brand img { width: 26px; height: 26px; }
+  .acct-btn { padding: 6px 8px; font-size: 11px; }
+}
+/* the narrowest phones: while "Regisztráció" is in the header, the logo stands for the name */
+@media (max-width: 340px) {
+  .brand-name { font-size: 16px; }
+  .header-row:has(.acct-reg) .brand-name { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .menu-panel, .menu-panel[data-open], .menu-backdrop, .menu-backdrop[data-open] { transition: none; }
+  .menu-btn[data-live="on"]::after { animation: none; }
+}

@@ -3,8 +3,8 @@
 // live stream. The browser keeps a random id (several tabs count once); App Check still guards the call, and the ID
 // token, when someone is signed in, only marks them as signed in.
 
-import { auth, appCheckHeaders } from "./firebase.js?v=202611241130";
-import { apiUrl } from "./config.js?v=202611241130";
+import { auth, appCheckHeaders } from "./firebase.js?v=202611241300";
+import { apiUrl } from "./config.js?v=202611241300";
 
 const EVERY_MS = 30_000;
 const KEY = "vr-presence-id";

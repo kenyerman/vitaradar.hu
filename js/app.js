@@ -6,12 +6,12 @@
 // clock (EXT-X-PROGRAM-DATE-TIME in the playlist), and the page compares that with the date of the frame on screen.
 
 import { doc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { defaultStream } from "./config.js?v=202611241130";
-import { db, el, badge, sourceList, setPhoto, mpHref } from "./common.js?v=202611241130";
-import { mountAccount } from "./account.js?v=202611241130";
-import { factSocial } from "./social.js?v=202611241130";
-import { mountChat } from "./chat.js?v=202611241130";
-import { mountGame } from "./game.js?v=202611241130";
+import { defaultStream } from "./config.js?v=202611241300";
+import { db, el, badge, sourceList, setPhoto, mpHref } from "./common.js?v=202611241300";
+import { mountAccount } from "./account.js?v=202611241300";
+import { factSocial } from "./social.js?v=202611241300";
+import { mountChat } from "./chat.js?v=202611241300";
+import { mountGame } from "./game.js?v=202611241300";
 
 const $ = (id) => document.getElementById(id);
 const video = $("video");

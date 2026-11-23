@@ -5,9 +5,9 @@
 
 import { onAuthStateChanged, getIdToken } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { auth, db, appCheckHeaders, signInWithGoogle, signOut } from "./firebase.js?v=202611241130";
-import { apiUrl, avatarUrl, photoPrefix } from "./config.js?v=202611241130";
-import { el, initials, huDate } from "./common.js?v=202611241130";
+import { auth, db, appCheckHeaders, signInWithGoogle, signOut } from "./firebase.js?v=202611241300";
+import { apiUrl, avatarUrl, photoPrefix } from "./config.js?v=202611241300";
+import { el, initials, huDate } from "./common.js?v=202611241300";
 
 export const account = {
   user: null, registered: false, a18: false, profile: null, private: null, ready: false,
@@ -363,8 +363,10 @@ export function mountAccount() {
       b.addEventListener("click", signIn);
       box.append(b);
     } else if (!a.registered) {
-      const b = el("button", "btn acct-btn", "Regisztráció befejezése");
+      const b = el("button", "btn acct-btn acct-reg", "Regisztráció");
+      b.append(el("span", "acct-more", " befejezése"));  // phones show only the first word (css)
       b.type = "button";
+      b.title = "Regisztráció befejezése";
       b.addEventListener("click", () => openRegister({}));
       box.append(b);
     } else {
