@@ -625,7 +625,9 @@ a.ext { color: var(--cyan); text-decoration: underline dotted; overflow-wrap: an
 .t-btn:disabled { color: var(--muted); cursor: default; font-weight: 400; }
 .fact.future { opacity: .5; }
 .fact.future:hover { opacity: .85; }
-.fact.now { border-color: var(--green); box-shadow: var(--glow); }
+/* the fact at the playhead: green frame, but the left edge keeps its verdict's colour (.fact[data-verdict]) */
+.fact.now { border-top-color: var(--green); border-right-color: var(--green); border-bottom-color: var(--green);
+  box-shadow: var(--glow); }
 .speeches-head { margin-top: 18px; }
 .speaker-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 13px; }
 .speaker-list li { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border: 1px solid var(--line-dim);
