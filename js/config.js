@@ -17,3 +17,9 @@ export const recaptchaSiteKey = "6LedwC4uAAAAAHMtCo5sAB-qFvfLRedBJBZqIrIS";
 
 // The speech search, a Cloud Run function in the same project (its code is with the backend, in a private repo).
 export const searchUrl = "https://europe-west4-parlament-factcheck.cloudfunctions.net/vitaradar-search";
+
+// The user API (accounts, votes, comments) and the profile-picture upload; their code is with the backend.
+export const apiUrl = "https://europe-west4-parlament-factcheck.cloudfunctions.net/vitaradar-api";
+export const avatarUrl = "https://vitaradar-avatar-347862343261.europe-west4.run.app";
+// Profile pictures are served only from here (the server writes these addresses).
+export const photoPrefix = "https://firebasestorage.googleapis.com/";

@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap">
-  <link rel="stylesheet" href="css/style.css?v=202611231706">
+  <link rel="stylesheet" href="css/style.css?v=202611231830">
 </head>
 <body>
   <canvas id="rain" aria-hidden="true"></canvas>
@@ -32,10 +32,12 @@
   </header>
 
   <main class="wrap">
-    <section class="player panel" aria-label="Élő adás">
-      <video id="video" controls playsinline muted preload="none"></video>
-      <div id="player-note" class="player-note">várakozás az adásra…</div>
-    </section>
+    <div id="stage" class="stage" data-chat="off">
+      <section class="player panel" aria-label="Élő adás">
+        <video id="video" controls playsinline muted preload="none"></video>
+        <div id="player-note" class="player-note">várakozás az adásra…</div>
+      </section>
+    </div>
 
     <section class="below">
       <div class="facts-col">
@@ -80,6 +82,6 @@
   </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js"></script>
-  <script type="module" src="js/app.js?v=202611231706"></script>
+  <script type="module" src="js/app.js?v=202611231830"></script>
 </body>
 </html>

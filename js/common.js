@@ -1,7 +1,7 @@
 // Shared by every page: Firebase, the digital rain behind the page, and small helpers.
 
 import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { db } from "./firebase.js?v=202611231706";
+import { db } from "./firebase.js?v=202611231830";
 
 export { db };  // set up once, with App Check, in firebase.js
 

@@ -1,12 +1,15 @@
 // vitaradar.hu MP page: one MP's fact-checked speeches, their overall scores, and a search over what they said.
 
 import { doc, getDoc, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { searchUrl } from "./config.js";
-import { appCheckHeaders } from "./firebase.js?v=202611231706";
-import { db, el, badge, sourceList, setPhoto, hms, huDate, watchLiveBadge } from "./common.js?v=202611231706";
-import { calendar } from "./calendar.js";
+import { searchUrl } from "./config.js?v=202611231830";
+import { appCheckHeaders } from "./firebase.js?v=202611231830";
+import { db, el, badge, sourceList, setPhoto, hms, huDate, watchLiveBadge } from "./common.js?v=202611231830";
+import { mountAccount } from "./account.js?v=202611231830";
+import { factSocial } from "./social.js?v=202611231830";
+import { calendar } from "./calendar.js?v=202611231830";
 
 watchLiveBadge();
+mountAccount();
 const $ = (id) => document.getElementById(id);
 const id = new URLSearchParams(location.search).get("id") || "";
 
@@ -47,6 +50,7 @@ function factItem(c, session) {
   if (c.claim && c.claim !== c.bullet) body.append(el("p", "fact-claim", c.claim));
   if (c.explanation) body.append(el("p", "fact-expl", c.explanation));
   body.append(sourceList(c.sources));
+  if (session && c.id && v !== "pending") body.append(factSocial(session, c.id));  // votes and comments (social.js)
   det.append(sum, body);
   li.append(det);
   return li;

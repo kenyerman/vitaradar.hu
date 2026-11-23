@@ -37,11 +37,18 @@ parliament's stream ──► fact-check pipeline (GPU VM) ──► HLS video p
 - **Search:** each speech is cut into ~120-word passages, embedded with Vertex AI's multilingual model
   (`text-multilingual-embedding-002`) and stored with a Firestore vector index. A small search function embeds the
   visitor's question with the same model and returns that MP's nearest passages.
+- **Accounts** (`js/account.js`): Google sign-in only; a profile (name, nick, picture) after a one-time registration,
+  16+ only. E-mail and birth date are visible to their owner only.
+- **Votes and comments** (`js/social.js`): thumbs up/down on every fact check and comment; comments (250 characters,
+  replies two levels deep) for registered users, who can delete their own, flag others' and block users. Every
+  write goes through the backend's user API, which checks rate limits and decides whether a comment is published.
+  User text is put on the page as text, never HTML, and links ask before leaving the site.
+- **Live chat** (`js/chat.js`): for registered users over 18, through Firestore; messages are deleted after an hour.
 - **Protected:** the page uses Firebase App Check with reCAPTCHA Enterprise (invisible, score-based), so only this
   site, not scripts, can use the search; Firestore's security rules make the public data read-only for browsers. The
   Firebase config and the reCAPTCHA site key in `js/config.js` are public by design.
-- **Backend:** the search function, the security rules and the fact-check pipeline are in a private repository;
-  this repository is the website only.
+- **Backend:** the search function, the user API, the profile-picture service, the security rules and the fact-check
+  pipeline are in a private repository; this repository is the website only.
 
 ## Run locally
 

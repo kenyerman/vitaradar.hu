@@ -6,8 +6,11 @@
 // clock (EXT-X-PROGRAM-DATE-TIME in the playlist), and the page compares that with the date of the frame on screen.
 
 import { doc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { defaultStream } from "./config.js";
-import { db, el, badge, sourceList, setPhoto, mpHref } from "./common.js?v=202611231706";
+import { defaultStream } from "./config.js?v=202611231830";
+import { db, el, badge, sourceList, setPhoto, mpHref } from "./common.js?v=202611231830";
+import { mountAccount } from "./account.js?v=202611231830";
+import { factSocial } from "./social.js?v=202611231830";
+import { mountChat } from "./chat.js?v=202611231830";
 
 const $ = (id) => document.getElementById(id);
 const video = $("video");
@@ -18,6 +21,9 @@ const els = {
   more: $("speaker-more"),
 };
 const MAX_SHOWN = 200;
+
+mountAccount();
+mountChat($("stage"));
 
 let live = { session: null, active: false, url: null };
 let claims = new Map();  // id -> fact document
@@ -135,6 +141,9 @@ function buildFact(c) {
   li.append(top, el("p", "fact-bullet", c.bullet || c.claim));
   if (c.claim && c.claim !== c.bullet) li.append(el("p", "fact-claim", c.claim));
   li.append(el("p", "fact-expl"), el("ul", "fact-sources"));
+  const social = factSocial(live.session, c.id);  // votes and comments, once the verdict is in
+  social.hidden = true;
+  li.append(social);
   return li;
 }
 
@@ -145,6 +154,7 @@ function fillVerdict(li, c, v) {
   expl.textContent = v === "pending" ? "" : (c.explanation || "");
   expl.hidden = !expl.textContent;
   li.querySelector(".fact-sources").replaceWith(sourceList(v === "pending" ? [] : c.sources));
+  li.querySelector(".social").hidden = v === "pending";
 }
 
 function render() {
