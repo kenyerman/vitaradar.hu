@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap">
-  <link rel="stylesheet" href="css/style.css?v=202611231543">
+  <link rel="stylesheet" href="css/style.css?v=202611231606">
 </head>
 <body>
   <canvas id="rain" aria-hidden="true"></canvas>
@@ -36,13 +36,7 @@
     <p class="page-sub">// az Országgyűlés minden képviselője, és amit ellenőriztünk a felszólalásaikból: állítások, minősítések, felszólalások</p>
     <div class="toolbar">
       <input id="filter" class="field" type="search" placeholder="> név vagy párt…" aria-label="Szűrés név vagy párt szerint">
-      <select id="sort" class="field" aria-label="Rendezés">
-        <option value="claims">legtöbb állítás</option>
-        <option value="false">legtöbb hamis</option>
-        <option value="true_share">legmagasabb igaz arány</option>
-        <option value="recent">legutóbb felszólalt</option>
-        <option value="name">név szerint</option>
-      </select>
+      <div id="sort"></div>
       <button id="only-data" class="btn toggle" type="button" aria-pressed="false">csak akikről van adat</button>
     </div>
     <p id="mps-count" class="count-line"></p>
@@ -57,6 +51,6 @@
     </div>
   </footer>
 
-  <script type="module" src="js/mps.js?v=202611231543"></script>
+  <script type="module" src="js/mps.js?v=202611231606"></script>
 </body>
 </html>

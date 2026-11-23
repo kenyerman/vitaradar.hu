@@ -1,11 +1,20 @@
 // vitaradar.ai MP list: everyone whose speeches were fact-checked, with their totals.
 
 import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { db, el, setPhoto, mpHref, watchLiveBadge } from "./common.js?v=202611231543";
+import { dropdown } from "./dropdown.js?v=202611231606";
+import { db, el, setPhoto, mpHref, watchLiveBadge } from "./common.js?v=202611231606";
 
 watchLiveBadge();
 const list = document.getElementById("mps"), empty = document.getElementById("mps-empty");
-const filter = document.getElementById("filter"), sort = document.getElementById("sort");
+const filter = document.getElementById("filter");
+const sort = dropdown(document.getElementById("sort"), {
+  label: "Rendezés", value: "claims", onChange: () => render(),
+  options: [
+    { value: "claims", label: "legtöbb állítás" }, { value: "false", label: "legtöbb hamis" },
+    { value: "true_share", label: "legmagasabb igaz arány" }, { value: "recent", label: "legutóbb felszólalt" },
+    { value: "name", label: "név szerint" },
+  ],
+});
 const onlyData = document.getElementById("only-data"), count = document.getElementById("mps-count");
 let mps = [];
 const hasData = (m) => m.has_data ?? (m.speeches || 0) > 0;
@@ -79,7 +88,6 @@ onlyData.addEventListener("click", () => {
   onlyData.setAttribute("aria-pressed", String(onlyData.getAttribute("aria-pressed") !== "true"));
   render();
 });
-sort.addEventListener("change", render);
 getDocs(collection(db, "mps")).then((snap) => {
   mps = snap.docs.map((d) => d.data());
   render();

@@ -200,6 +200,26 @@ input.field { flex: 1; min-width: 200px; }
 .mp-stats dd.c-true { color: var(--true); } .mp-stats dd.c-false { color: var(--false); }
 .mp-stats dd.c-unverifiable { color: var(--unverifiable); } .mp-stats dd.c-fallacy { color: var(--fallacy); }
 
+/* dropdown (js/dropdown.js): the site's own listbox in place of the browser's <select> */
+.dd { position: relative; min-width: 240px; }
+.dd-button { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer;
+  background: rgba(0, 0, 0, .7); border: 1px solid var(--line); color: var(--text); font: 14px var(--mono); padding: 9px 11px;
+  text-align: left; }
+.dd-button::before { content: "> "; color: var(--muted); }
+.dd-value { flex: 1; color: var(--green); }
+.dd-caret { color: var(--green); transition: transform .15s; }
+.dd-button:hover, .dd-button:focus-visible, .dd[data-open="true"] .dd-button { outline: none; border-color: var(--green); box-shadow: var(--glow); }
+.dd[data-open="true"] .dd-caret { transform: rotate(180deg); }
+.dd-list { position: absolute; z-index: 20; top: calc(100% + 4px); left: 0; right: 0; margin: 0; padding: 4px 0; list-style: none;
+  background: var(--panel-solid); border: 1px solid var(--green); box-shadow: var(--glow), 0 12px 30px rgba(0, 0, 0, .7);
+  max-height: 320px; overflow: auto; outline: none; }
+.dd-option { padding: 8px 12px 8px 30px; font-size: 14px; color: var(--text); cursor: pointer; position: relative; }
+.dd-option::before { content: ""; position: absolute; left: 12px; color: var(--green); }
+.dd-option[aria-selected="true"] { color: var(--green); }
+.dd-option[aria-selected="true"]::before { content: "✓"; }
+.dd-option.active { background: rgba(0, 255, 65, .14); color: #eafff0; }
+.dd-option.active::after { content: " _"; color: var(--green); animation: blink 1s steps(1) infinite; }
+
 /* MP page */
 .mp-head { display: grid; grid-template-columns: 180px 1fr; gap: 22px; align-items: start; margin-bottom: 24px; }
 .mp-head .speaker-photo { aspect-ratio: 4 / 5; }
