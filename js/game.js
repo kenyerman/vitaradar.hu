@@ -104,10 +104,13 @@ class ChallengeView {
     const head = el("div", "game-head");
     head.append(el("span", "game-tag", ch.kind === "truth" ? "[ KIHÍVÁS ]" : "[ KIHÍVÁS · HIBÁS ÉRVELÉS ]"),
       el("span", "game-time"), el("span", "game-worth", `+${ch.points} pont`));
-    const quote = el("blockquote", "game-quote", `„${ch.quote || ch.claim || ""}”`);
+    // What is being judged comes first: the claim itself (true/false) or the argument as summarized (fallacy). The
+    // words as transcribed are only context, two lines at most: a transcript runs long and wanders off the point.
+    const statement = el("p", "game-statement", (ch.kind === "truth" ? ch.claim || ch.summary : ch.summary) || ch.quote || "");
     const who = el("p", "game-who", ch.speaker ? `— ${ch.speaker}` : "");
-    const summary = el("p", "game-summary", ch.summary || "");
-    summary.hidden = !ch.summary;
+    const quote = el("p", "game-quote", ch.quote ? `Elhangzott: „${ch.quote}”` : "");
+    quote.title = ch.quote || "";
+    quote.hidden = !ch.quote || ch.quote === statement.textContent;
     const opts = el("div", "game-options");
     for (const o of ch.options || []) {
       const btn = el("button", "game-opt");
@@ -117,7 +120,7 @@ class ChallengeView {
       btn.addEventListener("click", () => this.choose(o));
       opts.append(btn);
     }
-    b.replaceChildren(head, el("h3", "game-q", ch.question || ""), quote, who, summary, bar(), opts,
+    b.replaceChildren(head, el("h3", "game-q", ch.question || ""), statement, who, quote, bar(), opts,
       el("p", "game-status"), el("div", "game-after"));
   }
 

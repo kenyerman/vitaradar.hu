@@ -511,12 +511,11 @@ a.ext { color: var(--cyan); text-decoration: underline dotted; overflow-wrap: an
 .game-worth { color: var(--muted); }
 .game-time:empty + .game-worth { margin-left: auto; }
 .game-q { margin: 0; font-size: 15px; color: var(--text); letter-spacing: .3px; }
-.game-quote { margin: 0; padding: 6px 0 6px 10px; border-left: 2px solid var(--line); color: var(--text); font-size: 13px;
-  font-style: italic; max-height: 7.5em; overflow-y: auto; }
+.game-statement { margin: 0; color: var(--text); font-size: 14px; font-weight: 700; line-height: 1.45; }
 .game-who { margin: -4px 0 0; color: var(--muted); font-size: 12px; text-align: right; }
 .game-who:empty { display: none; }
-.game-summary { margin: 0; font-size: 12px; color: var(--muted); }
-.game-summary::before { content: "» "; }
+.game-quote { margin: 0; color: var(--muted); font-size: 11px; font-style: italic; line-height: 1.4;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
 .game-bar { height: 4px; background: rgba(0, 255, 65, .08); }
 .game-bar span { display: block; height: 100%; background: var(--unverifiable); transition: width .2s linear; }
 .game-options { display: grid; gap: 6px; }
@@ -569,7 +568,6 @@ a.ext { color: var(--cyan); text-decoration: underline dotted; overflow-wrap: an
 
 @media (max-width: 860px) {  /* on a phone the dock must not hide the video: while a question is open, the tip is a bar */
   .game-dock { left: 8px; right: 8px; bottom: 8px; width: auto; gap: 6px; }
-  .game-quote { max-height: 4.5em; }
   .game-pop[data-state="open"] .game-upsell { display: none; }
   .game-dock:has(> .game-pop:not([hidden])[data-state="open"]) > .tip-box { padding: 8px 12px; }
   .game-dock:has(> .game-pop:not([hidden])[data-state="open"]) > .tip-box > :not(.game-head) { display: none; }
