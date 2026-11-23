@@ -1,0 +1,21 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // vitaradar.ai: the live stream's state, facts and speakers are public to read; only the VM writes (server side).
+    match /live/{doc} {
+      allow read: if true;
+      allow write: if false;
+    }
+    match /sessions/{session} {
+      allow read: if true;
+      allow write: if false;
+      match /{collection}/{doc} {
+        allow read: if true;
+        allow write: if false;
+      }
+    }
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
