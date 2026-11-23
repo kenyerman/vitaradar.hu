@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="hu">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Impresszum – Vitaradar</title>
+  <meta name="description" content="Ki készíti a Vitaradart, hogyan működik az élő tényellenőrzés, és miért csináljuk. Kapcsolat: help@vitaradar.hu.">
+  <meta name="theme-color" content="#000000">
+  <meta property="og:title" content="Impresszum – Vitaradar">
+  <meta property="og:description" content="Ki készíti a Vitaradart, hogyan működik, és miért csináljuk.">
+  <link rel="icon" href="img/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap">
+  <link rel="stylesheet" href="css/style.css?v=202611241410">
+</head>
+<body>
+  <canvas id="rain" aria-hidden="true"></canvas>
+  <header class="site-header">
+    <div class="wrap header-row">
+      <a class="brand" href="./" aria-label="Vitaradar kezdőlap">
+        <img src="img/logo.svg" alt="" width="32" height="32">
+        <span class="brand-name">vitaradar<span class="brand-tld">.hu</span></span>
+      </a>
+      <p class="tagline">Országgyűlés // élő tényellenőrzés</p>
+      <nav class="nav" aria-label="Fő menü">
+        <a href="./">Élő adás</a>
+        <a href="mps.html">Képviselők</a>
+        <a href="archive.html">Archívum</a>
+      </nav>
+      <span id="live-badge" class="live-badge" data-state="off"><span class="dot"></span><span id="live-text">nincs adás</span></span>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <h1 class="page-title">Impresszum</h1>
+    <p class="page-sub">// ki készíti, hogyan működik, és miért csináljuk</p>
+
+    <div class="imp">
+      <section class="imp-sec panel" aria-labelledby="imp-op">
+        <h2 id="imp-op">Üzemeltető és kapcsolat</h2>
+        <dl class="imp-data">
+          <dt>Üzemeltető</dt>
+          <dd>Simó Balázs</dd>
+          <dt>Kérdés, hiba, támogatás</dt>
+          <dd><a href="mailto:help@vitaradar.hu">help@vitaradar.hu</a></dd>
+          <dt>A készítőnek</dt>
+          <dd><a href="mailto:simo@vitaradar.hu">simo@vitaradar.hu</a></dd>
+        </dl>
+      </section>
+
+      <section class="imp-sec panel" aria-labelledby="imp-me">
+        <h2 id="imp-me">Rólam</h2>
+        <p>Simó Balázs vagyok (kenyerman), szoftverfejlesztő. A Vitaradart én építem: a közvetítés feldolgozását, a tényellenőrzést és ezt az oldalt is.</p>
+        <ul class="imp-links">
+          <li><a href="https://github.com/kenyerman" target="_blank" rel="noopener">&gt; GitHub</a></li>
+          <li><a href="https://www.linkedin.com/in/kenyerman/" target="_blank" rel="noopener">&gt; LinkedIn</a></li>
+          <li><a href="https://www.youtube.com/kenyerman" target="_blank" rel="noopener">&gt; YouTube</a></li>
+        </ul>
+      </section>
+
+      <section class="imp-sec panel" aria-labelledby="imp-how">
+        <h2 id="imp-how">Hogyan működik</h2>
+        <ul class="imp-list">
+          <li><b>Az Országgyűlés nyilvános közvetítése.</b> Az ülések hivatalos, bárki számára elérhető élő adását dolgozzuk fel, rövid késleltetéssel.</li>
+          <li><b>Beszédfelismerés.</b> Gépi beszédfelismerés írja le szöveggé, ami elhangzik.</li>
+          <li><b>Ki beszél?</b> A felszólalót a képen látható arc és a képernyőn megjelenő felirat (név, tisztség) alapján azonosítjuk, az Országgyűlés hivatalos képviselőlistájával összevetve.</li>
+          <li><b>Az állítások ellenőrzése.</b> Mesterséges intelligencia választja ki a beszédből az ellenőrizhető tényállításokat, majd hivatalos forrásokkal (például az Országgyűlés jegyzőkönyveivel és nyilvános hivatalos adatokkal) és egy kereshető tudásbázissal veti össze őket. A felhasznált forrásokat minden állítás alatt linkeljük.</li>
+          <li><b>Minősítések.</b> Minden állítás címkét kap:
+            <dl class="imp-verdicts">
+              <dt><span class="verdict" data-v="true">[ IGAZ ]</span></dt><dd>a források alátámasztják</dd>
+              <dt><span class="verdict" data-v="false">[ HAMIS ]</span></dt><dd>a források cáfolják</dd>
+              <dt><span class="verdict" data-v="unverifiable">[ NEM ELLENŐRIZHETŐ ]</span></dt><dd>nincs elég megbízható adat a döntéshez</dd>
+              <dt><span class="verdict" data-v="fallacy">[ HIBÁS ÉRVELÉS ]</span></dt><dd>logikai hiba az érvelésben, például szalmabáb vagy személyeskedés</dd>
+            </dl>
+          </li>
+          <li><b>Keresés a felszólalásokban.</b> A képviselők elhangzott beszédei kereshetők: jelentés szerint, nem csak szó szerint, így egy témára is rá lehet keresni.</li>
+          <li><b>Archívum.</b> A korábbi közvetítések visszanézhetők, az állítások abban a pillanatban jelennek meg, amikor a videóban elhangzanak.</li>
+          <li><b>Játékok.</b> Élő adás közben időnként felugrik egy kérdés („igaz vagy hamis?”, „melyik érvelési hiba?”), és minden felszólalás elején tippelni lehet, hány igaz, hamis és hibás érvelésű állítás hangzik el. A jó válaszokért pont jár.</li>
+        </ul>
+        <p class="imp-note">A minősítéseket gép készíti automatikusan, ezért tévedhet. Ha hibát találsz, írj a <a href="mailto:help@vitaradar.hu">help@vitaradar.hu</a> címre.</p>
+      </section>
+
+      <section class="imp-sec panel" aria-labelledby="imp-why">
+        <h2 id="imp-why">Miért csináljuk</h2>
+        <ul class="imp-list">
+          <li><b>Közösségi élmény.</b> Legyen menő együtt nézni a parlamentet: kommentelni, beszélgetni, játszani.</li>
+          <li><b>A politikusok tényellenőrzése.</b> Ha minden elhangzó állítás ellenőrzésen megy át, jobban megéri pontosan fogalmazni. Azt szeretnénk, hogy ettől jobbak legyenek a felszólalások.</li>
+          <li><b>A vita kultúrája.</b> Tanuljuk meg felismerni az érvelési hibákat, és tanuljunk meg jól vitatkozni.</li>
+        </ul>
+      </section>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-links">
+      <nav aria-label="Oldalak">
+        <p class="footer-h">// oldalak</p>
+        <ul>
+          <li><a href="./">Élő adás</a></li>
+          <li><a href="mps.html">Képviselők</a></li>
+          <li><a href="archive.html">Archívum</a></li>
+          <li><a href="impresszum.html">Impresszum</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="A készítő máshol">
+        <p class="footer-h">// a készítő</p>
+        <ul>
+          <li><a href="https://github.com/kenyerman" target="_blank" rel="noopener">GitHub</a></li>
+          <li><a href="https://www.linkedin.com/in/kenyerman/" target="_blank" rel="noopener">LinkedIn</a></li>
+          <li><a href="https://www.youtube.com/kenyerman" target="_blank" rel="noopener">YouTube</a></li>
+        </ul>
+      </nav>
+      <div>
+        <p class="footer-h">// kapcsolat</p>
+        <ul>
+          <li><a href="mailto:help@vitaradar.hu">help@vitaradar.hu</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="wrap footer-row">
+      <p>© <span id="year">2026</span> vitaradar.hu. Minden jog fenntartva.</p>
+      <p class="muted">Felvétel: Országgyűlés. A minősítéseket mesterséges intelligencia készíti automatikusan, ezért tévedhet.</p>
+      <p class="muted"><a href="https://github.com/kenyerman/vitaradar.hu">&gt; forráskód a GitHubon</a></p>
+    </div>
+  </footer>
+  <script type="module" src="js/impresszum.js?v=202611241300"></script>
+</body>
+</html>

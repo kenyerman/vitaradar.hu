@@ -14,6 +14,8 @@ Plain HTML, CSS and JavaScript, no build step, hosted on GitHub Pages. Two libra
 - **Képviselők** (`mps.html`): every MP whose speeches were fact-checked, with their totals.
 - **Képviselő** (`mp.html?id=…`): one MP's overall scores, their speeches grouped by sitting day with each speech's
   claims and verdicts (and transcript, where the run saved one), and a search over what they said.
+- **Impresszum** (`impresszum.html`): who runs the site and how to reach them, how the fact-checking works, and why.
+  Every page's footer links the pages, the maker's GitHub, LinkedIn and YouTube, and help@vitaradar.hu.
 
 ## How it works
 

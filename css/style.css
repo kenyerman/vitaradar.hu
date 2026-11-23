@@ -344,6 +344,40 @@ details[open] > summary .lvl-title::before { content: "▾ "; }
 .footer-row { display: grid; gap: 4px; }
 .footer-row p { margin: 0; }
 .footer-row p:first-child { color: var(--green); }
+.footer-links {
+  display: grid; grid-template-columns: repeat(3, max-content); gap: 14px 64px;
+  padding-bottom: 16px; margin-bottom: 14px; border-bottom: 1px solid var(--line-dim);
+}
+.footer-links ul { list-style: none; margin: 0; padding: 0; }
+.footer-links li a { display: inline-block; padding: 3px 0; color: var(--text); }  /* a 24px-tall target */
+.footer-links li a:hover, .footer-links li a:focus-visible { color: var(--green); }
+.footer-h { margin: 0 0 4px; color: var(--green); letter-spacing: .5px; }
+@media (max-width: 560px) { .footer-links { grid-template-columns: 1fr 1fr; gap: 16px 24px; } }
+
+/* impresszum */
+.imp { display: grid; gap: 18px; max-width: 900px; }
+.imp-sec { padding: 18px 20px; }
+.imp-sec h2 { margin: 0 0 12px; font-size: 15px; color: var(--green); text-shadow: var(--glow); letter-spacing: .5px; }
+.imp-sec h2::before { content: "// "; color: var(--muted); text-shadow: none; }
+.imp-sec p { margin: 0 0 10px; }
+.imp-sec > :last-child { margin-bottom: 0; }
+.imp-data { display: grid; grid-template-columns: max-content 1fr; gap: 8px 20px; margin: 0; }
+.imp-data dt { color: var(--muted); }
+.imp-data dd { margin: 0; overflow-wrap: anywhere; }
+.imp-list { list-style: none; margin: 0 0 14px; padding: 0; display: grid; gap: 12px; }
+.imp-list > li { position: relative; padding-left: 20px; }
+.imp-list > li::before { content: ">"; position: absolute; left: 0; color: var(--green); }
+.imp-list b { color: var(--green-soft); }
+.imp-verdicts { display: grid; grid-template-columns: max-content 1fr; gap: 8px 14px; align-items: center; margin: 10px 0 0; }
+.imp-verdicts dd { margin: 0; color: var(--text); }
+.imp-links { display: flex; flex-wrap: wrap; gap: 6px 22px; list-style: none; margin: 12px 0 0; padding: 0; }
+.imp-links a { display: inline-block; padding: 3px 0; }
+.imp-note { color: var(--muted); font-size: 13px; }
+@media (max-width: 560px) {
+  .imp-sec { padding: 14px; }
+  .imp-data, .imp-verdicts { grid-template-columns: 1fr; gap: 2px; }
+  .imp-data dd, .imp-verdicts dd { margin-bottom: 10px; }
+}
 
 /* narrow screens */
 @media (max-width: 860px) {
