@@ -15,6 +15,7 @@ import { factSocial } from "./social.js?v=202611241021";
 import { watchHref } from "./links.js?v=202611241021";
 import { cdnReady, cdnUrl, cdnXhr } from "./cdn.js?v=202611241021";
 import { scrollHint } from "./scrollhint.js?v=202611241021";
+import { setPageMeta } from "./meta.js?v=202611241124";
 
 watchLiveBadge();
 mountAccount();
@@ -149,7 +150,12 @@ async function load() {
   ]);
   const a = aSnap.data();
   if (!a) { $("w-title").textContent = "Nincs ilyen adás"; note("ez az adás nincs az archívumban"); return; }
-  document.title = `${huDate(a.date)} – Visszanézés – Vitaradar`;
+  setPageMeta({
+    title: `Ülés visszanézése: ${huDate(a.date)} – Vitaradar`,
+    description: `Az Országgyűlés ülésének felvétele (${huDate(a.date)}) ${a.claims || 0} ellenőrzött állítással: ` +
+      "mindegyik akkor jelenik meg, amikor a videóban elhangzik.",
+    path: `watch.html?s=${encodeURIComponent(session)}`,
+  });
   $("w-title").textContent = `// ${huDate(a.date)}`;
   $("w-sub").textContent = (a.replay || !a.started_at ? "felvételről" : `${clock(a.started_at)}–${clock(a.started_at + a.duration_s * 1000)}`) +
     ` · ${hms(a.duration_s)} · ${a.claims || 0} ellenőrzött állítás`;

@@ -8,6 +8,7 @@ import { mountAccount } from "./account.js?v=202611241021";
 import { factSocial } from "./social.js?v=202611241021";
 import { calendar } from "./calendar.js?v=202611241021";
 import { watchHref } from "./links.js?v=202611241021";
+import { setPageMeta } from "./meta.js?v=202611241124";
 
 watchLiveBadge();
 mountAccount();
@@ -177,11 +178,17 @@ async function load() {
     $("speeches-empty").hidden = false;
     return;
   }
-  document.title = `${m.name} – Vitaradar`;
   $("mp-name").textContent = m.name;
   $("mp-meta").textContent = [m.party, m.role].filter(Boolean).join(" · ");
   setPhoto($("mp-img"), $("mp-initials"), m.photo, m.name, { id: m.id, color: m.color });
   const t = { true: 0, false: 0, unverifiable: 0, fallacy: 0, ...(m.totals || {}) };
+  setPageMeta({
+    title: `${m.name} ellenőrzött állításai – Vitaradar`,
+    description: `${m.name}${m.party ? ` (${m.party})` : ""} ${m.claims || 0} ellenőrzött állítása ` +
+      `${m.speeches || 0} országgyűlési felszólalásából: ${t.true} igaz, ${t.false} hamis, ` +
+      `${t.unverifiable} nem ellenőrizhető, ${t.fallacy} hibás érvelés.`,
+    path: `mp.html?id=${encodeURIComponent(id)}`,
+  });
   const checked = t.true + t.false + t.unverifiable;
   for (const k of ["true", "false", "unverifiable"]) {
     const dd = $(`s-${k}`);
