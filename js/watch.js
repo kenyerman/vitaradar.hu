@@ -3,16 +3,18 @@
 // The archive's video is the stream as it was broadcast, overlay included. Below it the run's facts, newest first,
 // like the live page: by default only those said up to the video's current moment, so new ones appear on top as it
 // plays (and seeking back hides the later ones); "összes állítás" lists every fact, those still to come dimmed. A
-// click on a fact's time jumps there, the latest fact said is highlighted, and the speaker card follows the video.
+// click on a fact's time jumps there, the latest fact said is highlighted, and the speaker card follows the video:
+// whoever had the floor, the chair included (the archive's floor turns; runs archived before them have only the
+// fact-checked speeches, so their card is empty while the chair speaks).
 // ?t= opens the video at that second (the MP page's fact links).
 
 import { doc, getDoc, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { db, el, badge, sourceList, setPhoto, hms, huDate, mpHref, watchLiveBadge } from "./common.js?v=202611241005";
-import { mountAccount } from "./account.js?v=202611241005";
-import { factSocial } from "./social.js?v=202611241005";
-import { watchHref } from "./links.js?v=202611241005";
-import { cdnReady, cdnUrl, cdnXhr } from "./cdn.js?v=202611241005";
-import { scrollHint } from "./scrollhint.js?v=202611241005";
+import { db, el, badge, sourceList, setPhoto, hms, huDate, mpHref, watchLiveBadge } from "./common.js?v=202611241021";
+import { mountAccount } from "./account.js?v=202611241021";
+import { factSocial } from "./social.js?v=202611241021";
+import { watchHref } from "./links.js?v=202611241021";
+import { cdnReady, cdnUrl, cdnXhr } from "./cdn.js?v=202611241021";
+import { scrollHint } from "./scrollhint.js?v=202611241021";
 
 watchLiveBadge();
 mountAccount();
@@ -24,6 +26,7 @@ const startAt = Math.max(0, parseFloat(params.get("t") || "0") || 0);
 const video = $("video");
 let facts = [];      // {c, speech, li}, newest first (those past the end of the video at the top)
 let speakers = [];   // archive doc's speeches: {mp_id, name, party, start_s, end_s}
+let turns = [];      // archive doc's floor turns: {speaker_id, name, party, role, color, photo, chair, start_s, end_s}
 const mps = new Map();  // mp id -> mps doc (photo, colour, role)
 let showAll = false;  // the "összes állítás" toggle
 
@@ -69,21 +72,41 @@ function speakerAt(t) {
   return speakers.find((s) => s.start_s != null && s.start_s <= t && t < (s.end_s ?? Infinity)) || null;
 }
 
-let shownSpeaker;
-function renderSpeaker(s) {
-  const key = s ? s.speech_id : null;
-  if (key === shownSpeaker) return;
-  shownSpeaker = key;
-  const m = s ? mps.get(s.mp_id) || {} : {};
-  $("speaker").dataset.empty = String(!s);
-  $("speaker-name").textContent = s ? s.name : "–";
-  if (s) $("speaker-name").href = mpHref(s.mp_id); else $("speaker-name").removeAttribute("href");
-  $("speaker-party").textContent = s ? s.party || "" : "";
-  $("speaker-party").hidden = !$("speaker-party").textContent;
-  $("speaker-role").textContent = m.role || "";
-  $("speaker").style.setProperty("--party", m.color || "");
-  setPhoto($("speaker-img"), $("speaker-initials"), m.photo, s ? s.name : "", { id: s && s.mp_id, color: m.color });
-  document.querySelectorAll(".speaker-list li").forEach((li) => li.classList.toggle("now", li.dataset.id === key));
+// who the card shows at t: the floor holder (the last turn started by then), else the speech playing
+function cardAt(t) {
+  if (turns.length) {
+    let x = null;
+    for (const u of turns) { if (u.start_s <= t) x = u; else break; }
+    return x && { key: `${x.speaker_id}|${x.start_s}`, id: x.speaker_id, name: x.name || "Ismeretlen felszólaló",
+      party: x.party, role: x.role, color: x.color, photo: x.photo };
+  }
+  const s = speakerAt(t);
+  if (!s) return null;
+  const m = mps.get(s.mp_id) || {};
+  return { key: s.speech_id, id: s.mp_id, name: s.name, party: s.party, role: m.role, color: m.color, photo: m.photo };
+}
+
+let shownCard, shownSpeech;
+function renderSpeaker(t) {
+  const c = cardAt(t);
+  const key = c ? c.key : null;
+  if (key !== shownCard) {
+    shownCard = key;
+    $("speaker").dataset.empty = String(!c);
+    $("speaker-name").textContent = c ? c.name : "–";
+    const mp = Boolean(c && c.id && c.id !== "?" && !c.id.startsWith("cap_"));  // captioned guests have no MP page
+    if (mp) $("speaker-name").href = mpHref(c.id); else $("speaker-name").removeAttribute("href");
+    $("speaker-party").textContent = c ? c.party || "" : "";
+    $("speaker-party").hidden = !$("speaker-party").textContent;
+    $("speaker-role").textContent = c ? c.role || "" : "";
+    $("speaker").style.setProperty("--party", c && c.color ? c.color : "");
+    setPhoto($("speaker-img"), $("speaker-initials"), c && c.photo, c ? c.name : "", { id: c && c.id, color: c && c.color });
+  }
+  const s = speakerAt(t);  // the speeches list marks the speech playing
+  const sk = s ? s.speech_id : null;
+  if (sk === shownSpeech) return;
+  shownSpeech = sk;
+  document.querySelectorAll(".speaker-list li").forEach((li) => li.classList.toggle("now", li.dataset.id === sk));
 }
 
 let current = null;
@@ -111,7 +134,7 @@ function renderFacts(t) {
 function tick() {
   const t = video.currentTime;
   renderFacts(t);
-  renderSpeaker(speakerAt(t));
+  renderSpeaker(t);
 }
 
 function shareUrl() {
@@ -131,6 +154,7 @@ async function load() {
   $("w-sub").textContent = (a.replay || !a.started_at ? "felvételről" : `${clock(a.started_at)}–${clock(a.started_at + a.duration_s * 1000)}`) +
     ` · ${hms(a.duration_s)} · ${a.claims || 0} ellenőrzött állítás`;
   speakers = (a.speakers || []).filter((s) => s.start_s != null);
+  turns = (a.turns || []).filter((u) => u.start_s != null).sort((x, y) => x.start_s - y.start_s);
 
   // the speeches list: who spoke when, a click jumps there
   $("speakers").replaceChildren(...speakers.map((s) => {

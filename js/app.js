@@ -6,14 +6,14 @@
 // clock (EXT-X-PROGRAM-DATE-TIME in the playlist), and the page compares that with the date of the frame on screen.
 
 import { doc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { defaultStream } from "./config.js?v=202611241005";
-import { db, el, badge, sourceList, setPhoto, mpHref } from "./common.js?v=202611241005";
-import { mountAccount } from "./account.js?v=202611241005";
-import { factSocial } from "./social.js?v=202611241005";
-import { mountChat } from "./chat.js?v=202611241005";
-import { scrollHint } from "./scrollhint.js?v=202611241005";
-import { mountGame } from "./game.js?v=202611241020";
-import { cdnReady, cdnUrl, cdnXhr } from "./cdn.js?v=202611241005";
+import { defaultStream } from "./config.js?v=202611241021";
+import { db, el, badge, sourceList, setPhoto, mpHref } from "./common.js?v=202611241021";
+import { mountAccount } from "./account.js?v=202611241021";
+import { factSocial } from "./social.js?v=202611241021";
+import { mountChat } from "./chat.js?v=202611241021";
+import { scrollHint } from "./scrollhint.js?v=202611241021";
+import { mountGame } from "./game.js?v=202611241050";
+import { cdnReady, cdnUrl, cdnXhr } from "./cdn.js?v=202611241021";
 
 cdnReady();  // the stream is on cdn.vitaradar.hu, which needs its cookie: get it before the player asks
 
