@@ -1092,6 +1092,8 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   :is(.m-live, .m-watch) .menu-panel { left: 0; right: 0; width: auto; padding: 4px 0 18px; border: 0;
     border-top: 2px solid var(--green); box-shadow: 0 18px 40px rgba(0, 0, 0, .6); transform: none; transition: visibility 0s .2s; }
   :is(.m-live, .m-watch) .menu-panel[data-open] { transform: none; transition: none; }
+  :is(.m-live, .m-watch) .menu-panel:not([data-open]) { display: none; }  /* closed: not drawn at all (the nav's
+     "nincs adás" label sets its own visibility, so a hidden panel would still show it) */
   :is(.m-live, .m-watch) .menu-head { display: none; }
   :is(.m-live, .m-watch) .menu-panel .nav { flex: none; padding: 0; }
   :is(.m-live, .m-watch) .menu-panel .nav a { display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 0 16px;
