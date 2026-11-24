@@ -1,24 +1,41 @@
 // Profile cards: hovering, focusing or tapping a user's name in the chat or the comments shows their card: username,
 // name, points, games won and lost, the likes and dislikes their comments got, and how many comments they wrote,
-// with a link to their profile page (profile.html: the same, plus their comments).
+// with a link to their profile page (profile.html: the same, plus their games and comments).
 //
 // The numbers are stored on the public profile (profiles/{uid}) and kept up to date by the server as things happen
 // (comments, votes on comments, settled games), so a card is one document read; each card is kept for a minute.
 // Only registered users can read profiles (rules), and only they see real names in the chat and the comments.
+// The card shows what the profile's owner lets others see: a hidden name is not on the document, and hidden stats
+// make it unreadable for others (rules), so the card then asks the API for the rest (/user).
 
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { db, el } from "./common.js?v=202611241206";
-import { avatar } from "./account.js?v=202611241206";
+import { account, avatar, api } from "./account.js?v=202611241315";
 import { profileHref } from "./links.js?v=202611241021";
 
 const KEEP_MS = 60_000;
 const SHOW_MS = 250, HIDE_MS = 200;
 const cache = new Map();  // uid -> {at, value: Promise<profile | null>}
 
+async function read(uid) {
+  try {
+    const s = await getDoc(doc(db, "profiles", uid));
+    if (!s.exists()) return null;
+    const p = s.data();
+    const own = uid === account.user?.uid;
+    const hide = Array.isArray(p.hide) ? p.hide : [];
+    return { ...p, name: own ? account.profile?.name || p.name : p.name, stats: own || !hide.includes("stats") ? p : null };
+  } catch (e) {
+    if (e.code !== "permission-denied") throw e;
+    const r = await api("/user", { uid });  // hidden stats: the rest from the API
+    return { ...r.profile, stats: r.profile.stats || null };
+  }
+}
+
 function profile(uid) {
   const hit = cache.get(uid);
   if (hit && Date.now() - hit.at < KEEP_MS) return hit.value;
-  const value = getDoc(doc(db, "profiles", uid)).then((s) => (s.exists() ? s.data() : null));
+  const value = read(uid);
   value.catch(() => cache.delete(uid));
   cache.set(uid, { at: Date.now(), value });
   return value;
@@ -61,19 +78,25 @@ function render(p, fallbackNick, uid) {
   name.title = name.textContent;
   who.append(nick, name);
   head.append(avatar(p.photo && p.photo["64"], p.nick, 44), who);
-  const stats = el("dl", "ucard-stats");
-  for (const [label, value, cls] of [
-    ["pont", num(p.points), "c-true"],
-    ["megnyert játék", num(p.won), ""],
-    ["elvesztett játék", num(p.lost), ""],
-    ["like / dislike", `${num(p.likes)} / ${num(p.dislikes)}`, ""],
-    ["hozzászólás", num(p.comments), ""],
-  ]) {
-    const row = el("div");
-    row.append(el("dt", null, label), el("dd", cls, value));
-    stats.append(row);
+  let stats;
+  if (p.stats) {
+    const s = p.stats;
+    stats = el("dl", "ucard-stats");
+    for (const [label, value, cls] of [
+      ["pont", num(s.points), "c-true"],
+      ["megnyert játék", num(s.won), ""],
+      ["elvesztett játék", num(s.lost), ""],
+      ["like / dislike", `${num(s.likes)} / ${num(s.dislikes)}`, ""],
+      ["hozzászólás", num(s.comments), ""],
+    ]) {
+      const row = el("div");
+      row.append(el("dt", null, label), el("dd", cls, value));
+      stats.append(row);
+    }
+  } else {
+    stats = el("p", "ucard-empty ucard-hidden", "A pontjait és a statisztikáit nem teszi közzé.");
   }
-  const more = el("a", "ucard-link", "profil és hozzászólások →");
+  const more = el("a", "ucard-link", "profil megnyitása →");
   more.href = profileHref(uid);
   c.append(head, stats, more);
 }

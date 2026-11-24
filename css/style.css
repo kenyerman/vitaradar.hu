@@ -627,8 +627,8 @@ body:has(.game-dock > :not([hidden])) .scroll-hint { display: none; }
 .cmt.cmt-focus { outline: 1px solid var(--green); outline-offset: 4px; box-shadow: var(--glow); }
 .cmt.cmt-focus > .cmt-text { animation: flash 1.6s ease-out; }
 
-/* the profile page (profile.html, js/profile.js): the head with the stats, one's own editor, and the comments, each
-   with a link to where it was written */
+/* the profile page (profile.html, js/profile.js): the head with the stats, one's own editor, the games and the
+   comments, each with a link to where it happened; what the owner hides from others is marked "csak te látod" */
 .prof { display: grid; gap: 18px; }
 .prof-gate { display: grid; gap: 12px; justify-items: start; max-width: 560px; padding: 22px; }
 .prof-gate p { margin: 0; }
@@ -660,10 +660,32 @@ body:has(.game-dock > :not([hidden])) .scroll-hint { display: none; }
 .pc-meta .c-false { color: var(--false); }
 .pc-open { margin-left: auto; padding: 4px 0; font-weight: 700; }
 .pc-more { justify-self: start; margin-top: 10px; }
+.prof-private { display: inline-block; padding: 0 6px; border: 1px solid var(--line-dim); color: var(--muted);
+  font-size: 10px; letter-spacing: .8px; text-transform: uppercase; vertical-align: middle; }
+.prof-private[hidden] { display: none; }
+.section-head .prof-private { margin-left: auto; }
+.prof-side { margin: 0; min-width: 0; }
+.prof-side-note { margin: 0 0 6px; color: var(--muted); font-size: 12px; }
+.prof-privacy { margin: 0; padding: 0; border: 0; min-width: 0; gap: 8px; }
+.prof-privacy > legend { padding: 0; margin-bottom: 8px; }
+.prof-privacy .fld.check { font-size: 13px; color: var(--text); }
+.prof-privacy .fld.check > span { display: grid; gap: 2px; }
+.prof-saved.is-error { color: var(--false); }
+/* a game in the history: what was asked, the player's answer, the right one, the points */
+.pg-tag { color: var(--green); font-size: 11px; letter-spacing: .8px; text-transform: uppercase; white-space: nowrap; }
+.pg[data-kind="fallacy"] .pg-tag { color: var(--fallacy); }
+.pg[data-kind="tip"] .pg-tag, .pg[data-kind="vote"] .pg-tag { color: var(--unverifiable); }
+.pg-ans { display: flex; flex-wrap: wrap; gap: 4px 22px; margin: 0; font-size: 13px; }
+.pg-ans div { display: flex; gap: 8px; align-items: baseline; min-width: 0; }
+.pg-ans dt { color: var(--muted); font-size: 11px; }
+.pg-ans dd { margin: 0; font-weight: 700; color: #eafff0; overflow-wrap: anywhere; }
+.pg-ans dd.c-true { color: var(--true); }
+.pg-ans dd.c-false { color: var(--false); }
+.pg-points { font-weight: 700; }
 @media (max-width: 760px) {
   .prof-head { grid-template-columns: 72px minmax(0, 1fr); gap: 14px; padding: 14px; }
   .prof-head > .avatar { --size: 72px !important; }
-  .prof-head > .prof-stats { grid-column: 1 / -1; }
+  .prof-head > .prof-stats, .prof-head > .prof-side { grid-column: 1 / -1; }
   .prof-nick { font-size: 21px; }
   .pc-open { margin-left: 0; }
 }
@@ -862,6 +884,7 @@ a.fact-time { display: inline-block; padding-top: 4px; padding-bottom: 4px; marg
 .ucard-stats dt { color: var(--muted); }
 .ucard-stats dd { margin: 0; font-weight: 700; color: #eafff0; }
 .ucard-empty { margin: 0; color: var(--muted); font-size: 12px; }
+.ucard-hidden { margin-top: 12px; }
 
 /* the phone menu (js/menu.js): a hamburger in the header (with a red dot while live); the pages in a panel that slides
    in from the right (the online count stays under the logo) */

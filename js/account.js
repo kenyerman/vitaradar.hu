@@ -253,9 +253,62 @@ const PHOTO_ERRORS = {  // the picture service answers with English codes only
   429: "Naponta legfeljebb 10 képet tölthetsz fel.",
 };
 
+// What others may see on a profile: each section its owner can hide (the API's /privacy; the server keeps a hidden
+// one from everyone else). [key, label, hint]
+export const PRIVACY = [
+  ["stats", "Pontok és statisztikák", "pontok, megnyert és elvesztett játékok, kapott like-ok és dislike-ok"],
+  ["games", "Játékelőzmények", "a megválaszolt kihívások, beszédtippek és szavazási tippek"],
+  ["comments", "Hozzászólások listája", "a tényellenőrzések alatt a hozzászólásaid ettől még látszanak"],
+  ["name", "Teljes név a beceneved mellett", ""],
+];
+
+// The privacy switches of the profile editor: ticked = others see it. Each change is saved at once.
+function privacyBox() {
+  const box = el("fieldset", "fld prof-privacy");
+  box.append(el("legend", "fld-label", "Mások ezt látják a profilodon"));
+  const boxes = {};
+  const hidden = new Set(account.profile?.hide || []);
+  for (const [key, label, hint] of PRIVACY) {
+    const cb = input("checkbox", { name: `show-${key}` });
+    cb.checked = !hidden.has(key);
+    boxes[key] = cb;
+    const text = el("span", null, label);
+    if (hint) text.append(el("span", "fld-hint", hint));
+    const row = el("label", "fld check");
+    row.append(cb, text);
+    box.append(row);
+  }
+  const msg = el("p", "prof-saved");
+  msg.setAttribute("role", "status");
+  box.append(el("span", "fld-hint", "Ami nincs bejelölve, azt csak te látod. A változást azonnal mentjük."), msg);
+  const show = (hide) => { for (const [k] of PRIVACY) boxes[k].checked = !hide.includes(k); };
+  box.addEventListener("change", async (e) => {
+    if (e.target.type !== "checkbox") return;
+    const hide = PRIVACY.map(([k]) => k).filter((k) => !boxes[k].checked);
+    Object.values(boxes).forEach((b) => { b.disabled = true; });
+    msg.classList.remove("is-error");
+    msg.textContent = "mentés…";
+    try {
+      const r = await api("/privacy", { hide });
+      account.profile = { ...account.profile, hide: r.hide || hide };
+      show(account.profile.hide);
+      emit();
+      msg.textContent = "Elmentve.";
+    } catch (err) {
+      show(account.profile?.hide || []);
+      msg.classList.add("is-error");
+      msg.textContent = err.message;
+    } finally {
+      Object.values(boxes).forEach((b) => { b.disabled = false; });
+    }
+  });
+  return box;
+}
+
 // The profile editor of one's own profile page (profile.html): picture, full name and nick; the e-mail address and the
-// birth date shown but fixed; the blocked users, each with "feloldás"; and sign-out. Saving goes through the API
-// (/profile, and the picture service), which validates everything again. Returns {el, destroy}.
+// birth date shown but fixed; who sees what on the profile; the blocked users, each with "feloldás"; and sign-out.
+// Saving goes through the API (/profile, /privacy and the picture service), which validates everything again.
+// Returns {el, destroy}.
 export function profileEditor() {
   const p = account.profile || {};
   const pic = el("div", "profile-pic");
@@ -306,7 +359,7 @@ export function profileEditor() {
   bar.append(out, save);
   form.append(pic, field("Profilkép", file, "JPEG, PNG vagy WEBP, legfeljebb 2 MB."),
     field("Teljes név", name), field("Becenév", nick, "3–40 karakter: betű, szám, pont, kötőjel, aláhúzás. Ezt látják mások."),
-    email, born, blockedBox, err, saved, bar);
+    email, born, privacyBox(), blockedBox, err, saved, bar);
   const dlg = {  // the same calls as a dialog's, so the flows below stay as they were
     form,
     error: (msg) => { err.textContent = msg || ""; err.hidden = !msg; if (msg) saved.textContent = ""; },

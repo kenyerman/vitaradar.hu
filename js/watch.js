@@ -10,8 +10,8 @@
 
 import { doc, getDoc, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { db, el, badge, sourceList, setPhoto, hms, huDate, mpHref, watchLiveNav } from "./common.js?v=202611241206";
-import { mountAccount } from "./account.js?v=202611241206";
-import { factSocial } from "./social.js?v=202611241206";
+import { mountAccount } from "./account.js?v=202611241315";
+import { factSocial } from "./social.js?v=202611241315";
 import { watchHref } from "./links.js?v=202611241021";
 import { cdnReady, cdnUrl, cdnXhr } from "./cdn.js?v=202611241021";
 import { scrollHint } from "./scrollhint.js?v=202611241021";

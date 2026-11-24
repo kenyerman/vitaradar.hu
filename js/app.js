@@ -8,11 +8,11 @@
 import { doc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { defaultStream } from "./config.js?v=202611241021";
 import { db, el, badge, sourceList, setPhoto, mpHref, setLiveNav } from "./common.js?v=202611241206";
-import { mountAccount } from "./account.js?v=202611241206";
-import { factSocial } from "./social.js?v=202611241206";
-import { mountChat } from "./chat.js?v=202611241206";
+import { mountAccount } from "./account.js?v=202611241315";
+import { factSocial } from "./social.js?v=202611241315";
+import { mountChat } from "./chat.js?v=202611241315";
 import { scrollHint } from "./scrollhint.js?v=202611241021";
-import { mountGame } from "./game.js?v=202611241206";
+import { mountGame } from "./game.js?v=202611241315";
 import { cdnReady, cdnUrl, cdnXhr } from "./cdn.js?v=202611241021";
 
 cdnReady();  // the stream is on cdn.vitaradar.hu, which needs its cookie: get it before the player asks
