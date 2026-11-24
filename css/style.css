@@ -1231,13 +1231,13 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   body { font-family: var(--sans); }
   body::after { display: none; }  /* no scanlines */
   .site-header { background: var(--bg); backdrop-filter: none; }  /* solid: the feed never shows through it */
-  /* the header: a green logo block, the name in capitals, a red "Élő" tag while live, the heart and the menu as icons */
+  /* the header: the chamber icon, the name in capitals, a red "Élő" tag while live, the heart and the menu as icons */
   .header-row { min-height: 56px; padding-top: 6px; padding-bottom: 6px; gap: 8px; }
   .brand { position: relative; gap: 8px; }
-  .brand::before { content: ""; position: absolute; left: 0; top: 50%; width: 30px; height: 30px; transform: translateY(-50%);
-    background: var(--green); clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 7px 100%, 0 calc(100% - 7px)); }
-  .brand img { position: relative; width: 18px; height: 18px; margin: 0 6px; filter: brightness(0); }
-  .brand-box { --logo: 30px; --brand-gap: 8px; --name: 14px; }
+  .brand::before { content: ""; flex: none; width: 38px; height: 22px;
+    background: url("../img/chamber-icon.svg?v=202611250120") center / contain no-repeat; }  /* the chamber icon */
+  .brand img { display: none; }
+  .brand-box { --logo: 38px; --brand-gap: 8px; --name: 14px; }
   .brand-name { font-size: 14px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; text-shadow: none; }
   .brand-name::after { content: none; }
   .brand-tld { font-size: 11px; color: var(--green); }
