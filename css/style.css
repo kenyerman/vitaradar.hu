@@ -1231,16 +1231,13 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   body { font-family: var(--sans); }
   body::after { display: none; }  /* no scanlines */
   .site-header { background: var(--bg); backdrop-filter: none; }  /* solid: the feed never shows through it */
-  /* the header: the chamber icon, the name in capitals, a red "Élő" tag while live, the heart and the menu as icons */
+  /* the header: the chamber icon before the name, a red "Élő" tag while live, the heart and the menu as icons */
   .header-row { min-height: 56px; padding-top: 6px; padding-bottom: 6px; gap: 8px; }
   .brand { position: relative; gap: 8px; }
   .brand::before { content: ""; flex: none; width: 38px; height: 22px;
     background: url("../img/chamber-icon.svg?v=202611250120") center / contain no-repeat; }  /* the chamber icon */
   .brand img { display: none; }
-  .brand-box { --logo: 38px; --brand-gap: 8px; --name: 14px; }
-  .brand-name { font-size: 14px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; text-shadow: none; }
-  .brand-name::after { content: none; }
-  .brand-tld { font-size: 11px; color: var(--green); }
+  .brand-box { --logo: 38px; --brand-gap: 8px; }
   .hdr-support { width: 44px; height: 44px; justify-content: center; padding: 0; border: 0; background: none; }
   .hdr-support .nav-label { display: none; }
   .hdr-support::before { color: #ff4d5a; font-size: 20px; text-shadow: none; }
@@ -1259,10 +1256,9 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   :is(.m-live, .m-watch) .hdr-support { display: inline-flex !important; margin-left: auto; }
   :is(.m-live, .m-watch) .menu-btn[data-live="on"]::after { display: none; }  /* the "Élő" tag says it */
   .brand img, .menu-bars span { filter: none; box-shadow: none; }
-  .brand-name, .page-title, .section-head h2, .speaker-name, .m-sep-name, .m-tab, .m-new, .m-ai, .tally, .verdict,
+  .page-title, .section-head h2, .speaker-name, .m-sep-name, .m-tab, .m-new, .m-ai, .tally, .verdict,
   .fact-time, .t-btn, .btn, .acct-btn, .hdr-support, .brand-beta, .online-badge, .menu-panel .nav a, .menu-title,
   .game-head, .game-tag, .chat-head h2, .crumbs { font-family: var(--display); }
-  .brand-name { letter-spacing: .5px; }
   .fact-bullet { font-family: var(--sans); font-weight: 600; letter-spacing: 0; line-height: 1.35; color: #eef3f0; }
   .fact-claim, .fact-expl, .speaker-role, .chat-list, .m-game-empty { font-family: var(--sans); }
   /* verdict badges: solid, dark text, a cut corner */
