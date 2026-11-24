@@ -1036,6 +1036,7 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
    The player stays pinned under the header with a compact strip under it (the speaker, the sitting's tally, the chat
    button), so the video never scrolls away and nothing covers it. Everything here is for phones only. */
 .m-top, .m-chat-slot, .m-game-slot, .m-new, .m-onair { display: none; }
+.nav a.nav-imp { display: none; }  /* the impresszum is in the footer there; the phone menu shows it */
 .m-sep { display: none; }
 @media (max-width: 860px) {
   .m-top { display: block; position: sticky; top: var(--m-hdr, 0px); z-index: 9; margin: -20px -16px 0;
@@ -1084,20 +1085,42 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   .m-strip .tally dd { margin: 0; font: 700 11px/1.2 var(--display); }
   .m-live .speaker-col { display: none; }  /* its speaker card and tally are in the strip */
 
-  /* the menu opens below the pinned player, so it never covers the video */
-  .m-live .menu-panel, .m-watch .menu-panel, .m-live .menu-backdrop, .m-watch .menu-backdrop { top: var(--m-top, 0px); }
-  .m-live .menu-head, .m-watch .menu-head { min-height: 52px; }
-  /* "Élő adás" while live: a small filled red dot, not a red row */
-  .menu-panel .nav a.nav-live[data-live="on"] { color: var(--text); border-left-color: transparent; background: none; }
-  .menu-panel .nav a.nav-live[data-live="on"][aria-current="page"] { color: var(--green); border-left-color: var(--green);
-    background: rgba(0, 255, 65, .08); }
-  .menu-panel .nav a.nav-live[data-live="on"]::before { color: var(--muted); }
+  /* the menu: a full-width sheet right below the video (never over it), as in the design: the pages with an arrow each
+     ("Élő adás" with a small red dot while live), the account, BETA and the online count, the support button with a red
+     heart, the contact links (js/mobile.js moves them in from the header) */
+  :is(.m-live, .m-watch) .menu-panel, :is(.m-live, .m-watch) .menu-backdrop { top: var(--m-menu, var(--m-top, 0px)); }
+  :is(.m-live, .m-watch) .menu-panel { left: 0; right: 0; width: auto; padding: 4px 0 18px; border: 0;
+    border-top: 2px solid var(--green); box-shadow: 0 18px 40px rgba(0, 0, 0, .6); transform: none; transition: visibility 0s .2s; }
+  :is(.m-live, .m-watch) .menu-panel[data-open] { transform: none; transition: none; }
+  :is(.m-live, .m-watch) .menu-head { display: none; }
+  :is(.m-live, .m-watch) .menu-panel .nav { flex: none; padding: 0; }
+  :is(.m-live, .m-watch) .menu-panel .nav a { display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 0 16px;
+    border: 0; border-bottom: 1px solid rgba(61, 240, 130, .08); background: none; color: #e9f2ed; text-shadow: none;
+    font: 700 15px/1 var(--display); letter-spacing: 1.6px; text-transform: uppercase; }
+  :is(.m-live, .m-watch) .menu-panel .nav a::before { content: none; }
+  :is(.m-live, .m-watch) .menu-panel .nav a::after { content: "\203A"; margin-left: auto; color: var(--muted); font-size: 18px; }
+  :is(.m-live, .m-watch) .menu-panel .nav a[aria-current="page"],
+  :is(.m-live, .m-watch) .menu-panel .nav a.nav-live[data-live="on"] { color: #e9f2ed; background: none; border-left: 0; box-shadow: none; }
   .menu-panel .nav-live .live-dot { width: 8px; height: 8px; background: #ff4d5a; box-shadow: none; }
-  /* support: a button with a red heart, the menu's last item */
-  .menu-panel .nav a.nav-support { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 14px 16px 6px;
-    padding: 12px 14px; border: 1px solid var(--green); background: transparent; color: var(--green); font-weight: 700;
-    letter-spacing: 1.2px; text-transform: uppercase; }
-  .menu-panel .nav a.nav-support::before { content: "\2665"; color: #ff4d5a; text-shadow: none; }
+  .menu-panel .nav-live:not([data-live="on"]) .live-dot { display: none; }
+  .menu-panel .nav a.nav-imp { display: flex; }
+  .menu-panel > .acct { order: 2; display: flex; gap: 6px; margin: 0; padding: 12px 16px 0; }
+  .menu-panel > .acct > * { flex: 1; }
+  .menu-panel > .brand-sub { order: 3; }
+  .menu-panel > a.nav-support { order: 4; }
+  .m-menu-foot { order: 5; }
+  :is(.m-live, .m-watch) .menu-panel .nav a.nav-profile { display: none; }
+  html[data-acct="in"] :is(.m-live, .m-watch) .menu-panel .nav a.nav-profile { display: flex; }
+  .menu-panel > .acct .btn, .menu-panel > .acct .acct-btn { min-height: 44px; justify-content: center; font: 700 12px/1 var(--display);
+    letter-spacing: 1.4px; }
+  .menu-panel > .acct .acct-me { grid-column: 1 / -1; margin: 0; }
+  .menu-panel > .brand-sub { position: static; display: flex; align-items: center; gap: 8px; padding: 14px 16px 6px; }
+  .menu-panel > a.nav-support { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px;
+    margin: 8px 16px 0; padding: 0 14px; border: 1px solid var(--green); background: none; color: var(--green);
+    font: 700 12px/1 var(--display); letter-spacing: 1.4px; text-shadow: none; text-transform: uppercase; }
+  .menu-panel > a.nav-support::before { content: "\2665"; color: #ff4d5a; text-shadow: none; }
+  .m-menu-foot { margin: 0; padding: 12px 16px 0; color: var(--muted); font: 400 12px/1.6 var(--sans); }
+  .m-menu-foot a { color: var(--muted); text-decoration: underline; text-underline-offset: 3px; }
   .m-live .support-line { display: none; }  /* the header's heart and the menu's button stand for it */
 
   /* facts: full-width rows (time | verdict, comment count / headline) that open on a tap into the quote, the reasoning,

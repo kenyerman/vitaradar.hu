@@ -35,13 +35,16 @@ function mover() {
   };
 }
 
-function measure(header, top) {
+function measure(header, top, video) {
   const set = () => {
     const h = header ? header.offsetHeight : 0;
     root.style.setProperty("--m-hdr", `${h}px`);
-    // where the pinned block ends on screen (on the replay page it starts below the title and pins only later)
+    // where the pinned block ends on screen (on the replay page it starts below the title and pins only later), and
+    // where the video ends (the menu opens right below it)
     const end = PHONE.matches && top ? Math.max(h, Math.round(top.getBoundingClientRect().bottom)) : h;
     root.style.setProperty("--m-top", `${end}px`);
+    const vid = PHONE.matches && video ? Math.max(h, Math.round(video.getBoundingClientRect().bottom)) : h;
+    root.style.setProperty("--m-menu", `${vid}px`);
   };
   const ro = new ResizeObserver(set);
   if (header) ro.observe(header);
@@ -283,6 +286,34 @@ function onAir() {
   sync();
 }
 
+// Phones: the menu (js/menu.js) holds what the header gives up: under the pages (with the impresszum added), the
+// account, BETA and the online count, the support button and the contact links. On wider screens they go back.
+function menuParts(moves) {
+  const panel = document.getElementById("menu");
+  const nav = panel && (panel.querySelector(".nav") || document.querySelector(".site-header .nav"));
+  if (!panel || !nav) return;
+  if (!nav.querySelector(".nav-imp")) {
+    const imp = el("a", "nav-imp");
+    imp.href = "impresszum.html";
+    imp.textContent = "Impresszum";
+    nav.insertBefore(imp, nav.querySelector(".nav-support"));
+  }
+  moves.add(document.getElementById("acct"), panel);
+  moves.add(document.querySelector(".site-header .brand-sub"), panel);
+  moves.add(nav.querySelector(".nav-support"), panel);
+  const foot = el("p", "m-menu-foot");
+  const link = (href, text, ext) => {
+    const a = el("a");
+    a.href = href;
+    a.textContent = text;
+    if (ext) { a.target = "_blank"; a.rel = "noopener"; }
+    return a;
+  };
+  foot.append(link("impresszum.html#tamogatas", "Mire megy a pénz?"), " · ", link("mailto:help@vitaradar.hu", "help@vitaradar.hu"),
+    " · ", link("https://github.com/kenyerman/vitaradar.hu/issues", "hibakövető (GitHub)", true));
+  panel.append(foot);
+}
+
 // page: "live" (index.html) or "watch" (watch.html)
 export function mountPhone({ page }) {
   const main = document.querySelector("main");
@@ -324,7 +355,10 @@ export function mountPhone({ page }) {
 
   onAir();
 
-  const remeasure = measure(document.querySelector(".site-header"), top);
+  menuParts(moves);
+
+  const remeasure = measure(document.querySelector(".site-header"), top,
+    page === "live" ? player.querySelector(".player") : player);
   const place = () => { moves.place(); remeasure(); };
   PHONE.addEventListener("change", place);
   place();
