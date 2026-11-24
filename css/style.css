@@ -400,10 +400,16 @@ details[open] > summary .lvl-title::before { content: "▾ "; }
 .imp-links { display: flex; flex-wrap: wrap; gap: 6px 22px; list-style: none; margin: 12px 0 0; padding: 0; }
 .imp-links a { display: inline-block; padding: 3px 0; }
 .imp-note { color: var(--muted); font-size: 13px; }
+.imp-me { display: grid; grid-template-columns: 150px 1fr; gap: 22px; align-items: start; }
+.imp-photo { width: 150px; aspect-ratio: 3 / 4; border: 1px solid var(--line);  /* the MP portraits' radar frame */
+  --hue: 138; --rings: 13px; --sweep-t: 7s; }
+.imp-me-text > p { margin-top: 0; }
 @media (max-width: 560px) {
   .imp-sec { padding: 14px; }
   .imp-data, .imp-verdicts { grid-template-columns: 1fr; gap: 2px; }
   .imp-data dd, .imp-verdicts dd { margin-bottom: 10px; }
+  .imp-me { grid-template-columns: 1fr; gap: 14px; }  /* the photo above the text */
+  .imp-photo { width: 132px; }
 }
 
 /* narrow screens */
