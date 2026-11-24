@@ -1091,4 +1091,8 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   :is(.m-live, .m-watch) .fact:not([data-open="true"]) .fact-bullet { display: -webkit-box; overflow: hidden;
     -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; }
   :is(.m-live, .m-watch) .fact:not([data-open="true"]) > :is(.fact-claim, .fact-expl, .fact-sources, .social) { display: none; }
+  /* a closed row: how many comments it has; an open one: the votes and the comment thread under the sources */
+  :is(.m-live, .m-watch) .fact:not([data-open="true"]) .fact-top[data-talk]::after { content: attr(data-talk) " hozzászólás";
+    flex-basis: 100%; order: 9; font-size: 11px; color: var(--muted); }
+  :is(.m-live, .m-watch) .fact[data-open="true"] .social { margin-top: 12px; }
 }

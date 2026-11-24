@@ -78,6 +78,20 @@ function compactFacts(list) {
   new MutationObserver((records) => {
     for (const r of records) r.addedNodes.forEach(mark);
   }).observe(list, { childList: true });
+
+  // a closed row shows how many comments it has (js/social.js writes "N hozzászólás" into the fact's .talk label)
+  let queued = false;
+  const counts = () => {
+    queued = false;
+    for (const li of list.querySelectorAll("li.fact")) {
+      const top = li.querySelector(".fact-top");
+      const m = /^(\d+)/.exec((li.querySelector(".social .talk") || {}).textContent || "");
+      if (!top) continue;
+      if (m && m[1] !== "0") top.dataset.talk = m[1]; else delete top.dataset.talk;
+    }
+  };
+  new MutationObserver(() => { if (!queued) { queued = true; requestAnimationFrame(counts); } })
+    .observe(list, { childList: true, subtree: true, characterData: true });
   list.querySelectorAll("li.fact").forEach(mark);
   PHONE.addEventListener("change", () => list.querySelectorAll("li.fact").forEach(mark));
 }
