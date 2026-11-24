@@ -1031,3 +1031,37 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
 .support-line a { flex: none; padding: 4px 0; color: var(--green); font-weight: 700; letter-spacing: .6px; white-space: nowrap; }
 .support-line a::before { content: "♥ "; color: #ff5a5f; text-shadow: 0 0 6px rgba(255, 90, 95, .7); }
 .support-line a::after { content: " →"; }
+
+/* ------------------------------------------------------------------ phones (js/mobile.js)
+   The player stays pinned under the header with a compact strip under it (the speaker, the sitting's tally, the chat
+   button), so the video never scrolls away and nothing covers it. Everything here is for phones only. */
+.m-top, .m-chat-slot { display: none; }
+@media (max-width: 860px) {
+  .m-top { display: block; position: sticky; top: var(--m-hdr, 0px); z-index: 9; margin: -20px -16px 0;
+    background: var(--bg); border-bottom: 1px solid var(--line); }
+  .m-chat-slot { display: block; margin-top: 14px; }
+  .m-chat-slot:empty { display: none; }
+  .m-top .stage { display: block; }
+  .m-top .player { border: 0; box-shadow: none; }
+  .m-top .player::before, .m-top .player::after { display: none; }
+  .scroll-hint { display: none !important; }  /* the player no longer hides the facts */
+
+  .m-strip { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 8px 12px;
+    background: var(--panel-solid); }
+  .m-strip .speaker { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; background: none; border: 0; }
+  .m-strip .speaker::before, .m-strip .speaker::after { display: none; }
+  .m-strip .speaker .speaker-photo { flex: none; width: 40px; height: 40px; min-height: 0; aspect-ratio: auto; }
+  .m-strip .speaker .initials { font-size: 15px; }
+  .m-strip .speaker-text { min-width: 0; padding: 0; border: 0; display: flex; flex-wrap: wrap; align-items: baseline;
+    gap: 0 8px; }
+  .m-strip .speaker-name { flex-basis: 100%; overflow: hidden; font-size: 14px; white-space: nowrap; text-overflow: ellipsis; }
+  .m-strip .speaker-party { margin: 0; font-size: 11px; }
+  .m-strip .speaker-role { margin: 0; overflow: hidden; font-size: 11px; white-space: nowrap; text-overflow: ellipsis; }
+  .m-strip .speaker-more { display: none; }  /* the name links to the same page */
+  .m-strip .chat-open { order: 2; position: static; flex: none; padding: 4px 9px; font-size: 12px; }
+  .m-strip .tally { order: 3; flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 2px 10px; margin: 0; }
+  .m-strip .tally div { display: flex; align-items: baseline; gap: 5px; padding: 0; background: none; border: 0; }
+  .m-strip .tally dt { font-size: 9.5px; letter-spacing: .3px; }
+  .m-strip .tally dd { margin: 0; font-size: 13px; }
+  .m-live .speaker-col { display: none; }  /* its speaker card and tally are in the strip */
+}

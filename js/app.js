@@ -15,6 +15,7 @@ import { scrollHint } from "./scrollhint.js?v=202611241021";
 import { mountGame } from "./game.js?v=202611241317";
 import { cdnReady, cdnUrl, cdnXhr } from "./cdn.js?v=202611241021";
 import { useTwitch, mountTwitch, twitchNow } from "./twitch.js?v=202611241408";
+import { mountPhone } from "./mobile.js?v=202611250101";
 
 const TWITCH = useTwitch();  // the stream from twitch.tv/vitaradar; ?player=cdn: our own CDN (supporters)
 if (!TWITCH) cdnReady();  // the stream is on cdn.vitaradar.hu, which needs its cookie: get it before the player asks
@@ -33,6 +34,7 @@ mountAccount();
 mountChat($("stage"));
 scrollHint(document.querySelector(".below"), document.querySelector(".player"));  // the facts, when the full-width player hides them
 const game = mountGame({ now: streamNow });  // challenges and speech tips
+mountPhone({ page: "live" });  // phones: the player pinned under the header, the speaker strip under it
 
 let live = { session: null, active: false, url: null };
 let claims = new Map();  // id -> fact document
