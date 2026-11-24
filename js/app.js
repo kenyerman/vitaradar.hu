@@ -14,8 +14,10 @@ import { mountChat } from "./chat.js?v=202611241315";
 import { scrollHint } from "./scrollhint.js?v=202611241021";
 import { mountGame } from "./game.js?v=202611241317";
 import { cdnReady, cdnUrl, cdnXhr } from "./cdn.js?v=202611241021";
+import { useTwitch, mountTwitch, twitchNow } from "./twitch.js?v=202611241408";
 
-cdnReady();  // the stream is on cdn.vitaradar.hu, which needs its cookie: get it before the player asks
+const TWITCH = useTwitch();  // the stream from twitch.tv/vitaradar; ?player=cdn: our own CDN (supporters)
+if (!TWITCH) cdnReady();  // the stream is on cdn.vitaradar.hu, which needs its cookie: get it before the player asks
 
 const $ = (id) => document.getElementById(id);
 const video = $("video");
@@ -95,6 +97,12 @@ let loads = 0;
 async function loadStream(url) {
   live.url = url;
   failed = false;
+  if (TWITCH) {  // Twitch shows its own offline screen; the player stays once it is there
+    video.hidden = true;
+    note(null);
+    mountTwitch(video.parentElement).catch(() => note("a Twitch lejátszó nem töltődött be"));
+    return;
+  }
   if (hls) { hls.destroy(); hls = null; }
   note("várakozás az adásra…");
   const load = ++loads;
@@ -132,6 +140,7 @@ function note(text) {
 
 // The date (ms) of the frame on screen, on the stream's clock; null when it is unknown.
 function streamNow() {
+  if (TWITCH) return twitchNow();
   if (hls && hls.playingDate) return hls.playingDate.getTime();
   if (typeof video.getStartDate === "function") {  // Safari's own HLS player
     const start = video.getStartDate().getTime();
