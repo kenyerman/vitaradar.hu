@@ -1142,3 +1142,33 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   .m-watch .m-top .player { aspect-ratio: 16 / 9; }
   .m-watch .fact.now { scroll-margin-bottom: 16px; }
 }
+
+/* ------------------------------------------------------------------ phones: the new look
+   A calmer matrix: one green without glow on a near-black ground, no scanlines; Chakra Petch for the labels, badges and
+   headings, Inter Tight for the text people read. (Desktop keeps its look until the desktop layout lands.) */
+@media (max-width: 860px) {
+  :root {
+    --bg: #040706; --panel: #0a110e; --panel-solid: #0a110e; --line: rgba(61, 240, 130, .2); --line-dim: rgba(61, 240, 130, .1);
+    --green: #3df082; --green-soft: #8af5b4; --text: #d5e0da; --muted: #8a9e94; --cyan: #6fd3e6;
+    --true: #3df082; --false: #ff5d52; --unverifiable: #ffc23d; --fallacy: #b8a0ff; --pending: #6fd3e6;
+    --glow: none;
+    --sans: "Inter Tight", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --display: "Chakra Petch", var(--mono);
+  }
+  body { font-family: var(--sans); }
+  body::after { display: none; }  /* no scanlines */
+  .brand img, .menu-bars span { filter: none; box-shadow: none; }
+  .brand-name, .page-title, .section-head h2, .speaker-name, .m-sep-name, .m-tab, .m-new, .m-ai, .tally, .verdict,
+  .fact-time, .t-btn, .btn, .acct-btn, .hdr-support, .brand-beta, .online-badge, .menu-panel .nav a, .menu-title,
+  .game-head, .game-tag, .chat-head h2, .crumbs { font-family: var(--display); }
+  .brand-name { letter-spacing: .5px; }
+  .fact-bullet { font-family: var(--sans); font-weight: 600; letter-spacing: 0; line-height: 1.35; color: #eef3f0; }
+  .fact-claim, .fact-expl, .speaker-role, .chat-list, .m-game-empty { font-family: var(--sans); }
+  /* verdict badges: solid, dark text, a cut corner */
+  .verdict { padding: 4px 10px 4px 8px; color: #021108; font-size: 11px; letter-spacing: 1px;
+    clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%); }
+  .verdict[data-v="false"] { color: #1a0402; }
+  .fact { border-left-width: 3px; }
+  .m-new { font-family: var(--display); font-size: 13px; letter-spacing: 1.2px;
+    clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px)); }
+}
