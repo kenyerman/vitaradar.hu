@@ -1,11 +1,11 @@
 // Shared by every page: Firebase, the digital rain behind the page, and small helpers.
 
 import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { db } from "./firebase.js?v=202611240845";
-import "./consent.js?v=202611240845";   // the cookie and storage bar at the bottom, on every page
-import "./presence.js?v=202611240845";  // the header's "N online" (visitors included), on every page
-import "./menu.js?v=202611240845";      // the hamburger menu on phones, on every page
-import { CDN, cdnReady, cdnUrl } from "./cdn.js?v=202611240845";
+import { db } from "./firebase.js?v=202611240846";
+import "./consent.js?v=202611240846";   // the cookie and storage bar at the bottom, on every page
+import "./presence.js?v=202611240846";  // the header's "N online" (visitors included), on every page
+import "./menu.js?v=202611240846";      // the hamburger menu on phones, on every page
+import { CDN, cdnReady, cdnUrl } from "./cdn.js?v=202611240846";
 
 export { db };  // set up once, with App Check, in firebase.js
 

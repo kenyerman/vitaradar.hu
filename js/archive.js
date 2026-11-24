@@ -1,10 +1,10 @@
 // vitaradar.hu archive: the past streams, newest sitting day first, each run a card that opens the replay.
 
 import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { db, el, hms, huDate, watchLiveBadge } from "./common.js?v=202611240845";
-import { mountAccount } from "./account.js?v=202611240845";
-import { watchHref } from "./links.js?v=202611240845";
-import { cdnReady, cdnUrl } from "./cdn.js?v=202611240845";
+import { db, el, hms, huDate, watchLiveBadge } from "./common.js?v=202611240846";
+import { mountAccount } from "./account.js?v=202611240846";
+import { watchHref } from "./links.js?v=202611240846";
+import { cdnReady, cdnUrl } from "./cdn.js?v=202611240846";
 
 watchLiveBadge();
 mountAccount();
