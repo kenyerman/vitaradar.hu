@@ -1,13 +1,15 @@
 // Profile cards: hovering, focusing or tapping a user's name in the chat or the comments shows their card: username,
-// name, points, games won and lost, the likes and dislikes their comments got, and how many comments they wrote.
+// name, points, games won and lost, the likes and dislikes their comments got, and how many comments they wrote,
+// with a link to their profile page (profile.html: the same, plus their comments).
 //
 // The numbers are stored on the public profile (profiles/{uid}) and kept up to date by the server as things happen
 // (comments, votes on comments, settled games), so a card is one document read; each card is kept for a minute.
 // Only registered users can read profiles (rules), and only they see real names in the chat and the comments.
 
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { db, el } from "./common.js?v=202611240130";
-import { avatar } from "./account.js?v=202611240130";
+import { db, el } from "./common.js?v=202611240245";
+import { avatar } from "./account.js?v=202611240245";
+import { profileHref } from "./links.js?v=202611240245";
 
 const KEEP_MS = 60_000;
 const SHOW_MS = 250, HIDE_MS = 200;
@@ -44,7 +46,7 @@ function box() {
 
 const num = (v) => Number(v || 0).toLocaleString("hu-HU");
 
-function render(p, fallbackNick) {
+function render(p, fallbackNick, uid) {
   const c = box();
   c.replaceChildren();
   if (!p) {
@@ -71,7 +73,9 @@ function render(p, fallbackNick) {
     row.append(el("dt", null, label), el("dd", cls, value));
     stats.append(row);
   }
-  c.append(head, stats);
+  const more = el("a", "ucard-link", "profil és hozzászólások →");
+  more.href = profileHref(uid);
+  c.append(head, stats, more);
 }
 
 function place() {
@@ -98,7 +102,7 @@ async function show(a) {
   let p = null;
   try { p = await profile(a.dataset.uid); } catch (e) { console.warn("profile card:", e); }
   if (mine !== seq || anchor !== a) return;  // the pointer moved on meanwhile
-  render(p, a.textContent);
+  render(p, a.textContent, a.dataset.uid);
   place();
 }
 

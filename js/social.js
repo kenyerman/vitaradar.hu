@@ -9,15 +9,26 @@
 // disappear for the user who blocked them.
 
 import { collection, query, where, orderBy, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { db, el } from "./common.js?v=202611240130";
-import { account, onAccount, onBlocks, isBlocked, api, needAccount, avatar, dialog, toast, blockUser } from "./account.js?v=202611240130";
-import { userCard } from "./usercard.js?v=202611240130";
+import { db, el } from "./common.js?v=202611240245";
+import { account, onAccount, onBlocks, isBlocked, api, needAccount, avatar, dialog, toast, blockUser } from "./account.js?v=202611240245";
+import { userCard } from "./usercard.js?v=202611240245";
 
 export const MAX_COMMENT = 250;
 const MAX_DEPTH = 2;          // a comment, a reply, a reply to the reply
 const PER_SESSION = 1000;     // the newest comments of a sitting
 const FIRST_SHOWN = 3;        // top-level comments shown under a fact before "more"
 const GAP = 10000;            // ms between two comments of a user (the API refuses faster ones)
+
+// A link to one comment (?c=<id>, from a profile page): when it arrives, its thread opens in full, the folded levels
+// above it open, and it is scrolled to and highlighted, once.
+const FOCUS = new URLSearchParams(location.search).get("c");
+let focused = !FOCUS;
+
+function reveal(node) {
+  for (let d = node.closest("details"); d; d = d.parentElement && d.parentElement.closest("details")) d.open = true;
+  node.classList.add("cmt-focus");
+  requestAnimationFrame(() => node.scrollIntoView({ block: "center" }));
+}
 
 const counts = new Map();     // key -> {up, down, comments?}: "c:<session>:<claim>" for facts, "m:<id>" for comments
 const mine = new Map();       // key -> 1 | -1: this user's votes
@@ -383,6 +394,7 @@ function actionLink(label, onClick, disabled) {
 // One comment's node: built once, its head, text and actions refilled when its state changes.
 function commentNode(c, key) {
   const li = el("li", "cmt");
+  li.id = `cmt-${c.id}`;
   li.dataset.depth = String(c.depth || 0);
   const head = el("div", "cmt-head");
   const text = el("p", "cmt-text");
@@ -492,8 +504,13 @@ function threadView(root, key, session) {
       return n;
     };
     const top = (kids.get(null) || []).filter(kept).sort((a, b) => ms(b.createdAt) - ms(a.createdAt));  // newest first
+    if (!focused && all.has(FOCUS)) t.expanded = true;  // the linked comment may be past the first few
     const shown = t.expanded ? top : top.slice(0, FIRST_SHOWN);
     place(list, shown.map(nodeOf));
+    if (!focused && t.nodes.has(FOCUS) && t.nodes.get(FOCUS).isConnected) {
+      focused = true;
+      reveal(t.nodes.get(FOCUS));
+    }
     const rest = top.length - FIRST_SHOWN;
     more.hidden = rest <= 0;
     more.textContent = t.expanded ? "− kevesebb" : `+ még ${rest} hozzászólás`;

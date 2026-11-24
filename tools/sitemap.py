@@ -31,7 +31,7 @@ from xml.sax.saxutils import escape
 
 ROOT = Path(__file__).resolve().parent.parent
 BASE = "https://vitaradar.hu/"
-TEMPLATES = {"mp.html", "watch.html", "404.html"}  # pages that need ?id= / ?s=, or aren't pages
+TEMPLATES = {"mp.html", "watch.html", "profile.html", "404.html"}  # pages that need ?id= / ?s= or a sign-in, or aren't pages
 CONFIG = json.loads(re.search(r"firebaseConfig\s*=\s*(\{.*?\});", (ROOT / "js/config.js").read_text(), re.S).group(1))
 API = f"https://firestore.googleapis.com/v1/projects/{CONFIG['projectId']}/databases/(default)/documents"
 

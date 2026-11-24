@@ -609,6 +609,56 @@ body:has(.game-dock > :not([hidden])) .scroll-hint { display: none; }
 .more-cmts { justify-self: start; }
 .blocked-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 13px; max-height: 140px; overflow: auto; }
 .blocked-list li { display: flex; justify-content: space-between; gap: 10px; }
+/* a comment linked to (?c=, from a profile page): framed until the page is left */
+.cmt.cmt-focus { outline: 1px solid var(--green); outline-offset: 4px; box-shadow: var(--glow); }
+.cmt.cmt-focus > .cmt-text { animation: flash 1.6s ease-out; }
+
+/* the profile page (profile.html, js/profile.js): the head with the stats, one's own editor, and the comments, each
+   with a link to where it was written */
+.prof { display: grid; gap: 18px; }
+.prof-gate { display: grid; gap: 12px; justify-items: start; max-width: 560px; padding: 22px; }
+.prof-gate p { margin: 0; }
+.prof-head { display: grid; grid-template-columns: 96px minmax(0, 1fr) minmax(220px, 300px); gap: 20px; align-items: start;
+  padding: 18px; }
+.prof-head > .avatar { border-color: var(--green); box-shadow: var(--glow); }
+.prof-who { display: grid; gap: 4px; justify-items: start; min-width: 0; }
+.prof-who p { margin: 0; }
+.prof-nick { margin: 0; font-size: 26px; line-height: 1.2; color: var(--green); text-shadow: var(--glow); overflow-wrap: anywhere; }
+.prof-you, .prof-since { color: var(--muted); font-size: 12px; }
+.prof-name { color: #eafff0; font-size: 14px; overflow-wrap: anywhere; }
+.prof-who .btn { margin-top: 8px; }
+.prof-edit > summary { cursor: pointer; padding: 12px 18px; color: var(--green); font-size: 13px; letter-spacing: 1.2px;
+  text-transform: uppercase; }
+.prof-edit > summary:focus-visible { outline: 1px solid var(--green); outline-offset: -1px; }
+.prof-edit[open] > summary { border-bottom: 1px solid var(--line-dim); }
+.prof-form { display: grid; gap: 12px; max-width: 520px; padding: 16px 18px 18px; }
+.prof-saved { margin: 0; color: var(--true); font-size: 13px; }
+.prof-saved:empty { display: none; }
+.pc-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.pc { display: grid; gap: 8px; padding: 12px 14px; }
+.pc-fact { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 10px; font-size: 12px; }
+.pc-bullet { flex: 1 1 240px; min-width: 0; color: #eafff0; }
+.pc-who { color: var(--muted); }
+.pc-text { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 14px; color: var(--text); }
+.pc-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; font-size: 11px; color: var(--muted); }
+.pc-meta .c-true { color: var(--true); }
+.pc-meta .c-false { color: var(--false); }
+.pc-open { margin-left: auto; padding: 4px 0; font-weight: 700; }
+.pc-more { justify-self: start; margin-top: 10px; }
+@media (max-width: 760px) {
+  .prof-head { grid-template-columns: 72px minmax(0, 1fr); gap: 14px; padding: 14px; }
+  .prof-head > .avatar { --size: 72px !important; }
+  .prof-head > .prof-stats { grid-column: 1 / -1; }
+  .prof-nick { font-size: 21px; }
+  .pc-open { margin-left: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .cmt.cmt-focus > .cmt-text { animation: none; } }
+/* the header's avatar is a link to one's own profile page: no underline or glow on its initials */
+a.acct-me, a.acct-me:hover { text-decoration: none; text-shadow: none; }
+/* the profile card's link to the profile page; "Profilom" in the phone menu, for registered users */
+.ucard-link { display: block; margin-top: 10px; padding: 4px 0; font-size: 12px; font-weight: 700; }
+.nav a.nav-profile { display: none; }
+@media (max-width: 860px) { html[data-acct="in"] .menu-panel .nav a.nav-profile { display: block; } }
 .msg { position: relative; padding-right: 18px; }
 .msg-block { position: absolute; right: 0; top: 0; background: transparent; border: 0; color: var(--muted); font: 13px/1 var(--mono);
   cursor: pointer; padding: 2px; opacity: 0; }

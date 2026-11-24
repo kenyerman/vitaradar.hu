@@ -1,6 +1,7 @@
 // The phone menu. On narrow screens (up to 860px) the header keeps the logo, the account button and a hamburger
-// button; the pages, the live badge and the online count move into a panel that slides in from the right. The
-// hamburger shows a red dot while the stream is live. On wider screens everything goes back into the header.
+// button; the pages (and "Profilom" for registered users), the live badge and the online count move into a panel that
+// slides in from the right. The hamburger shows a red dot while the stream is live. On wider screens everything goes
+// back into the header.
 //
 // The panel is a modal dialog: the focus moves into it and stays there, Escape, the ✕, a tap outside it or a link
 // closes it, and the focus returns to the hamburger. The elements are moved, not copied, so the live badge and the
@@ -52,6 +53,16 @@ function mountMenu() {
   status.className = "menu-status";
   panel.append(head, status);
   document.body.append(backdrop, panel);
+
+  // one's own profile, for registered users (css: html[data-acct="in"]), in the phone menu only: on a wide screen the
+  // header's avatar leads there
+  if (!nav.querySelector(".nav-profile")) {
+    const me = document.createElement("a");
+    me.className = "nav-profile";
+    me.href = "profile.html";
+    me.textContent = "Profilom";
+    nav.insertBefore(me, nav.querySelector(".nav-support"));
+  }
 
   // where the moved elements go back to on a wide screen
   const navMark = document.createComment(" nav ");

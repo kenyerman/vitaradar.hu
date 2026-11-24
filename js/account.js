@@ -5,10 +5,11 @@
 
 import { onAuthStateChanged, getIdToken } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { auth, db, appCheckHeaders, signInWithGoogle, signOut } from "./firebase.js?v=202611240130";
-import { apiUrl, avatarUrl, photoPrefix } from "./config.js?v=202611240130";
-import { el, initials, huDate } from "./common.js?v=202611240130";
-import { cdnReady, cdnUrl } from "./cdn.js?v=202611240130";
+import { auth, db, appCheckHeaders, signInWithGoogle, signOut } from "./firebase.js?v=202611240245";
+import { apiUrl, avatarUrl, photoPrefix } from "./config.js?v=202611240245";
+import { el, initials, huDate } from "./common.js?v=202611240245";
+import { cdnReady, cdnUrl } from "./cdn.js?v=202611240245";
+import { profileHref } from "./links.js?v=202611240245";
 
 export const account = {
   user: null, registered: false, a18: false, profile: null, private: null, ready: false,
@@ -252,8 +253,10 @@ const PHOTO_ERRORS = {  // the picture service answers with English codes only
   429: "Naponta legfeljebb 10 képet tölthetsz fel.",
 };
 
-function openProfile() {
-  if (!account.registered) return;
+// The profile editor of one's own profile page (profile.html): picture, full name and nick; the e-mail address and the
+// birth date shown but fixed; the blocked users, each with "feloldás"; and sign-out. Saving goes through the API
+// (/profile, and the picture service), which validates everything again. Returns {el, destroy}.
+export function profileEditor() {
   const p = account.profile || {};
   const pic = el("div", "profile-pic");
   pic.append(avatar(p.photo && p.photo["256"], p.nick, 96));
@@ -288,12 +291,27 @@ function openProfile() {
   };
   drawBlocked();
   const stopBlocks = onBlocks(drawBlocked);
-  const dlg = dialog("Profil", [pic, field("Profilkép", file, "JPEG, PNG vagy WEBP, legfeljebb 2 MB."),
-    field("Teljes név", name), field("Becenév", nick), email, born, blockedBox], [
-    { label: "Kilépés", value: "signout", onClick: () => { dlg.close(); signOut(); } },
-    { label: "Bezár", value: "cancel", onClick: () => dlg.close() },
-    { label: "Mentés", primary: true, submit: true },
-  ], { onClose: stopBlocks });
+  const form = el("form", "prof-form");
+  const err = el("p", "dlg-error");
+  err.setAttribute("role", "alert");
+  err.hidden = true;
+  const saved = el("p", "prof-saved");
+  saved.setAttribute("role", "status");
+  const bar = el("div", "dlg-actions");
+  const out = el("button", "btn ghost", "Kilépés");
+  out.type = "button";
+  out.addEventListener("click", () => signOut());
+  const save = el("button", "btn", "Mentés");
+  save.type = "submit";
+  bar.append(out, save);
+  form.append(pic, field("Profilkép", file, "JPEG, PNG vagy WEBP, legfeljebb 2 MB."),
+    field("Teljes név", name), field("Becenév", nick, "3–40 karakter: betű, szám, pont, kötőjel, aláhúzás. Ezt látják mások."),
+    email, born, blockedBox, err, saved, bar);
+  const dlg = {  // the same calls as a dialog's, so the flows below stay as they were
+    form,
+    error: (msg) => { err.textContent = msg || ""; err.hidden = !msg; if (msg) saved.textContent = ""; },
+    busy: (on) => bar.querySelectorAll("button").forEach((b) => { b.disabled = on; }),
+  };
   file.addEventListener("change", async () => {
     const f = file.files[0];
     if (!f) return;
@@ -324,14 +342,17 @@ function openProfile() {
     try {
       const r = await api("/profile", { name: name.value, nick: nick.value });
       account.profile = { ...account.profile, ...r.profile };
+      name.value = account.profile.name || "";
+      nick.value = account.profile.nick || "";
       emit();
-      dlg.close();
+      saved.textContent = "Elmentve.";
     } catch (err) {
       dlg.error(err.message);
     } finally {
       dlg.busy(false);
     }
   });
+  return { el: form, destroy: stopBlocks };
 }
 
 // Blocks a user after asking: their comments and chat messages disappear for this user.
@@ -380,8 +401,8 @@ export function mountAccount() {
       b.addEventListener("click", () => openRegister({}));
       box.append(b);
     } else {
-      const b = el("button", "acct-me");
-      b.type = "button";
+      const b = el("a", "acct-me");  // to one's own profile page, where it can be edited
+      b.href = profileHref(null);
       const pts = el("span", "acct-points");
       pts.hidden = true;
       b.append(avatar(a.profile?.photo && a.profile.photo["64"], a.profile?.nick, 32), pts);
@@ -390,7 +411,6 @@ export function mountAccount() {
         b.setAttribute("aria-label", b.title);
       };
       label(null);
-      b.addEventListener("click", openProfile);
       box.append(b);
       stopPoints = onPoints((p) => {  // the corner badge: just the number, bumped when it grows
         const before = pts.hidden ? null : Number(pts.dataset.points);
