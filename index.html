@@ -30,7 +30,7 @@
   <link rel="modulepreload" href="js/consent.js?v=202611240130">
   <link rel="modulepreload" href="js/presence.js?v=202611240130">
   <link rel="modulepreload" href="js/menu.js?v=202611240130">
-  <link rel="stylesheet" href="css/style.css?v=202611240134">
+  <link rel="stylesheet" href="css/style.css?v=202611240200">
 </head>
 <body>
   <canvas id="rain" aria-hidden="true"></canvas>
@@ -45,6 +45,7 @@
         <a href="./" aria-current="page">Élő adás</a>
         <a href="mps.html">Képviselők</a>
         <a href="archive.html">Archívum</a>
+        <a class="nav-support" href="https://www.patreon.com/vitaradar_hu" target="_blank" rel="noopener" aria-label="Támogatás a Patreonon (új lapon nyílik)" title="Támogatás a Patreonon"><span class="nav-label">Támogatás</span></a>
       </nav>
       <span id="live-badge" class="live-badge" data-state="off"><span class="dot"></span><span id="live-text">nincs adás</span></span>
       <span id="online" class="online-badge" data-state="loading" role="status"><span class="dot" aria-hidden="true"></span><span class="online-n">– online</span></span>
@@ -63,6 +64,11 @@
       <!-- the closed chat: a button on the player's top right corner, with the messages missed meanwhile -->
       <button type="button" id="chat-open" class="chat-open" aria-controls="chat" aria-expanded="false" aria-label="Chat megnyitása"><span aria-hidden="true">Chat</span><span class="chat-missed" aria-hidden="true" hidden></span></button>
     </div>
+
+    <p class="support-line">
+      <span>// A vitaradar.hu béta. A szervereket és a mesterséges intelligenciát egyelőre a készítő fizeti.</span>
+      <a href="https://www.patreon.com/vitaradar_hu" target="_blank" rel="noopener" aria-label="Támogass a Patreonon (új lapon nyílik)">Támogass a Patreonon</a>
+    </p>
 
     <section class="below">
       <div class="facts-col">
@@ -122,6 +128,13 @@
         <ul>
           <li><a href="mailto:help@vitaradar.hu">help@vitaradar.hu</a></li>
           <li><a href="https://github.com/kenyerman/vitaradar.hu/issues" target="_blank" rel="noopener">hibakövető (GitHub)</a></li>
+        </ul>
+      </div>
+      <div>
+        <p class="footer-h">// támogatás</p>
+        <ul>
+          <li><a href="https://www.patreon.com/vitaradar_hu" target="_blank" rel="noopener">Patreon</a></li>
+          <li><a href="impresszum.html#tamogatas">Mire megy a pénz?</a></li>
         </ul>
       </div>
     </div>

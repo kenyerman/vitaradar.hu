@@ -28,7 +28,7 @@
   <link rel="modulepreload" href="js/consent.js?v=202611240130">
   <link rel="modulepreload" href="js/presence.js?v=202611240130">
   <link rel="modulepreload" href="js/menu.js?v=202611240130">
-  <link rel="stylesheet" href="css/style.css?v=202611240134">
+  <link rel="stylesheet" href="css/style.css?v=202611240200">
 </head>
 <body>
   <canvas id="rain" aria-hidden="true"></canvas>
@@ -43,6 +43,7 @@
         <a href="./">Élő adás</a>
         <a href="mps.html">Képviselők</a>
         <a href="archive.html">Archívum</a>
+        <a class="nav-support" href="https://www.patreon.com/vitaradar_hu" target="_blank" rel="noopener" aria-label="Támogatás a Patreonon (új lapon nyílik)" title="Támogatás a Patreonon"><span class="nav-label">Támogatás</span></a>
       </nav>
       <span id="live-badge" class="live-badge" data-state="off"><span class="dot"></span><span id="live-text">nincs adás</span></span>
       <span id="online" class="online-badge" data-state="loading" role="status"><span class="dot" aria-hidden="true"></span><span class="online-n">– online</span></span>
@@ -122,6 +123,23 @@
         </ul>
       </section>
 
+      <section class="imp-sec panel" id="tamogatas" aria-labelledby="imp-support">
+        <h2 id="imp-support">Támogatás</h2>
+        <p>A vitaradar.hu béta. A működését jelenleg az üzemeltető fizeti, és aki szeretné, a <a href="https://www.patreon.com/vitaradar_hu" target="_blank" rel="noopener">Patreonon</a> havi támogatással segítheti. A támogatás az üzemeltetőhöz (Simó Balázs) érkezik, és ezeket a költségeket fedezi:</p>
+        <ul class="imp-list">
+          <li><b>Szerverek.</b> GPU-s gépek az élő beszédfelismeréshez és a videó elemzéséhez.</li>
+          <li><b>Mesterséges intelligencia.</b> Az állítások ellenőrzése és a források keresése.</li>
+          <li><b>Közvetítés és tárhely.</b> A videó eljuttatása a nézőkhöz, az archívum és a kereshető tudásbázis.</li>
+        </ul>
+        <p>Amit vállalunk:</p>
+        <ul class="imp-list">
+          <li>A tényellenőrzések mindenkinek ingyenesek maradnak, fizetőfal nélkül.</li>
+          <li>A támogatók nem szólhatnak bele, mit és hogyan ellenőrzünk.</li>
+          <li>Pártoktól, kampányoktól és politikusoktól nem fogadunk el pénzt.</li>
+        </ul>
+        <p class="imp-note">A fizetést a Patreon intézi. Ez az oldal csak egy linket tartalmaz oda: nem tölt be Patreon-kódot, és nem tesz Patreon-sütit a böngésződbe.</p>
+      </section>
+
       <section class="imp-sec panel" id="sutik" aria-labelledby="imp-cookies">
         <h2 id="imp-cookies">Sütik és adattárolás</h2>
         <p>Nincs analitika, hirdetés vagy követés. A böngésződben csak ezek kerülnek tárolásra, mert nélkülük az oldal nem működne:</p>
@@ -163,6 +181,13 @@
         <ul>
           <li><a href="mailto:help@vitaradar.hu">help@vitaradar.hu</a></li>
           <li><a href="https://github.com/kenyerman/vitaradar.hu/issues" target="_blank" rel="noopener">hibakövető (GitHub)</a></li>
+        </ul>
+      </div>
+      <div>
+        <p class="footer-h">// támogatás</p>
+        <ul>
+          <li><a href="https://www.patreon.com/vitaradar_hu" target="_blank" rel="noopener">Patreon</a></li>
+          <li><a href="impresszum.html#tamogatas">Mire megy a pénz?</a></li>
         </ul>
       </div>
     </div>

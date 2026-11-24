@@ -372,14 +372,14 @@ details[open] > summary .lvl-title::before { content: "▾ "; }
 .footer-row p { margin: 0; }
 .footer-row p:first-child { color: var(--green); }
 .footer-links {
-  display: grid; grid-template-columns: repeat(3, max-content); gap: 14px 64px;
+  display: grid; grid-template-columns: repeat(4, max-content); gap: 14px 56px;
   padding-bottom: 16px; margin-bottom: 14px; border-bottom: 1px solid var(--line-dim);
 }
 .footer-links ul { list-style: none; margin: 0; padding: 0; }
 .footer-links li a { display: inline-block; padding: 3px 0; color: var(--text); }  /* a 24px-tall target */
 .footer-links li a:hover, .footer-links li a:focus-visible { color: var(--green); }
 .footer-h { margin: 0 0 4px; color: var(--green); letter-spacing: .5px; }
-@media (max-width: 560px) { .footer-links { grid-template-columns: 1fr 1fr; gap: 16px 24px; } }
+@media (max-width: 700px) { .footer-links { grid-template-columns: 1fr 1fr; gap: 16px 24px; } }  /* four columns need ~630px */
 
 /* impresszum */
 .imp { display: grid; gap: 18px; max-width: 900px; }
@@ -828,4 +828,29 @@ a.fact-time { display: inline-block; padding-top: 4px; padding-bottom: 4px; marg
   :root[data-consent="open"] .game-dock { bottom: calc(8px + var(--consent-h, 0px)); }
 }
 .imp-sec code { font: inherit; color: var(--green-soft); overflow-wrap: anywhere; }
-#sutik { scroll-margin-top: 88px; }  /* the banner's Részletek link lands below the sticky header */
+#sutik, #tamogatas { scroll-margin-top: 88px; }  /* the banner's Részletek link lands below the sticky header */
+
+/* support on Patreon: plain links (no Patreon script or cookie on the site), marked with the logo's red dot as a heart */
+.nav a.nav-support { color: var(--green); border-color: var(--line); background: rgba(0, 255, 65, .06); }
+.nav a.nav-support::before { content: "♥ "; color: #ff5a5f; text-shadow: 0 0 6px rgba(255, 90, 95, .7); }
+.nav a.nav-support:hover, .nav a.nav-support:focus-visible { border-color: var(--green); box-shadow: var(--glow); text-shadow: var(--glow); }
+@media (min-width: 861px) and (max-width: 1259px) {  /* where the header is tight, the heart alone (its name is in the label and the tooltip) */
+  .nav a.nav-support { padding-left: 11px; padding-right: 11px; }
+  .nav a.nav-support::before { content: "♥"; }
+  .nav a.nav-support .nav-label { display: none; }
+}
+@media (min-width: 861px) and (max-width: 1199px) {  /* a little tighter, so the header stays on one line as before */
+  .header-row { gap: 12px; }
+  .nav a:not(.nav-support) { padding-left: 7px; padding-right: 7px; }
+}
+html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezése" needs its room */
+@media (max-width: 860px) {  /* in the phone menu: the last item, set off by a line */
+  .menu-panel .nav a.nav-support { margin-top: 8px; border-top: 1px solid var(--line-dim); border-left-color: transparent;
+    background: rgba(0, 255, 65, .05); }
+}
+.support-line { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 18px;
+  margin: 14px 0 0; padding: 9px 14px; background: var(--panel); border: 1px solid var(--line-dim);
+  color: var(--muted); font-size: 12px; letter-spacing: .3px; }
+.support-line a { flex: none; padding: 4px 0; color: var(--green); font-weight: 700; letter-spacing: .6px; white-space: nowrap; }
+.support-line a::before { content: "♥ "; color: #ff5a5f; text-shadow: 0 0 6px rgba(255, 90, 95, .7); }
+.support-line a::after { content: " →"; }
