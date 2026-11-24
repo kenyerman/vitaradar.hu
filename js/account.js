@@ -5,11 +5,11 @@
 
 import { onAuthStateChanged, getIdToken } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { auth, db, appCheckHeaders, signInWithGoogle, signOut } from "./firebase.js?v=202611240300";
-import { apiUrl, avatarUrl, photoPrefix } from "./config.js?v=202611240300";
-import { el, initials, huDate } from "./common.js?v=202611240300";
-import { cdnReady, cdnUrl } from "./cdn.js?v=202611240300";
-import { profileHref } from "./links.js?v=202611240300";
+import { auth, db, appCheckHeaders, signInWithGoogle, signOut } from "./firebase.js?v=202611240845";
+import { apiUrl, avatarUrl, photoPrefix } from "./config.js?v=202611240845";
+import { el, initials, huDate } from "./common.js?v=202611240845";
+import { cdnReady, cdnUrl } from "./cdn.js?v=202611240845";
+import { profileHref } from "./links.js?v=202611240845";
 
 export const account = {
   user: null, registered: false, a18: false, profile: null, private: null, ready: false,
@@ -260,18 +260,18 @@ export function profileEditor() {
   const p = account.profile || {};
   const pic = el("div", "profile-pic");
   pic.append(avatar(p.photo && p.photo["256"], p.nick, 96));
-  const file = input("file", { accept: "image/jpeg,image/png,image/webp" });
-  const name = input("text", { maxlength: "150", required: "" });
+  const file = input("file", { name: "photo", accept: "image/jpeg,image/png,image/webp" });
+  const name = input("text", { name: "name", maxlength: "150", autocomplete: "name", required: "" });
   name.value = p.name || "";
-  const nick = input("text", { maxlength: "40", required: "" });
+  const nick = input("text", { name: "nick", maxlength: "40", autocomplete: "nickname", required: "" });
   nick.value = p.nick || "";
-  const locked = (value) => {  // private and fixed: shown, never sent back
-    const i = input("text", { disabled: "", readonly: "" });
+  const locked = (key, value) => {  // private and fixed: shown, never sent back
+    const i = input("text", { name: key, disabled: "", readonly: "" });
     i.value = value || "–";
     return i;
   };
-  const email = field("E-mail · csak te látod", locked(account.private?.email), "Nem módosítható.");
-  const born = field("Születési dátum · csak te látod", locked(huDate(account.private?.birthdate)), "Nem módosítható.");
+  const email = field("E-mail · csak te látod", locked("email", account.private?.email), "Nem módosítható.");
+  const born = field("Születési dátum · csak te látod", locked("birthdate", huDate(account.private?.birthdate)), "Nem módosítható.");
   const blockedBox = el("div", "fld");
   const drawBlocked = () => {
     const list = el("ul", "blocked-list");

@@ -14,12 +14,12 @@
 import {
   doc, getDoc, onSnapshot, collection, query, where, orderBy, limit, startAfter, getDocs,
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { db, el, badge, huDate, watchLiveBadge } from "./common.js?v=202611240300";
+import { db, el, badge, huDate, watchLiveBadge } from "./common.js?v=202611240845";
 import {
   account, onAccount, onBlocks, isBlocked, avatar, profileEditor, mountAccount, signIn, openRegister, blockUser, api, toast,
-} from "./account.js?v=202611240300";
-import { linkify } from "./social.js?v=202611240300";
-import { watchHref, profileHref, withComment } from "./links.js?v=202611240300";
+} from "./account.js?v=202611240845";
+import { linkify } from "./social.js?v=202611240845";
+import { watchHref, profileHref, withComment } from "./links.js?v=202611240845";
 
 watchLiveBadge();
 mountAccount();
@@ -127,7 +127,7 @@ async function commentItem(c) {
   meta.append(time);
   if (c.parent) meta.append(el("span", null, "válasz"));
   meta.append(el("span", "c-true", `▲ ${num(c.up)}`), el("span", "c-false", `▼ ${num(c.down)}`));
-  if (c.replies) meta.append(el("span", null, `${num(c.replies)} válasz rá`));
+  // no reply count: `replies` also counts the replies deleted since (the API never lowers it)
   const place = placeOf(c, ctx, fact);
   if (place) {
     const a = el("a", "pc-open", `${place.label} →`);
@@ -235,6 +235,7 @@ function show(uid, own) {
   const headBox = el("section", "prof-head panel");
   const cmts = commentsView(uid, own);
   const editBox = el("div");
+  editBox.hidden = cmts.el.hidden = true;  // shown with the head, so the head filling in moves nothing (CLS)
   box.replaceChildren(headBox, editBox, cmts.el);
   shown = { uid, own, cmts, editor: null, stop: () => {} };
 
@@ -274,6 +275,7 @@ function show(uid, own) {
       who.append(b);
     }
     headBox.replaceChildren(avatar(p.photo && p.photo["256"], p.nick, 96), who, stats(p));
+    editBox.hidden = cmts.el.hidden = false;
   }, (e) => {
     console.warn("profile:", e);
     close();

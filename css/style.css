@@ -637,6 +637,7 @@ body:has(.game-dock > :not([hidden])) .scroll-hint { display: none; }
 .prof-edit > summary:focus-visible { outline: 1px solid var(--green); outline-offset: -1px; }
 .prof-edit[open] > summary { border-bottom: 1px solid var(--line-dim); }
 .prof-form { display: grid; gap: 12px; max-width: 520px; padding: 16px 18px 18px; }
+.prof-form .profile-pic { justify-content: flex-start; }
 .prof-saved { margin: 0; color: var(--true); font-size: 13px; }
 .prof-saved:empty { display: none; }
 .pc-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
