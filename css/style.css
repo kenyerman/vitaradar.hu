@@ -1080,4 +1080,15 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
     letter-spacing: 1.2px; text-transform: uppercase; }
   .menu-panel .nav a.nav-support::before { content: "\2665"; color: #ff4d5a; text-shadow: none; }
   .m-live .support-line { display: none; }  /* the header's heart and the menu's button stand for it */
+
+  /* facts: compact rows (verdict, time, a two-line headline) that open on a tap */
+  :is(.m-live, .m-watch) .facts { gap: 8px; }
+  :is(.m-live, .m-watch) .fact { padding: 10px 12px 11px; cursor: pointer; scroll-margin-top: calc(var(--m-top, 0px) + 8px); }
+  :is(.m-live, .m-watch) .fact:focus-visible { outline: 1px solid var(--green); outline-offset: 2px; }
+  :is(.m-live, .m-watch) .fact[data-open="true"] { cursor: auto; background: var(--panel-solid); }
+  :is(.m-live, .m-watch) .fact-top { margin-bottom: 4px; }
+  :is(.m-live, .m-watch) .fact-bullet { font-size: 15px; }
+  :is(.m-live, .m-watch) .fact:not([data-open="true"]) .fact-bullet { display: -webkit-box; overflow: hidden;
+    -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; }
+  :is(.m-live, .m-watch) .fact:not([data-open="true"]) > :is(.fact-claim, .fact-expl, .fact-sources, .social) { display: none; }
 }

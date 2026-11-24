@@ -48,6 +48,40 @@ function measure(header, top) {
   return set;
 }
 
+// Phones: each fact is a compact row (verdict, time, headline); a tap, or Enter, opens it to show the quote, the
+// explanation, the sources, the votes and the comments. A tap on a link, a button or the comments area does not.
+function compactFacts(list) {
+  if (!list) return;
+  const mark = (li) => {
+    if (!li.classList || !li.classList.contains("fact")) return;
+    li.tabIndex = PHONE.matches ? 0 : -1;
+    li.setAttribute("aria-expanded", String(li.dataset.open === "true"));
+  };
+  const toggle = (li) => {
+    const open = li.dataset.open !== "true";
+    if (open) li.dataset.open = "true"; else delete li.dataset.open;
+    li.setAttribute("aria-expanded", String(open));
+  };
+  list.addEventListener("click", (e) => {
+    if (!PHONE.matches) return;
+    if (e.target.closest("a, button, input, textarea, select, label, form, .social")) return;
+    const li = e.target.closest("li.fact");
+    if (li && list.contains(li)) toggle(li);
+  });
+  list.addEventListener("keydown", (e) => {
+    if (!PHONE.matches || (e.key !== "Enter" && e.key !== " ")) return;
+    const li = e.target;
+    if (!li.matches || !li.matches("li.fact")) return;
+    e.preventDefault();
+    toggle(li);
+  });
+  new MutationObserver((records) => {
+    for (const r of records) r.addedNodes.forEach(mark);
+  }).observe(list, { childList: true });
+  list.querySelectorAll("li.fact").forEach(mark);
+  PHONE.addEventListener("change", () => list.querySelectorAll("li.fact").forEach(mark));
+}
+
 // page: "live" (index.html) or "watch" (watch.html)
 export function mountPhone({ page }) {
   const main = document.querySelector("main");
@@ -71,6 +105,8 @@ export function mountPhone({ page }) {
     moves.add(document.getElementById("chat-open"), strip);
     moves.add(document.getElementById("chat"), slot);
   }
+
+  compactFacts(document.getElementById("facts"));
 
   const remeasure = measure(document.querySelector(".site-header"), top);
   const place = () => { moves.place(); remeasure(); };
