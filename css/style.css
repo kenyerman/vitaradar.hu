@@ -690,6 +690,7 @@ a.acct-me, a.acct-me:hover { text-decoration: none; text-shadow: none; }
 .game-time { margin-left: auto; color: var(--unverifiable); font-size: 14px; }
 .game-worth { color: var(--muted); }
 .game-time:empty + .game-worth { margin-left: auto; }
+.game-time, .game-worth { white-space: nowrap; }  /* on a phone the tag wraps, never "9 / mp" or "+10 / pont" */
 .game-close { flex: none; align-self: center; display: grid; place-items: center; width: 32px; height: 32px;
   margin: -9px -9px -9px -4px; padding: 0; background: transparent; border: 1px solid transparent; color: var(--muted);
   font: 14px/1 var(--mono); cursor: pointer; }

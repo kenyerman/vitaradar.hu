@@ -4,9 +4,9 @@
 // signed in, only marks them as signed in. Only with the visitor's consent (consent.js) does the browser keep that id,
 // so that several pages and tabs count once; without it the id lives in this page's memory and nothing is stored.
 
-import { auth, appCheckHeaders } from "./firebase.js?v=202611240954";
-import { apiUrl } from "./config.js?v=202611240954";
-import { consented, onConsentChange } from "./consent.js?v=202611240954";
+import { auth, appCheckHeaders } from "./firebase.js?v=202611241005";
+import { apiUrl } from "./config.js?v=202611241005";
+import { consented, onConsentChange } from "./consent.js?v=202611241005";
 
 const EVERY_MS = 30_000;
 const KEY = "vr-presence-id";
