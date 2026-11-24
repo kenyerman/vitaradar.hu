@@ -712,7 +712,9 @@ a.acct-me, a.acct-me:hover { text-decoration: none; text-shadow: none; }
 .game-dock > * { pointer-events: auto; }
 .game-pop { order: 2; margin-left: auto; width: min(400px, 100%); }
 .tip-box { order: 1; width: min(360px, 100%); }
-.game-pop, .tip-box { background: var(--panel-solid); border-color: var(--green); padding: 12px 14px 14px; display: grid; gap: 8px;
+/* one column no wider than the card: a long name or a wide header row is cut or wrapped, never pushed past the edge */
+.game-pop, .tip-box { background: var(--panel-solid); border-color: var(--green); padding: 12px 14px 14px; display: grid;
+  grid-template-columns: minmax(0, 1fr); gap: 8px;
   box-shadow: var(--glow), 0 14px 40px rgba(0, 0, 0, .85); animation: rise .25s ease-out; }
 .game-pop[data-kind="fallacy"] { border-color: var(--fallacy); }
 .game-head { display: flex; align-items: baseline; gap: 10px; font: 700 11px/1.2 var(--mono); letter-spacing: 1px; }
@@ -785,6 +787,9 @@ a.acct-me, a.acct-me:hover { text-decoration: none; text-shadow: none; }
 
 .tip-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text);
   letter-spacing: .4px; }
+/* the open card's question names the speaker in full, so its header keeps the room for the countdown and points; the
+   folded bar shows the name, cut short if need be */
+.tip-box[data-folded="false"] .tip-title { visibility: hidden; }
 .tip-box .game-time { margin-left: 0; }
 .tip-points { color: var(--true); text-shadow: var(--glow); }
 .tip-toggle { flex: none; align-self: center; width: 26px; height: 22px; padding: 0; background: transparent;
@@ -819,6 +824,7 @@ a.acct-me, a.acct-me:hover { text-decoration: none; text-shadow: none; }
   .game-dock:has(> .game-pop:not([hidden])[data-state="open"]) > .tip-box { padding: 8px 12px; }
   .game-dock:has(> .game-pop:not([hidden])[data-state="open"]) > .tip-box .tip-body { display: none; }
   .game-dock:has(> .game-pop:not([hidden])[data-state="open"]) > .tip-box .tip-sum { display: flex; }
+  .game-dock:has(> .game-pop:not([hidden])[data-state="open"]) > .tip-box .tip-title { visibility: visible; }
 }
 @media (prefers-reduced-motion: reduce) {
   .game-pop, .tip-box, .acct-points.bump, .game-won { animation: none; }

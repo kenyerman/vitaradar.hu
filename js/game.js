@@ -60,6 +60,12 @@ function upsell(text) {
   return box;
 }
 
+// A card's tag, such as "[ KIHÍVÁS · HIBÁS ÉRVELÉS ]": on a narrow card it may break after a "·", nowhere else (never
+// a "]" alone on a line).
+function tag(text) {
+  return el("span", "game-tag", text.replace(/ /g, "\u00a0").replace(/·\u00a0/g, "· "));
+}
+
 function bar() {
   const b = el("div", "game-bar");
   b.append(el("span"));
@@ -115,7 +121,7 @@ class ChallengeView {
     close.title = "Kihívás bezárása";
     close.setAttribute("aria-label", close.title);
     close.addEventListener("click", () => this.dismiss());
-    head.append(el("span", "game-tag", ch.kind === "truth" ? "[ KIHÍVÁS ]" : "[ KIHÍVÁS · HIBÁS ÉRVELÉS ]"),
+    head.append(tag(ch.kind === "truth" ? "[ KIHÍVÁS ]" : "[ KIHÍVÁS · HIBÁS ÉRVELÉS ]"),
       el("span", "game-time"), el("span", "game-worth", `+${ch.points} pont`), close);
     // What is being judged comes first: the claim itself (true/false) or the argument as summarized (fallacy). The
     // words as transcribed are only context, two lines at most: a transcript runs long and wanders off the point.
@@ -256,7 +262,7 @@ class VoteView {
     close.setAttribute("aria-label", close.title);
     close.addEventListener("click", () => this.dismiss());
     const max = (v.points || 0) + ((v.bands || []).length ? v.band_points || 0 : 0);
-    head.append(el("span", "game-tag", "[ SZAVAZÁS ]"), el("span", "game-time"), el("span", "game-worth", `max +${max} pont`),
+    head.append(tag("[ SZAVAZÁS ]"), el("span", "game-time"), el("span", "game-worth", `max +${max} pont`),
       close);
     const item = el("p", "vote-item", v.item ? `Napirend: ${v.item}` : "");
     item.title = v.item || "";
@@ -450,8 +456,9 @@ class TipView {
       this.update();
     });
     const head = el("div", "game-head");
-    head.append(el("span", "game-tag", "[ TIPP ]"), el("span", "tip-title", tip.speaker || "felszólalás"),
-      el("span", "game-time"), el("span", "game-worth"), this.toggle);
+    const title = el("span", "tip-title", tip.speaker || "felszólalás");
+    title.title = title.textContent;  // the folded bar may cut a long name short
+    head.append(tag("[ TIPP ]"), title, el("span", "game-time"), el("span", "game-worth"), this.toggle);
     const grid = el("div", "tip-grid");
     this.vals = {};
     this.sums = {};
