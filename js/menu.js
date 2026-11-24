@@ -1,11 +1,11 @@
-// The phone menu. On narrow screens (up to 860px) the header keeps the logo, the account button and a hamburger
-// button; the pages (and "Profilom" for registered users), the live badge and the online count move into a panel that
-// slides in from the right. The hamburger shows a red dot while the stream is live. On wider screens everything goes
-// back into the header.
+// The phone menu. On narrow screens (up to 860px) the header keeps the logo (the online count stays under it), the
+// support link where it fits, the account button and a hamburger button; the pages (and "Profilom" for registered
+// users) and the live badge move into a panel that slides in from the right. The hamburger shows a red dot while the
+// stream is live. On wider screens everything goes back into the header.
 //
 // The panel is a modal dialog: the focus moves into it and stays there, Escape, the ✕, a tap outside it or a link
-// closes it, and the focus returns to the hamburger. The elements are moved, not copied, so the live badge and the
-// online count keep updating wherever they are.
+// closes it, and the focus returns to the hamburger. The elements are moved, not copied, so the live badge keeps
+// updating wherever it is.
 
 const PHONE = matchMedia("(max-width: 860px)");
 const DURATION_MS = 280;  // the slide (css/style.css .menu-panel)
@@ -69,7 +69,7 @@ function mountMenu() {
   nav.before(navMark);
   const liveMark = document.createComment(" status ");
   if (live) live.before(liveMark);
-  const badges = () => [live, document.getElementById("online")].filter(Boolean);  // presence.js adds #online next to #live-badge
+  const badges = () => [live].filter(Boolean);  // the online count stays in the header, under the logo, at every width
 
   function place() {
     if (PHONE.matches) {
@@ -128,7 +128,6 @@ function mountMenu() {
     else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
   });
   PHONE.addEventListener("change", place);
-  // the online badge appears after the first heartbeat, next to the live badge, wherever that is by then
   place();
 }
 

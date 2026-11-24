@@ -4,9 +4,9 @@
 // signed in, only marks them as signed in. Only with the visitor's consent (consent.js) does the browser keep that id,
 // so that several pages and tabs count once; without it the id lives in this page's memory and nothing is stored.
 
-import { auth, appCheckHeaders } from "./firebase.js?v=202611240245";
-import { apiUrl } from "./config.js?v=202611240245";
-import { consented, onConsentChange } from "./consent.js?v=202611240245";
+import { auth, appCheckHeaders } from "./firebase.js?v=202611240300";
+import { apiUrl } from "./config.js?v=202611240300";
+import { consented, onConsentChange } from "./consent.js?v=202611240300";
 
 const EVERY_MS = 30_000;
 const KEY = "vr-presence-id";
@@ -35,13 +35,13 @@ function pageName() {
     || "other";
 }
 
-// The badge is in the page from the start ("– online", data-state="loading"), so the header doesn't move when the
-// first count arrives; pages without it get one here.
+// The badge is in the page from the start ("– online", data-state="loading"), under the logo next to BETA, so the
+// header doesn't move when the first count arrives; pages without it get one there (or by the live badge).
 function badge() {
   let b = document.getElementById("online");
   if (b) return b;
-  const live = document.getElementById("live-badge");
-  if (!live) return null;
+  const sub = document.querySelector(".brand-sub"), live = document.getElementById("live-badge");
+  if (!sub && !live) return null;
   b = document.createElement("span");
   b.id = "online";
   b.className = "online-badge";
@@ -54,7 +54,7 @@ function badge() {
   n.className = "online-n";
   n.textContent = "– online";
   b.append(dot, n);
-  live.after(b);
+  if (sub) sub.append(b); else live.after(b);
   return b;
 }
 

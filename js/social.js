@@ -9,9 +9,9 @@
 // disappear for the user who blocked them.
 
 import { collection, query, where, orderBy, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { db, el } from "./common.js?v=202611240245";
-import { account, onAccount, onBlocks, isBlocked, api, needAccount, avatar, dialog, toast, blockUser } from "./account.js?v=202611240245";
-import { userCard } from "./usercard.js?v=202611240245";
+import { db, el } from "./common.js?v=202611240300";
+import { account, onAccount, onBlocks, isBlocked, api, needAccount, avatar, dialog, toast, blockUser } from "./account.js?v=202611240300";
+import { userCard } from "./usercard.js?v=202611240300";
 
 export const MAX_COMMENT = 250;
 const MAX_DEPTH = 2;          // a comment, a reply, a reply to the reply

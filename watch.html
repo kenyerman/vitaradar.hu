@@ -20,24 +20,27 @@
   <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check.js">
   <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js">
   <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js">
-  <link rel="modulepreload" href="js/firebase.js?v=202611240245">
-  <link rel="modulepreload" href="js/config.js?v=202611240245">
-  <link rel="modulepreload" href="js/common.js?v=202611240245">
-  <link rel="modulepreload" href="js/account.js?v=202611240245">
-  <link rel="modulepreload" href="js/cdn.js?v=202611240245">
-  <link rel="modulepreload" href="js/consent.js?v=202611240245">
-  <link rel="modulepreload" href="js/presence.js?v=202611240245">
-  <link rel="modulepreload" href="js/menu.js?v=202611240245">
-  <link rel="stylesheet" href="css/style.css?v=202611240245">
+  <link rel="modulepreload" href="js/firebase.js?v=202611240300">
+  <link rel="modulepreload" href="js/config.js?v=202611240300">
+  <link rel="modulepreload" href="js/common.js?v=202611240300">
+  <link rel="modulepreload" href="js/account.js?v=202611240300">
+  <link rel="modulepreload" href="js/cdn.js?v=202611240300">
+  <link rel="modulepreload" href="js/consent.js?v=202611240300">
+  <link rel="modulepreload" href="js/presence.js?v=202611240300">
+  <link rel="modulepreload" href="js/menu.js?v=202611240300">
+  <link rel="stylesheet" href="css/style.css?v=202611240300">
 </head>
 <body>
   <canvas id="rain" aria-hidden="true"></canvas>
   <header class="site-header">
     <div class="wrap header-row">
-      <a class="brand" href="./" aria-label="vitaradar.hu kezdőlap">
-        <img src="img/logo.svg" alt="" width="32" height="32">
-        <span class="brand-name">vitaradar<span class="brand-tld">.hu</span><span class="brand-beta" aria-hidden="true">BETA</span></span>
-      </a>
+      <div class="brand-box">
+        <a class="brand" href="./" aria-label="vitaradar.hu kezdőlap">
+          <img src="img/logo.svg" alt="" width="32" height="32">
+          <span class="brand-name">vitaradar<span class="brand-tld">.hu</span></span>
+        </a>
+        <span class="brand-sub"><span class="brand-beta" aria-hidden="true">BETA</span><span id="online" class="online-badge" data-state="loading" role="status"><span class="dot" aria-hidden="true"></span><span class="online-n">– online</span></span></span>
+      </div>
       <p class="tagline">Országgyűlés // élő tényellenőrzés</p>
       <nav class="nav" aria-label="Fő menü">
         <a href="./">Élő adás</a>
@@ -46,7 +49,7 @@
         <a class="nav-support" href="https://www.patreon.com/vitaradar_hu" target="_blank" rel="noopener" aria-label="Támogatás a Patreonon (új lapon nyílik)" title="Támogatás a Patreonon"><span class="nav-label">Támogatás</span></a>
       </nav>
       <span id="live-badge" class="live-badge" data-state="off"><span class="dot"></span><span id="live-text">nincs adás</span></span>
-      <span id="online" class="online-badge" data-state="loading" role="status"><span class="dot" aria-hidden="true"></span><span class="online-n">– online</span></span>
+      <a class="hdr-support" href="https://www.patreon.com/vitaradar_hu" target="_blank" rel="noopener" aria-label="Támogatás a Patreonon (új lapon nyílik)" title="Támogatás a Patreonon"><span class="nav-label">Támogatás</span></a>
       <div id="acct" class="acct"><span class="acct-skel" aria-hidden="true"><span class="btn acct-btn skel-out">Belépés</span><span class="btn acct-btn skel-reg">Regisztráció<span class="acct-more"> befejezése</span></span><span class="acct-me skel-in"><span class="avatar"></span></span></span></div>
       <button type="button" class="menu-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Menü"><span class="menu-bars" aria-hidden="true"><span></span><span></span><span></span></span></button>
     </div>
@@ -131,6 +134,6 @@
     </div>
   </footer>
   <script defer src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js"></script>
-  <script type="module" src="js/watch.js?v=202611240245"></script>
+  <script type="module" src="js/watch.js?v=202611240300"></script>
 </body>
 </html>

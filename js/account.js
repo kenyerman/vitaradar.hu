@@ -5,11 +5,11 @@
 
 import { onAuthStateChanged, getIdToken } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { auth, db, appCheckHeaders, signInWithGoogle, signOut } from "./firebase.js?v=202611240245";
-import { apiUrl, avatarUrl, photoPrefix } from "./config.js?v=202611240245";
-import { el, initials, huDate } from "./common.js?v=202611240245";
-import { cdnReady, cdnUrl } from "./cdn.js?v=202611240245";
-import { profileHref } from "./links.js?v=202611240245";
+import { auth, db, appCheckHeaders, signInWithGoogle, signOut } from "./firebase.js?v=202611240300";
+import { apiUrl, avatarUrl, photoPrefix } from "./config.js?v=202611240300";
+import { el, initials, huDate } from "./common.js?v=202611240300";
+import { cdnReady, cdnUrl } from "./cdn.js?v=202611240300";
+import { profileHref } from "./links.js?v=202611240300";
 
 export const account = {
   user: null, registered: false, a18: false, profile: null, private: null, ready: false,

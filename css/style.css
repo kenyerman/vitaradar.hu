@@ -54,9 +54,13 @@ h1, h2, h3 { font-family: var(--mono); }
 .brand-name { font: 700 22px/1 var(--mono); letter-spacing: -.3px; text-shadow: var(--glow); }
 .brand-name::after { content: "_"; animation: blink 1s steps(1) infinite; margin-left: 1px; }
 .brand-tld { color: var(--green-soft); }
-/* BETA under the name, at its bottom left: out of the flow, so the header keeps its height and the name its width */
-.brand-name { position: relative; }
-.brand-beta { position: absolute; left: 1px; top: calc(100% + 4px); padding: 2px 4px 1px; border: 1px solid var(--line);
+/* Under the name, from its bottom left: BETA and the online count (js/presence.js) as one small line. Out of the flow,
+   so the header keeps its height and the name its width; outside the link, so the count's tooltip is its own. The
+   variables follow the logo's size, the gap and the name's font size at each width (the 480px and 340px rules). */
+.brand-box { --logo: 32px; --brand-gap: 10px; --name: 22px; position: relative; display: flex; flex: none; }
+.brand-sub { position: absolute; left: calc(var(--logo) + var(--brand-gap) + 1px); top: calc(50% + var(--name) / 2 + 4px);
+  display: flex; align-items: center; gap: 4px; white-space: nowrap; }
+.brand-beta { padding: 2px 4px 1px; border: 1px solid var(--line);
   background: rgba(0, 255, 65, .08); color: var(--green); font: 700 9px/1 var(--mono); letter-spacing: 1.6px;
   text-shadow: none; }
 @keyframes blink { 50% { opacity: 0; } }
@@ -71,10 +75,11 @@ h1, h2, h3 { font-family: var(--mono); }
 .live-badge .dot { width: 8px; height: 8px; background: currentColor; }
 .live-badge[data-state="on"] { color: #ff4d4d; border-color: rgba(255, 77, 77, .5); background: rgba(255, 77, 77, .08); }
 .live-badge[data-state="on"] .dot { animation: blink 1s steps(1) infinite; }
-/* who is on the site now (js/presence.js), next to the live badge */
-.online-badge { display: inline-flex; align-items: center; gap: 8px; padding: 5px 10px; border: 1px solid var(--line-dim);
-  font: 700 11px/1 var(--mono); letter-spacing: 1.2px; text-transform: uppercase; color: var(--green); cursor: default; }
-.online-badge .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; box-shadow: 0 0 6px currentColor;
+/* who is on the site now (js/presence.js), beside BETA under the logo, in its size */
+.online-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 4px 1px; border: 1px solid var(--line);
+  font: 700 9px/1 var(--mono); letter-spacing: 1.2px; text-transform: uppercase; color: var(--green); cursor: default;
+  text-shadow: none; }
+.online-badge .dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; box-shadow: 0 0 4px currentColor;
   animation: pulse-dot 2s ease-in-out infinite; }
 @keyframes pulse-dot { 50% { opacity: .35; } }
 /* The header's slots that fill in after load (js/presence.js, js/account.js, js/menu.js) are in the page from the
@@ -91,10 +96,10 @@ html[data-acct="in"] .acct-skel > .skel-in { display: inline-flex !important; }
 /* the footer starts below the fold, so content arriving after load doesn't push it around in view */
 main { min-height: 100vh; }
 @media (max-width: 860px) {  /* these live in the phone menu's panel (js/menu.js moves them there) */
-  .header-row > .nav, .header-row > .live-badge, .header-row > .online-badge { display: none; }
+  .header-row > .nav, .header-row > .live-badge { display: none; }
 }
-@media (max-width: 340px) {
-  html[data-acct="reg"] .header-row:has(.acct-skel) .brand-name { display: none; }
+@media (max-width: 359px) {
+  html[data-acct="reg"] .header-row:has(.acct-skel) .brand-name, html[data-acct="reg"] .header-row:has(.acct-skel) .brand-sub { display: none; }
 }
 
 /* panels: a thin neon frame with corner brackets */
@@ -820,8 +825,8 @@ a.fact-time { display: inline-block; padding-top: 4px; padding-bottom: 4px; marg
 .ucard-stats dd { margin: 0; font-weight: 700; color: #eafff0; }
 .ucard-empty { margin: 0; color: var(--muted); font-size: 12px; }
 
-/* the phone menu (js/menu.js): a hamburger in the header; the pages and the live and online badges in a panel that
-   slides in from the right */
+/* the phone menu (js/menu.js): a hamburger in the header; the pages and the live badge in a panel that slides in from
+   the right (the online count stays under the logo) */
 .menu-btn, .menu-panel, .menu-backdrop { display: none; }
 @media (max-width: 860px) {
   .header-row { gap: 10px; flex-wrap: nowrap; }
@@ -863,12 +868,17 @@ a.fact-time { display: inline-block; padding-top: 4px; padding-bottom: 4px; marg
   .header-row, .brand { gap: 8px; }
   .brand-name { font-size: 17px; }
   .brand img { width: 26px; height: 26px; }
+  .brand-box { --logo: 26px; --brand-gap: 8px; --name: 17px; }
   .acct-btn { padding: 6px 8px; font-size: 11px; }
 }
-/* the narrowest phones: while "Regisztráció" is in the header, the logo stands for the name */
 @media (max-width: 340px) {
   .brand-name { font-size: 16px; }
-  .header-row:has(.acct-reg) .brand-name { display: none; }
+  .brand-box { --name: 16px; }
+}
+/* narrow phones: while "Regisztráció" is in the header, the logo stands for the name (BETA and the count go with it,
+   as there is no room beside the icon); up to 359px, where the name, the button and the hamburger can't all fit */
+@media (max-width: 359px) {
+  .header-row:has(.acct-reg) .brand-name, .header-row:has(.acct-reg) .brand-sub { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
   .menu-panel, .menu-panel[data-open], .menu-backdrop, .menu-backdrop[data-open] { transition: none; }
@@ -898,10 +908,52 @@ a.fact-time { display: inline-block; padding-top: 4px; padding-bottom: 4px; marg
 .nav a.nav-support { color: var(--green); border-color: var(--line); background: rgba(0, 255, 65, .06); }
 .nav a.nav-support::before { content: "♥ "; color: #ff5a5f; text-shadow: 0 0 6px rgba(255, 90, 95, .7); }
 .nav a.nav-support:hover, .nav a.nav-support:focus-visible { border-color: var(--green); box-shadow: var(--glow); text-shadow: var(--glow); }
-@media (min-width: 861px) and (max-width: 1259px) {  /* where the header is tight, the heart alone (its name is in the label and the tooltip) */
-  .nav a.nav-support { padding-left: 11px; padding-right: 11px; }
-  .nav a.nav-support::before { content: "♥"; }
-  .nav a.nav-support .nav-label { display: none; }
+/* The full "♥ Támogatás" wherever it fits beside the account button (and the hamburger on phones); the heart alone where
+   only that fits (its name is in the label and the tooltip). What fits depends on the account state (html[data-acct],
+   set in each page's head before the first paint, so the header doesn't move). Measured with the widest content of each
+   state: a visitor's "Belépés", "Regisztráció", an avatar with a five-digit points badge. */
+@media (min-width: 861px) and (max-width: 1099px) {  /* "Regisztráció" here; "befejezése" is in its tooltip */
+  html[data-acct="reg"] .acct-more { display: none; }
+}
+@media (min-width: 861px) and (max-width: 899px) {
+  html:not([data-acct="in"]):not([data-acct="reg"]) .nav a.nav-support::before { content: "♥"; }
+  html:not([data-acct="in"]):not([data-acct="reg"]) .nav a.nav-support .nav-label { display: none; }
+}
+@media (min-width: 861px) and (max-width: 939px) {
+  html[data-acct="reg"] .nav a.nav-support::before { content: "♥"; }
+  html[data-acct="reg"] .nav a.nav-support .nav-label { display: none; }
+}
+/* phones: the nav (with its support item) is in the menu panel, so the header gets its own support link */
+.hdr-support { display: none; }
+@media (max-width: 860px) {
+  .brand-box { margin-right: auto; }
+  .acct { margin-left: 0; }
+  .hdr-support { order: 1; display: inline-flex; align-items: center; gap: 5px; flex: none; padding: 7px 9px;
+    border: 1px solid var(--line); background: rgba(0, 255, 65, .06); color: var(--green); font: 700 11px/normal var(--mono);
+    letter-spacing: .8px; text-transform: uppercase; white-space: nowrap; }
+  .hdr-support::before { content: "♥"; color: #ff5a5f; text-shadow: 0 0 6px rgba(255, 90, 95, .7); }
+  .hdr-support:hover, .hdr-support:focus-visible { border-color: var(--green); box-shadow: var(--glow); text-shadow: var(--glow);
+    text-decoration: none; outline: none; }
+}
+/* Where the full link doesn't fit, the heart alone; where not even that fits, nothing (the menu panel still has it).
+   Widths measured per account state, with a few pixels to spare: the name is 211px wide from 481px, 164px below. */
+@media (min-width: 481px) and (max-width: 495px), (min-width: 360px) and (max-width: 432px) {
+  html:not([data-acct="in"]):not([data-acct="reg"]) .hdr-support .nav-label { display: none; }
+  html:not([data-acct="in"]):not([data-acct="reg"]) .hdr-support { padding-left: 8px; padding-right: 8px; }
+}
+@media (max-width: 359px) {
+  html:not([data-acct="in"]):not([data-acct="reg"]) .hdr-support { display: none; }
+}
+@media (min-width: 481px) and (max-width: 535px), (min-width: 396px) and (max-width: 469px), (max-width: 331px) {
+  html[data-acct="reg"] .hdr-support .nav-label { display: none; }
+  html[data-acct="reg"] .hdr-support { padding-left: 8px; padding-right: 8px; }
+}
+@media (min-width: 360px) and (max-width: 395px) {
+  html[data-acct="reg"] .hdr-support { display: none; }
+}
+@media (max-width: 404px) {
+  html[data-acct="in"] .hdr-support .nav-label { display: none; }
+  html[data-acct="in"] .hdr-support { padding-left: 8px; padding-right: 8px; }
 }
 @media (min-width: 861px) and (max-width: 1199px) {  /* a little tighter, so the header stays on one line as before */
   .header-row { gap: 12px; }
