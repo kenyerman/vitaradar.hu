@@ -48,6 +48,7 @@ function card(a, i) {  // i: its place in the list (runs.map)
     poster.append(img);
   }
   poster.append(el("span", "arch-len", hms(a.duration_s)));
+  if (!a.youtube) poster.append(el("span", "arch-wait", "feltöltés alatt"));  // replays play from YouTube (watch.js)
   const body = el("div", "arch-body");
   body.append(el("h3", null, timeRange(a)));
   const names = [...new Set((a.speakers || []).map((s) => s.name))];

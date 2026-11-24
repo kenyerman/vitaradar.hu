@@ -8,7 +8,7 @@
 // fact-checked speeches, so their card is empty while the chair speaks).
 // ?t= opens the video at that second (the MP page's fact links).
 
-import { doc, getDoc, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { doc, getDoc, onSnapshot, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { db, el, badge, sourceList, setPhoto, hms, huDate, mpHref, watchLiveNav } from "./common.js?v=202611241206";
 import { mountAccount } from "./account.js?v=202611241315";
 import { factSocial } from "./social.js?v=202611241315";
@@ -189,20 +189,60 @@ async function load() {
     try { mps.set(id, (await getDoc(doc(db, "mps", id))).data() || {}); } catch { /* the card shows initials */ }
   }));
 
-  // YouTube when the run was uploaded there (pfc youtube), else our own archive; ?player=cdn forces ours, ?yt=<id> a
-  // given YouTube video (testing)
+  // The recording plays from YouTube (pfc uploads every archived run there). Until it is up, the poster and every
+  // fact; the player comes as soon as the upload lands. ?yt=<id> plays a given YouTube video (testing); ?player=cdn
+  // our own archive on cdn.vitaradar.hu (which serves only images for now).
   const yt = params.get("yt") || (params.get("player") === "cdn" ? null : a.youtube);
   if (yt) {
-    video.hidden = true;
-    media = await youtubeMedia(video.parentElement, yt, startAt);
-    wire(media);
-    note(null);
-    tick();
+    await mountYoutube(yt);
+    return;
+  }
+  if (params.get("player") !== "cdn") {
+    waitForUpload(a);
     return;
   }
   wire(video);
-  await cdnReady();  // the recording is on cdn.vitaradar.hu, which needs its cookie
+  await Promise.all([loadHls(), cdnReady()]);  // the recording is on cdn.vitaradar.hu, which needs its cookie
   play(cdnUrl(a.video));
+}
+
+async function mountYoutube(id) {
+  video.hidden = true;
+  media = await youtubeMedia(video.parentElement, id, startAt);
+  wire(media);
+  note(null);
+  $("player-note").classList.remove("over-poster");
+  tick();
+}
+
+// Not on YouTube yet: the poster, every fact listed (none is "said" before the video plays), and the player once the
+// upload lands (archive/{session}.youtube is written when YouTube has processed the video).
+function waitForUpload(a) {
+  video.controls = false;
+  if (a.poster) cdnReady().then(() => { video.poster = cdnUrl(a.poster); }).catch(() => {});
+  note("a felvétel feltöltése folyamatban, hamarosan itt visszanézhető");
+  $("player-note").classList.add("over-poster");
+  renderFacts(Number.MAX_SAFE_INTEGER);
+  if (current) current.li.classList.remove("now");
+  current = null;
+  const stop = onSnapshot(doc(db, "archive", session), (snap) => {
+    const id = (snap.data() || {}).youtube;
+    if (!id) return;
+    stop();
+    mountYoutube(id);
+  }, () => {});
+}
+
+// hls.js (about 100 KB) only for ?player=cdn; Safari plays HLS itself
+const HLS_JS = "https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js";
+function loadHls() {
+  if (window.Hls) return Promise.resolve();
+  return new Promise((resolve) => {
+    const s = document.createElement("script");
+    s.src = HLS_JS;
+    s.onload = s.onerror = () => resolve();
+    document.head.append(s);
+  });
 }
 
 function wire(m) {
