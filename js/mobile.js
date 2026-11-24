@@ -259,6 +259,20 @@ function liveTabs(top, slots, feed) {
   select("feed");
 }
 
+// Phones: a red "Élő" tag beside the logo while the stream is live (the nav's "Élő adás" link knows, js/common.js).
+function onAir() {
+  const live = document.querySelector(".nav-live");
+  const box = document.querySelector(".site-header .brand-box");
+  if (!live || !box) return;
+  const tag = el("span", "m-onair");
+  tag.textContent = "Élő";
+  tag.setAttribute("aria-hidden", "true");  // the menu button's label says it too
+  box.after(tag);
+  const sync = () => { tag.hidden = live.dataset.live !== "on"; };
+  new MutationObserver(sync).observe(live, { attributes: true, attributeFilter: ["data-live"] });
+  sync();
+}
+
 // page: "live" (index.html) or "watch" (watch.html)
 export function mountPhone({ page }) {
   const main = document.querySelector("main");
@@ -297,6 +311,8 @@ export function mountPhone({ page }) {
   compactFacts(document.getElementById("facts"));
   if (page === "live") liveTabs(top, slots, followFeed(document.getElementById("facts")));
   if (page === "watch") followReplay(document.getElementById("facts"));
+
+  onAir();
 
   const remeasure = measure(document.querySelector(".site-header"), top);
   const place = () => { moves.place(); remeasure(); };

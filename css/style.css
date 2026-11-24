@@ -1035,7 +1035,7 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
 /* ------------------------------------------------------------------ phones (js/mobile.js)
    The player stays pinned under the header with a compact strip under it (the speaker, the sitting's tally, the chat
    button), so the video never scrolls away and nothing covers it. Everything here is for phones only. */
-.m-top, .m-chat-slot, .m-game-slot, .m-new { display: none; }
+.m-top, .m-chat-slot, .m-game-slot, .m-new, .m-onair { display: none; }
 .m-sep { display: none; }
 @media (max-width: 860px) {
   .m-top { display: block; position: sticky; top: var(--m-hdr, 0px); z-index: 9; margin: -20px -16px 0;
@@ -1159,6 +1159,33 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   body { font-family: var(--sans); }
   body::after { display: none; }  /* no scanlines */
   .site-header { background: var(--bg); backdrop-filter: none; }  /* solid: the feed never shows through it */
+  /* the header: a green logo block, the name in capitals, a red "Élő" tag while live, the heart and the menu as icons */
+  .header-row { min-height: 56px; padding-top: 6px; padding-bottom: 6px; gap: 8px; }
+  .brand { position: relative; gap: 8px; }
+  .brand::before { content: ""; position: absolute; left: 0; top: 50%; width: 30px; height: 30px; transform: translateY(-50%);
+    background: var(--green); clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 7px 100%, 0 calc(100% - 7px)); }
+  .brand img { position: relative; width: 18px; height: 18px; margin: 0 6px; filter: brightness(0); }
+  .brand-box { --logo: 30px; --brand-gap: 8px; --name: 14px; }
+  .brand-name { font-size: 14px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; text-shadow: none; }
+  .brand-name::after { content: none; }
+  .brand-tld { font-size: 11px; color: var(--green); }
+  .hdr-support { width: 44px; height: 44px; justify-content: center; padding: 0; border: 0; background: none; }
+  .hdr-support .nav-label { display: none; }
+  .hdr-support::before { color: #ff4d5a; font-size: 20px; text-shadow: none; }
+  .hdr-support:hover, .hdr-support:focus-visible { border: 0; box-shadow: none; }
+  .menu-btn { width: 44px; height: 44px; border: 0; }
+  .menu-btn:hover, .menu-btn:focus-visible { box-shadow: none; outline: 1px solid var(--green); }
+  html.menu-open .menu-btn { background: var(--green); color: #021108; }
+  html.menu-open .menu-bars { display: none; }
+  html.menu-open .menu-btn::before { content: "\2715"; font: 700 18px/1 var(--display); }
+  .m-onair { display: inline-flex; align-items: center; gap: 5px; flex: none; height: 20px; padding: 0 9px; background: #d92b35;
+    color: #fff; font: 700 10px/1 var(--display); letter-spacing: 1.2px; text-transform: uppercase;
+    clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%); }
+  .m-onair::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: #fff; }
+  .m-onair[hidden] { display: none; }
+  :is(.m-live, .m-watch) .brand-box { margin-right: 0; }
+  :is(.m-live, .m-watch) .hdr-support { display: inline-flex !important; margin-left: auto; }
+  :is(.m-live, .m-watch) .menu-btn[data-live="on"]::after { display: none; }  /* the "Élő" tag says it */
   .brand img, .menu-bars span { filter: none; box-shadow: none; }
   .brand-name, .page-title, .section-head h2, .speaker-name, .m-sep-name, .m-tab, .m-new, .m-ai, .tally, .verdict,
   .fact-time, .t-btn, .btn, .acct-btn, .hdr-support, .brand-beta, .online-badge, .menu-panel .nav a, .menu-title,
