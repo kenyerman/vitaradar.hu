@@ -9,15 +9,15 @@
 // ?t= opens the video at that second (the MP page's fact links).
 
 import { doc, getDoc, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { db, el, badge, sourceList, setPhoto, hms, huDate, mpHref, watchLiveBadge } from "./common.js?v=202611241021";
-import { mountAccount } from "./account.js?v=202611241021";
-import { factSocial } from "./social.js?v=202611241021";
+import { db, el, badge, sourceList, setPhoto, hms, huDate, mpHref, watchLiveNav } from "./common.js?v=202611241206";
+import { mountAccount } from "./account.js?v=202611241206";
+import { factSocial } from "./social.js?v=202611241206";
 import { watchHref } from "./links.js?v=202611241021";
 import { cdnReady, cdnUrl, cdnXhr } from "./cdn.js?v=202611241021";
 import { scrollHint } from "./scrollhint.js?v=202611241021";
 import { setPageMeta } from "./meta.js?v=202611241124";
 
-watchLiveBadge();
+watchLiveNav();
 mountAccount();
 scrollHint(document.querySelector(".below"), document.querySelector(".player"));  // the facts, when the full-width player hides them
 const $ = (id) => document.getElementById(id);

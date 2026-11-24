@@ -2,10 +2,10 @@
 
 import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { dropdown } from "./dropdown.js?v=202611241021";
-import { db, el, setPhoto, mpHref, watchLiveBadge } from "./common.js?v=202611241021";
-import { mountAccount } from "./account.js?v=202611241021";
+import { db, el, setPhoto, mpHref, watchLiveNav } from "./common.js?v=202611241206";
+import { mountAccount } from "./account.js?v=202611241206";
 
-watchLiveBadge();
+watchLiveNav();
 mountAccount();
 const list = document.getElementById("mps"), empty = document.getElementById("mps-empty");
 const filter = document.getElementById("filter");

@@ -7,12 +7,12 @@
 
 import { doc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { defaultStream } from "./config.js?v=202611241021";
-import { db, el, badge, sourceList, setPhoto, mpHref } from "./common.js?v=202611241021";
-import { mountAccount } from "./account.js?v=202611241021";
-import { factSocial } from "./social.js?v=202611241021";
-import { mountChat } from "./chat.js?v=202611241021";
+import { db, el, badge, sourceList, setPhoto, mpHref, setLiveNav } from "./common.js?v=202611241206";
+import { mountAccount } from "./account.js?v=202611241206";
+import { factSocial } from "./social.js?v=202611241206";
+import { mountChat } from "./chat.js?v=202611241206";
 import { scrollHint } from "./scrollhint.js?v=202611241021";
-import { mountGame } from "./game.js?v=202611241050";
+import { mountGame } from "./game.js?v=202611241206";
 import { cdnReady, cdnUrl, cdnXhr } from "./cdn.js?v=202611241021";
 
 cdnReady();  // the stream is on cdn.vitaradar.hu, which needs its cookie: get it before the player asks
@@ -21,7 +21,7 @@ const $ = (id) => document.getElementById(id);
 const video = $("video");
 const els = {
   facts: $("facts"), empty: $("facts-empty"), count: $("fact-count"), note: $("player-note"),
-  badge: $("live-badge"), badgeText: $("live-text"), speaker: $("speaker"), img: $("speaker-img"),
+  speaker: $("speaker"), img: $("speaker-img"),
   initials: $("speaker-initials"), name: $("speaker-name"), party: $("speaker-party"), role: $("speaker-role"),
   more: $("speaker-more"),
 };
@@ -43,7 +43,7 @@ let failed = false;  // the stream could not be loaded (not live yet, or not rea
 onSnapshot(doc(db, "live", "current"), (snap) => {
   const d = snap.data() || {};
   live.active = Boolean(d.active);
-  setBadge();
+  setLiveNav(live.active);  // the header's "Élő adás" link (it stays plain until this first answer)
   if (d.session && d.session !== live.session) follow(d.session);
   const url = d.hls_url || defaultStream;
   // Nothing on air: the bucket still holds the last broadcast's playlist, which must not play as if it were live.
@@ -128,11 +128,6 @@ async function loadStream(url) {
 function note(text) {
   els.note.hidden = !text;
   if (text) els.note.textContent = text;
-}
-
-function setBadge() {
-  els.badge.dataset.state = live.active ? "on" : "off";
-  els.badgeText.textContent = live.active ? "LIVE" : "nincs adás";
 }
 
 // The date (ms) of the frame on screen, on the stream's clock; null when it is unknown.
@@ -249,5 +244,4 @@ function renderSpeaker(now) {
   setPhoto(els.img, els.initials, t && t.photo, t && t.name, { id: t && t.speaker_id, color: t && t.color });
 }
 
-setBadge();
 setInterval(render, 250);

@@ -37,14 +37,14 @@
   <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js">
   <link rel="modulepreload" href="js/firebase.js?v=202611241021">
   <link rel="modulepreload" href="js/config.js?v=202611241021">
-  <link rel="modulepreload" href="js/common.js?v=202611241021">
-  <link rel="modulepreload" href="js/account.js?v=202611241021">
+  <link rel="modulepreload" href="js/common.js?v=202611241206">
+  <link rel="modulepreload" href="js/account.js?v=202611241206">
   <link rel="modulepreload" href="js/cdn.js?v=202611241021">
   <link rel="modulepreload" href="js/consent.js?v=202611241021">
-  <link rel="modulepreload" href="js/presence.js?v=202611241021">
-  <link rel="modulepreload" href="js/menu.js?v=202611241021">
+  <link rel="modulepreload" href="js/presence.js?v=202611241206">
+  <link rel="modulepreload" href="js/menu.js?v=202611241206">
   <link rel="modulepreload" href="js/meta.js?v=202611241124">
-  <link rel="stylesheet" href="css/style.css?v=202611241050">
+  <link rel="stylesheet" href="css/style.css?v=202611241206">
 </head>
 <body>
   <canvas id="rain" aria-hidden="true"></canvas>
@@ -59,12 +59,11 @@
       </div>
       <p class="tagline">Országgyűlés // élő tényellenőrzés</p>
       <nav class="nav" aria-label="Fő menü">
-        <a href="./">Élő adás</a>
+        <a class="nav-live" href="./" data-live="loading"><span class="live-stack"><span class="live-on"><span class="live-dot" aria-hidden="true"></span>Élő adás</span><span class="live-off">nincs adás</span></span></a>
         <a href="mps.html" aria-current="page">Képviselők</a>
         <a href="archive.html">Archívum</a>
         <a class="nav-support" href="https://www.patreon.com/vitaradar_hu" target="_blank" rel="noopener" aria-label="Támogatás a Patreonon (új lapon nyílik)" title="Támogatás a Patreonon"><span class="nav-label">Támogatás</span></a>
       </nav>
-      <span id="live-badge" class="live-badge" data-state="off"><span class="dot"></span><span id="live-text">nincs adás</span></span>
       <a class="hdr-support" href="https://www.patreon.com/vitaradar_hu" target="_blank" rel="noopener" aria-label="Támogatás a Patreonon (új lapon nyílik)" title="Támogatás a Patreonon"><span class="nav-label">Támogatás</span></a>
       <div id="acct" class="acct"><span class="acct-skel" aria-hidden="true"><span class="btn acct-btn skel-out">Belépés</span><span class="btn acct-btn skel-reg">Regisztráció<span class="acct-more"> befejezése</span></span><span class="acct-me skel-in"><span class="avatar"></span></span></span></div>
       <button type="button" class="menu-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Menü"><span class="menu-bars" aria-hidden="true"><span></span><span></span><span></span></span></button>
@@ -159,6 +158,6 @@
     </div>
   </footer>
 
-  <script type="module" src="js/mp.js?v=202611241124"></script>
+  <script type="module" src="js/mp.js?v=202611241206"></script>
 </body>
 </html>

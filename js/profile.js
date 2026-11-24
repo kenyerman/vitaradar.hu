@@ -14,14 +14,14 @@
 import {
   doc, getDoc, onSnapshot, collection, query, where, orderBy, limit, startAfter, getDocs,
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { db, el, badge, huDate, watchLiveBadge } from "./common.js?v=202611241021";
+import { db, el, badge, huDate, watchLiveNav } from "./common.js?v=202611241206";
 import {
   account, onAccount, onBlocks, isBlocked, avatar, profileEditor, mountAccount, signIn, openRegister, blockUser, api, toast,
-} from "./account.js?v=202611241021";
-import { linkify } from "./social.js?v=202611241021";
+} from "./account.js?v=202611241206";
+import { linkify } from "./social.js?v=202611241206";
 import { watchHref, profileHref, withComment } from "./links.js?v=202611241021";
 
-watchLiveBadge();
+watchLiveNav();
 mountAccount();
 
 const PAGE = 20;  // comments per page

@@ -3,8 +3,8 @@
 import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { db } from "./firebase.js?v=202611241021";
 import "./consent.js?v=202611241021";   // the cookie and storage bar at the bottom, on every page
-import "./presence.js?v=202611241021";  // the header's "N online" (visitors included), on every page
-import "./menu.js?v=202611241021";      // the hamburger menu on phones, on every page
+import "./presence.js?v=202611241206";  // the header's "N online" (visitors included), on every page
+import "./menu.js?v=202611241206";      // the hamburger menu on phones, on every page
 import { CDN, cdnReady, cdnUrl } from "./cdn.js?v=202611241021";
 
 export { db };  // set up once, with App Check, in firebase.js
@@ -184,13 +184,21 @@ startRain(document.getElementById("rain"));
 const year = document.getElementById("year");
 if (year) year.textContent = String(new Date().getFullYear());
 
-// The header's live badge on pages other than the live page.
-export function watchLiveBadge() {
-  const badgeEl = document.getElementById("live-badge"), text = document.getElementById("live-text");
-  if (!badgeEl) return;
-  onSnapshot(doc(db, "live", "current"), (snap) => {
-    const on = Boolean((snap.data() || {}).active);
-    badgeEl.dataset.state = on ? "on" : "off";
-    text.textContent = on ? "LIVE" : "nincs adás";
-  });
+// The header's "Élő adás" link tells whether a broadcast is on: it glows red with a blinking dot while live and reads
+// "nincs adás" otherwise. Both labels are in the page from the start, stacked in one grid cell (css .live-stack), so the
+// link keeps the width of the longer one; until the state is known (data-live="loading") it reads "Élő adás", its dot
+// dim and still.
+// The phone menu's hamburger follows its data-live (js/menu.js).
+export function setLiveNav(on) {
+  for (const a of document.querySelectorAll(".nav-live")) {
+    a.dataset.live = on ? "on" : "off";
+    // the state in the accessible name (the visible label alone reads "nincs adás", or "Élő adás" either way)
+    a.setAttribute("aria-label", on ? "Élő adás (most adásban)" : "Élő adás (most nincs adás)");
+  }
+}
+
+// The same on pages other than the live page, which follows live/current itself (js/app.js).
+export function watchLiveNav() {
+  if (!document.querySelector(".nav-live")) return;
+  onSnapshot(doc(db, "live", "current"), (snap) => setLiveNav(Boolean((snap.data() || {}).active)));
 }

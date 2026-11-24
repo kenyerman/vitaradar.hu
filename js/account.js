@@ -7,7 +7,7 @@ import { onAuthStateChanged, getIdToken } from "https://www.gstatic.com/firebase
 import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { auth, db, appCheckHeaders, signInWithGoogle, signOut } from "./firebase.js?v=202611241021";
 import { apiUrl, avatarUrl, photoPrefix } from "./config.js?v=202611241021";
-import { el, initials, huDate } from "./common.js?v=202611241021";
+import { el, initials, huDate } from "./common.js?v=202611241206";
 import { cdnReady, cdnUrl } from "./cdn.js?v=202611241021";
 import { profileHref } from "./links.js?v=202611241021";
 

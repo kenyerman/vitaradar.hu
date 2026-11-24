@@ -70,11 +70,20 @@ h1, h2, h3 { font-family: var(--mono); }
   text-transform: uppercase; }
 .nav a:hover { color: var(--green); border-color: var(--line); text-decoration: none; }
 .nav a[aria-current="page"] { color: var(--green); border-color: var(--line); background: rgba(0, 255, 65, .06); text-shadow: var(--glow); }
-.live-badge { display: inline-flex; align-items: center; gap: 8px; padding: 5px 10px; border: 1px solid var(--line-dim);
-  font: 700 11px/1 var(--mono); letter-spacing: 1.2px; text-transform: uppercase; color: var(--muted); }
-.live-badge .dot { width: 8px; height: 8px; background: currentColor; }
-.live-badge[data-state="on"] { color: #ff4d4d; border-color: rgba(255, 77, 77, .5); background: rgba(255, 77, 77, .08); }
-.live-badge[data-state="on"] .dot { animation: blink 1s steps(1) infinite; }
+/* The nav's "Élő adás" link is the live indicator (js/common.js setLiveNav): red glow and a blinking dot while a
+   broadcast is on, "nincs adás" otherwise. Both labels share one grid cell, so the link always has the width of the
+   longer one and nothing moves when the state arrives; until then (data-live="loading") the dot is dim and still,
+   like the online count's. */
+.live-stack { display: inline-grid; justify-items: center; align-items: center; }
+.live-stack > span { grid-area: 1 / 1; display: inline-flex; align-items: baseline; gap: 6px; white-space: nowrap; }  /* the text's baseline is the link's */
+.live-off, .nav-live[data-live="off"] .live-on { visibility: hidden; }
+.nav-live[data-live="off"] .live-off { visibility: visible; }
+.live-dot { flex: none; align-self: center; width: 7px; height: 7px; border-radius: 50%; background: currentColor; opacity: .45; }
+.nav-live[data-live="on"] .live-dot { opacity: 1; box-shadow: 0 0 6px #ff4d4d; animation: blink 1s steps(1) infinite; }
+.nav a.nav-live[data-live="on"] { color: #ff4d4d; border-color: rgba(255, 77, 77, .6); background: rgba(255, 77, 77, .1);
+  text-shadow: 0 0 6px rgba(255, 77, 77, .75); box-shadow: 0 0 10px rgba(255, 77, 77, .35), inset 0 0 8px rgba(255, 77, 77, .12); }
+.nav a.nav-live[data-live="on"]:hover, .nav a.nav-live[data-live="on"]:focus-visible { border-color: #ff4d4d;
+  box-shadow: 0 0 14px rgba(255, 77, 77, .55), inset 0 0 8px rgba(255, 77, 77, .18); outline: none; }
 /* who is on the site now (js/presence.js), beside BETA under the logo, in its size */
 .online-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 4px 1px; border: 1px solid var(--line);
   font: 700 9px/1 var(--mono); letter-spacing: 1.2px; text-transform: uppercase; color: var(--green); cursor: default;
@@ -84,7 +93,7 @@ h1, h2, h3 { font-family: var(--mono); }
 @keyframes pulse-dot { 50% { opacity: .35; } }
 /* The header's slots that fill in after load (js/presence.js, js/account.js, js/menu.js) are in the page from the
    start, at their final size, so nothing in the header moves when their data arrives. */
-#live-text, .online-n { display: inline-block; min-width: calc(6em + 12px); text-align: center; }  /* 10 monospace characters with their letter-spacing: "nincs adás", "999 online" (em, not ch: ch follows whichever font has loaded) */
+.online-n { display: inline-block; min-width: calc(6em + 12px); text-align: center; }  /* 10 monospace characters with their letter-spacing: "999 online" (em, not ch: ch follows whichever font has loaded) */
 .online-badge[data-state="loading"], .online-badge[data-state="unknown"] { color: var(--muted); }
 .online-badge[data-state="loading"] .dot, .online-badge[data-state="unknown"] .dot { animation: none; box-shadow: none; }
 /* the account slot's placeholder: the last known state's button (html[data-acct], set in each page's head), dimmed */
@@ -95,8 +104,8 @@ html[data-acct="reg"] .acct-skel > .skel-reg { display: inline-block !important;
 html[data-acct="in"] .acct-skel > .skel-in { display: inline-flex !important; }
 /* the footer starts below the fold, so content arriving after load doesn't push it around in view */
 main { min-height: 100vh; }
-@media (max-width: 860px) {  /* these live in the phone menu's panel (js/menu.js moves them there) */
-  .header-row > .nav, .header-row > .live-badge { display: none; }
+@media (max-width: 860px) {  /* it lives in the phone menu's panel (js/menu.js moves it there) */
+  .header-row > .nav { display: none; }
 }
 @media (max-width: 359px) {
   html[data-acct="reg"] .header-row:has(.acct-skel) .brand-name, html[data-acct="reg"] .header-row:has(.acct-skel) .brand-sub { display: none; }
@@ -436,7 +445,7 @@ details[open] > summary .lvl-title::before { content: "▾ "; }
   .scores { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .fact, .fact.flash, .live-badge .dot, .online-badge .dot, .verdict::after, .brand-name::after { animation: none !important; }
+  .fact, .fact.flash, .live-dot, .online-badge .dot, .verdict::after, .brand-name::after { animation: none !important; }
 }
 
 /* accounts (js/account.js), votes and comments (js/social.js), the live chat (js/chat.js) */
@@ -854,8 +863,8 @@ a.fact-time { display: inline-block; padding-top: 4px; padding-bottom: 4px; marg
 .ucard-stats dd { margin: 0; font-weight: 700; color: #eafff0; }
 .ucard-empty { margin: 0; color: var(--muted); font-size: 12px; }
 
-/* the phone menu (js/menu.js): a hamburger in the header; the pages and the live badge in a panel that slides in from
-   the right (the online count stays under the logo) */
+/* the phone menu (js/menu.js): a hamburger in the header (with a red dot while live); the pages in a panel that slides
+   in from the right (the online count stays under the logo) */
 .menu-btn, .menu-panel, .menu-backdrop { display: none; }
 @media (max-width: 860px) {
   .header-row { gap: 10px; flex-wrap: nowrap; }
@@ -890,7 +899,10 @@ a.fact-time { display: inline-block; padding-top: 4px; padding-bottom: 4px; marg
   .menu-panel .nav a:hover, .menu-panel .nav a:focus-visible { color: var(--green); background: rgba(0, 255, 65, .04); outline: none; }
   .menu-panel .nav a[aria-current="page"] { border-left-color: var(--green); background: rgba(0, 255, 65, .08); }
   .menu-panel .nav a[aria-current="page"]::before { color: var(--green); }
-  .menu-status { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; padding: 16px 20px; border-top: 1px solid var(--line-dim); }
+  .menu-panel .live-stack { justify-items: start; }
+  .menu-panel .nav a.nav-live[data-live="on"] { color: #ff4d4d; border-left-color: #ff4d4d; background: rgba(255, 77, 77, .1);
+    box-shadow: none; }
+  .menu-panel .nav a.nav-live[data-live="on"]::before { color: #ff4d4d; }
   html.menu-open { overflow: hidden; }
 }
 @media (max-width: 480px) {

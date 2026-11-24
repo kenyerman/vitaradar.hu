@@ -1,10 +1,10 @@
 // The phone menu. On narrow screens (up to 860px) the header keeps the logo (the online count stays under it), the
 // support link where it fits, the account button and a hamburger button; the pages (and "Profilom" for registered
-// users) and the live badge move into a panel that slides in from the right. The hamburger shows a red dot while the
-// stream is live. On wider screens everything goes back into the header.
+// users) move into a panel that slides in from the right. The hamburger shows a red dot while the stream is live (as
+// the "Élő adás" link does in the nav, js/common.js setLiveNav). On wider screens the nav goes back into the header.
 //
 // The panel is a modal dialog: the focus moves into it and stays there, Escape, the ✕, a tap outside it or a link
-// closes it, and the focus returns to the hamburger. The elements are moved, not copied, so the live badge keeps
+// closes it, and the focus returns to the hamburger. The nav is moved, not copied, so its "Élő adás" link keeps
 // updating wherever it is.
 
 const PHONE = matchMedia("(max-width: 860px)");
@@ -14,7 +14,7 @@ function mountMenu() {
   const row = document.querySelector(".site-header .header-row");
   const nav = row && row.querySelector(".nav");
   if (!nav) return;
-  const live = document.getElementById("live-badge");
+  const live = nav.querySelector(".nav-live");
 
   // the page has the button already (so the header is laid out right from the first paint); older copies get one here
   let button = row.querySelector(":scope > .menu-btn");
@@ -49,9 +49,7 @@ function mountMenu() {
   close.setAttribute("aria-label", "Menü bezárása");
   close.textContent = "✕";
   head.append(title, close);
-  const status = document.createElement("div");
-  status.className = "menu-status";
-  panel.append(head, status);
+  panel.append(head);
   document.body.append(backdrop, panel);
 
   // one's own profile, for registered users (css: html[data-acct="in"]), in the phone menu only: on a wide screen the
@@ -64,30 +62,25 @@ function mountMenu() {
     nav.insertBefore(me, nav.querySelector(".nav-support"));
   }
 
-  // where the moved elements go back to on a wide screen
+  // where the nav goes back to on a wide screen (the online count stays in the header, under the logo, at every width)
   const navMark = document.createComment(" nav ");
   nav.before(navMark);
-  const liveMark = document.createComment(" status ");
-  if (live) live.before(liveMark);
-  const badges = () => [live].filter(Boolean);  // the online count stays in the header, under the logo, at every width
 
   function place() {
     if (PHONE.matches) {
       head.after(nav);
-      status.append(...badges());
     } else {
       shut(false);
       navMark.after(nav);
-      liveMark.after(...badges());
     }
   }
 
-  const label = () => {  // the stream's state on the button, since its badge is in the panel
-    const on = live && live.dataset.state === "on";
+  const label = () => {  // the stream's state on the button, since its link is in the panel
+    const on = live && live.dataset.live === "on";
     button.dataset.live = on ? "on" : "off";
     button.setAttribute("aria-label", on ? "Menü (élő adás most)" : "Menü");
   };
-  if (live) new MutationObserver(label).observe(live, { attributes: true, attributeFilter: ["data-state"] });
+  if (live) new MutationObserver(label).observe(live, { attributes: true, attributeFilter: ["data-live"] });
   label();
 
   let open = false, timer = 0;

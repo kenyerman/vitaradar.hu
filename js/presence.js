@@ -36,12 +36,12 @@ function pageName() {
 }
 
 // The badge is in the page from the start ("– online", data-state="loading"), under the logo next to BETA, so the
-// header doesn't move when the first count arrives; pages without it get one there (or by the live badge).
+// header doesn't move when the first count arrives; pages without it get one there.
 function badge() {
   let b = document.getElementById("online");
   if (b) return b;
-  const sub = document.querySelector(".brand-sub"), live = document.getElementById("live-badge");
-  if (!sub && !live) return null;
+  const sub = document.querySelector(".brand-sub");
+  if (!sub) return null;
   b = document.createElement("span");
   b.id = "online";
   b.className = "online-badge";
@@ -54,7 +54,7 @@ function badge() {
   n.className = "online-n";
   n.textContent = "– online";
   b.append(dot, n);
-  if (sub) sub.append(b); else live.after(b);
+  sub.append(b);
   return b;
 }
 
