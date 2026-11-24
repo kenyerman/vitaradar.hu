@@ -132,7 +132,89 @@ function followFeed(list) {
     if (following) toEnd(false); else { unseen += fresh; show(); }
   }).observe(list, { childList: true });
   PHONE.addEventListener("change", show);
-  return { show };
+  return { show, resume() { show(); if (following) toEnd(false); } };
+}
+
+// Phones, live page: three tabs under the pinned block. Állítások: the facts (with the AI notice above them); Chat:
+// the chat, opened while its tab is on and closed otherwise, so its count of missed messages keeps working; Játék:
+// the games, moved out of the dock that popped up over the page. The Játék tab turns green, with the countdown, while
+// a game is open.
+function liveTabs(top, slots, feed) {
+  const bar = el("div", "m-tabs");
+  bar.setAttribute("role", "tablist");
+  bar.setAttribute("aria-label", "Nézet");
+  const tab = (id, label) => {
+    const b = el("button", "m-tab");
+    b.type = "button";
+    b.id = `m-tab-${id}`;
+    b.setAttribute("role", "tab");
+    b.dataset.tab = id;
+    const name = el("span");
+    name.textContent = label;
+    const n = el("span", "m-tab-n");
+    n.hidden = true;
+    b.append(name, n);
+    bar.append(b);
+    return { b, n };
+  };
+  const tabs = [tab("feed", "Állítások"), tab("chat", "Chat"), tab("game", "Játék")];
+  const [, chatTab, gameTab] = tabs;
+  const ai = el("p", "m-ai");
+  ai.textContent = "// automatikus (AI) ellenőrzés — tévedhet";
+  top.append(bar, ai);
+
+  const chatCol = document.getElementById("chat");
+  const chatOpen = document.getElementById("chat-open");
+  function select(id, focus = false) {
+    document.body.dataset.mTab = id;
+    for (const t of tabs) {
+      const on = t.b.dataset.tab === id;
+      t.b.setAttribute("aria-selected", String(on));
+      t.b.tabIndex = on ? 0 : -1;
+      if (on && focus) t.b.focus();
+    }
+    const closed = root.dataset.chat === "closed";
+    if (id === "chat" && closed && chatOpen) chatOpen.click();
+    if (id !== "chat" && !closed && chatCol) chatCol.querySelector(".chat-close")?.click();
+    if (id === "feed") feed.resume();
+    else { feed.show(); scrollTo({ top: 0 }); }
+  }
+  bar.addEventListener("click", (e) => {
+    const b = e.target.closest(".m-tab");
+    if (b) select(b.dataset.tab);
+  });
+  bar.addEventListener("keydown", (e) => {
+    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+    const i = tabs.findIndex((t) => t.b.getAttribute("aria-selected") === "true");
+    const next = tabs[(i + (e.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length];
+    select(next.b.dataset.tab, true);
+  });
+
+  // the chat's missed messages, on its tab
+  const missed = chatOpen && chatOpen.querySelector(".chat-missed");
+  if (missed) {
+    const copy = () => { chatTab.n.textContent = missed.textContent; chatTab.n.hidden = missed.hidden || !missed.textContent; };
+    new MutationObserver(copy).observe(missed, { childList: true, characterData: true, subtree: true, attributes: true });
+    copy();
+  }
+
+  // a game open: the tab turns green and shows its countdown (js/game.js keeps it in .game-time)
+  const dock = slots.game.querySelector(".game-dock") || document.querySelector(".game-dock");
+  if (dock) {
+    const live = () => {
+      const card = dock.querySelector(':scope > :not([hidden])[data-state="open"]');
+      const time = card ? (card.querySelector(".game-time") || {}).textContent || "" : "";
+      if (card) gameTab.b.dataset.live = "true"; else delete gameTab.b.dataset.live;
+      gameTab.n.textContent = time.trim();
+      gameTab.n.hidden = !card || !time.trim();
+    };
+    new MutationObserver(live).observe(dock, { childList: true, subtree: true, characterData: true, attributes: true,
+      attributeFilter: ["hidden", "data-state"] });
+    live();
+  }
+
+  for (const t of tabs) t.b.setAttribute("aria-controls", t.b.dataset.tab === "feed" ? "facts" : t.b.dataset.tab === "chat" ? "chat" : "m-game");
+  select("feed");
 }
 
 // page: "live" (index.html) or "watch" (watch.html)
@@ -148,6 +230,7 @@ export function mountPhone({ page }) {
   player.before(top);
 
   const moves = mover();
+  let slots = null;
   moves.add(player, top, strip);
   moves.add(document.getElementById("speaker"), strip);
   moves.add(document.querySelector(".speaker-col .tally"), strip);
@@ -157,10 +240,20 @@ export function mountPhone({ page }) {
     top.after(slot);
     moves.add(document.getElementById("chat-open"), strip);
     moves.add(document.getElementById("chat"), slot);
+    // the games: out of the dock over the page, into the Játék tab
+    const game = el("div", "m-game-slot");
+    game.id = "m-game";
+    const empty = el("p", "m-game-empty");
+    empty.textContent = "Nincs futó kihívás. Kihívás akkor ugrik fel, amikor egy biztos állítás elhangzik; "
+      + "a felszólalások elején a mérlegre tippelhetsz.";
+    game.append(empty);
+    slot.after(game);
+    moves.add(document.querySelector(".game-dock"), game);
+    slots = { chat: slot, game };
   }
 
   compactFacts(document.getElementById("facts"));
-  if (page === "live") followFeed(document.getElementById("facts"));
+  if (page === "live") liveTabs(top, slots, followFeed(document.getElementById("facts")));
 
   const remeasure = measure(document.querySelector(".site-header"), top);
   const place = () => { moves.place(); remeasure(); };
