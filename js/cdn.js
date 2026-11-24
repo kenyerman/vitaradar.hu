@@ -5,8 +5,8 @@
 // stores the cookie for .vitaradar.hu, so the browser sends it with the player's requests (withCredentials) and
 // with the images, and renews it before the hour is up. Elsewhere (localhost) the addresses are left as they were.
 
-import { apiUrl } from "./config.js?v=202611241005";
-import { appCheckHeaders } from "./firebase.js?v=202611241005";
+import { apiUrl } from "./config.js?v=202611241021";
+import { appCheckHeaders } from "./firebase.js?v=202611241021";
 
 export const CDN = "https://cdn.vitaradar.hu/";
 const ENABLED = true;
