@@ -32,8 +32,9 @@ function head(onClose) {
 }
 
 // Closing: the chat folds into a button on the player (#chat-open, in the page, like the column) that counts the messages
-// that arrive while it is closed: not the ones already there, not the reader's own, not the blocked users'. The choice
-// is kept in vr-chat; the head's script sets :root[data-chat="closed"] from it before the first paint.
+// that arrive while it is closed: not the ones already there, not the reader's own, not the blocked users'. It starts
+// closed; vr-chat keeps the reader's choice once they open or close it, and the head's script sets
+// :root[data-chat="closed"] from it (closed unless "open") before the first paint.
 const KEY = "vr-chat";
 
 function folding(stage, col) {

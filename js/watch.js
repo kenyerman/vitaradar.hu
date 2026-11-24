@@ -12,9 +12,11 @@ import { mountAccount } from "./account.js?v=202611240130";
 import { factSocial } from "./social.js?v=202611240130";
 import { watchHref } from "./links.js?v=202611240130";
 import { cdnReady, cdnUrl, cdnXhr } from "./cdn.js?v=202611240130";
+import { scrollHint } from "./scrollhint.js?v=202611240216";
 
 watchLiveBadge();
 mountAccount();
+scrollHint(document.querySelector(".below"), document.querySelector(".player"));  // the facts, when the full-width player hides them
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
 const session = params.get("s") || "";

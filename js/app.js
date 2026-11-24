@@ -10,7 +10,8 @@ import { defaultStream } from "./config.js?v=202611240130";
 import { db, el, badge, sourceList, setPhoto, mpHref } from "./common.js?v=202611240130";
 import { mountAccount } from "./account.js?v=202611240130";
 import { factSocial } from "./social.js?v=202611240130";
-import { mountChat } from "./chat.js?v=202611240134";
+import { mountChat } from "./chat.js?v=202611240216";
+import { scrollHint } from "./scrollhint.js?v=202611240216";
 import { mountGame } from "./game.js?v=202611240130";
 import { cdnReady, cdnUrl, cdnXhr } from "./cdn.js?v=202611240130";
 
@@ -28,6 +29,7 @@ const MAX_SHOWN = 200;
 
 mountAccount();
 mountChat($("stage"));
+scrollHint(document.querySelector(".below"), document.querySelector(".player"));  // the facts, when the full-width player hides them
 const game = mountGame({ now: streamNow });  // challenges and speech tips
 
 let live = { session: null, active: false, url: null };

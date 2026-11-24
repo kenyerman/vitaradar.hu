@@ -578,6 +578,20 @@ a.ext { color: var(--cyan); text-decoration: underline dotted; overflow-wrap: an
   .stage[data-chat="on"], .stage[data-chat="on"] > .chat, :root[data-chat="closed"] .stage > .chat { transition: none; }
   .chat-missed.bump { animation: none; }
 }
+/* the first arrival's scroll hint (js/scrollhint.js): a down arrow at the bottom centre while the full-width player hides
+   the facts; the script sets its height (under the player, or above the video's controls, above the cookie bar). Fixed,
+   so nothing moves; gone while a game card is up at the bottom. */
+@keyframes hint-in { from { opacity: 0; } }
+@keyframes hint-bob { 50% { transform: translate(-50%, 5px); } }
+.scroll-hint { position: fixed; z-index: 44; left: 50%; bottom: 20px; transform: translateX(-50%); display: grid;
+  place-items: center; width: 42px; height: 42px; padding: 0; background: rgba(0, 0, 0, .8); border: 1px solid var(--green);
+  color: var(--green); cursor: pointer; box-shadow: var(--glow); animation: hint-in .4s ease-out, hint-bob 1.8s ease-in-out .4s infinite; }
+.scroll-hint svg { width: 20px; height: 20px; filter: drop-shadow(0 0 4px rgba(0, 255, 65, .6)); }
+.scroll-hint:hover, .scroll-hint:focus-visible { background: rgba(0, 255, 65, .14); outline: none; }
+.scroll-hint[hidden] { display: none; }
+.scroll-hint[data-gone] { opacity: 0; transition: opacity .25s; pointer-events: none; }
+body:has(.game-dock > :not([hidden])) .scroll-hint { display: none; }
+@media (prefers-reduced-motion: reduce) { .scroll-hint { animation: none; } .scroll-hint[data-gone] { transition: none; } }
 @media (max-width: 1399px) { .tagline { display: none; } }  /* the tagline only where the header has room for it */
 
 /* locked content (js/social.js locked()): placeholder text, blurred, with a prompt on top */

@@ -16,8 +16,8 @@
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap"></noscript>
   <!-- the header's account slot keeps the size of the last known state (js/account.js stores it) -->
   <script>try{document.documentElement.dataset.acct=localStorage.getItem("vr-acct")||"out"}catch(e){}</script>
-  <!-- a chat the reader closed stays closed, from the first paint (js/chat.js stores it) -->
-  <script>try{if(localStorage.getItem("vr-chat")==="closed")document.documentElement.dataset.chat="closed"}catch(e){}</script>
+  <!-- the chat starts closed, unless the reader opened it before (js/chat.js stores the choice), from the first paint -->
+  <script>try{if(localStorage.getItem("vr-chat")!=="open")document.documentElement.dataset.chat="closed"}catch(e){document.documentElement.dataset.chat="closed"}</script>
   <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js">
   <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check.js">
   <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js">
@@ -30,7 +30,7 @@
   <link rel="modulepreload" href="js/consent.js?v=202611240130">
   <link rel="modulepreload" href="js/presence.js?v=202611240130">
   <link rel="modulepreload" href="js/menu.js?v=202611240130">
-  <link rel="stylesheet" href="css/style.css?v=202611240200">
+  <link rel="stylesheet" href="css/style.css?v=202611240216">
 </head>
 <body>
   <canvas id="rain" aria-hidden="true"></canvas>
@@ -145,6 +145,6 @@
     </div>
   </footer>
 
-  <script type="module" src="js/app.js?v=202611240134"></script>
+  <script type="module" src="js/app.js?v=202611240216"></script>
 </body>
 </html>
