@@ -733,6 +733,25 @@ a.acct-me, a.acct-me:hover { text-decoration: none; text-shadow: none; }
   border: 1px dashed var(--line); font-size: 12px; color: var(--text); }
 .game-upsell .btn { padding: 6px 10px; font-size: 11px; flex: none; }
 
+/* a vote (js/game.js VoteView): the outcome and, optionally, the band of yes votes */
+.game-pop[data-kind="vote"] { border-color: var(--cyan); box-shadow: 0 0 6px rgba(0, 229, 255, .45), 0 14px 40px rgba(0, 0, 0, .85); }
+.game-pop[data-kind="vote"] .game-tag { color: var(--cyan); text-shadow: 0 0 8px rgba(0, 229, 255, .45); }
+.game-pop[data-kind="vote"] .game-options { grid-template-columns: 1fr 1fr; }
+.vote-item { margin: -2px 0 0; color: var(--muted); font-size: 11px; line-height: 1.4; display: -webkit-box;
+  -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
+.vote-mode { margin: -2px 0 0; color: var(--unverifiable); font: 700 11px/1.3 var(--mono); letter-spacing: .4px; }
+.vote-band-q { margin: 2px 0 -2px; color: var(--muted); font-size: 12px; }
+.vote-bands { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px; }
+.vote-band { min-width: 0; padding: 7px 0; background: rgba(0, 0, 0, .5); border: 1px solid var(--line); color: var(--text);
+  font: 700 12px/1.1 var(--mono); cursor: pointer; white-space: nowrap; transition: border-color .15s, box-shadow .15s; }
+.vote-band:not(:disabled):hover, .vote-band:focus-visible { border-color: var(--cyan); outline: none; }
+.vote-band:disabled { cursor: default; }
+.vote-band.picked { border-color: var(--cyan); color: var(--cyan); box-shadow: 0 0 8px rgba(0, 229, 255, .4); }
+.vote-band.right { border-color: var(--true); color: var(--true); box-shadow: 0 0 10px rgba(0, 255, 65, .45); }
+.vote-band.wrong { border-color: var(--false); color: var(--false); box-shadow: none; }
+.game-pop[data-kind="vote"]:not([data-state="open"]) .vote-band:not(.picked):not(.right) { opacity: .45; }
+.game-pop[data-kind="vote"]:not([data-state="open"]) .vote-band-q { display: none; }
+
 .tip-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text);
   letter-spacing: .4px; }
 .tip-box .game-time { margin-left: 0; }
@@ -763,6 +782,9 @@ a.acct-me, a.acct-me:hover { text-decoration: none; text-shadow: none; }
   .game-pop, .tip-box { width: auto; margin-left: 0; }
   .game-pop { order: 1; }
   .game-pop[data-state="open"] .game-upsell { display: none; }
+  .vote-bands { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .game-pop[data-kind="vote"] .vote-item:has(+ .vote-item:not([hidden])) { display: none; }  /* the motion, else the item */
+  .game-pop[data-kind="vote"] .vote-item { -webkit-line-clamp: 1; line-clamp: 1; }
   .game-dock:has(> .game-pop:not([hidden])[data-state="open"]) > .tip-box { padding: 8px 12px; }
   .game-dock:has(> .game-pop:not([hidden])[data-state="open"]) > .tip-box .tip-body { display: none; }
   .game-dock:has(> .game-pop:not([hidden])[data-state="open"]) > .tip-box .tip-sum { display: flex; }

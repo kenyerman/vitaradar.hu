@@ -1,8 +1,12 @@
-// vitaradar.hu games: instant challenges and speech tips while the stream plays, and the player's points.
+// vitaradar.hu games: instant challenges, speech tips and vote predictions while the stream plays, and the player's
+// points.
 //
 // The pipeline (live/game.py, private repo) picks the challenges among the facts it is sure of, publishes each
 // question when it is about to appear on the stream (games/{session}/challenges) and settles it after the answer
 // window, the moment the answers close: the right answer is in no document the browser can read before that.
+// Votes (games/{session}/votes): when the chair puts a question to the vote, players predict the outcome and, if they
+// like, the band the yes votes fall in, until just before the result board shows on their video. The pipeline knows
+// the result long before (the broadcast delay) and publishes it when the predictions close.
 // Everything here runs on the stream's clock (the date of the frame on screen), so a question pops up when this
 // viewer's video shows the claim, whatever their delay. Answers and tips go through the user API; visitors play along,
 // unscored, and are asked to sign in.
@@ -21,6 +25,7 @@ const TIP_RESULT_MS = 60000; // the tip's card stays this long once its result i
 const MAX_BEHIND_MS = 30000; // a delay behind the stream's clock beyond this (a wrong computer clock, a paused video)
                              // is not trusted for the server's close
 const SEND_MS = 500;         // an answer given at the last moment needs this long to reach the server
+const VOTE_SEND_MS = 1500;   // a vote prediction without a band is sent this long before the lock (a band sends it at once)
 
 const label = (ch, option) => (ch.kind === "truth" ? TRUTH[option] || option : option);
 const secs = (ms) => Math.max(0, Math.ceil(ms / 1000));
@@ -197,6 +202,202 @@ class ChallengeView {
   }
 }
 
+// ------------------------------------------------------------------ a vote (in the dock, where challenges show)
+// From the chair's question until just before the result board: the outcome (two buttons) and, optionally, the band of
+// yes votes (chips). The outcome can be changed until the prediction is sent: at once when a band is picked too,
+// otherwise just before the lock. Its ✕ dismisses that vote for good on this page, like a challenge's.
+class VoteView {
+  constructor(host) {
+    this.box = el("section", "game-pop vote-pop panel");
+    this.box.dataset.kind = "vote";
+    this.box.setAttribute("aria-live", "polite");
+    this.box.hidden = true;
+    this.box.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && this.v) { e.preventDefault(); this.dismiss(); }
+    });
+    host.append(this.box);
+    this.v = null;
+    this.mine = new Map();     // vote id -> {choice, band, sent, sending, error}
+    this.closed = new Set();
+  }
+
+  hide() { this.box.hidden = true; this.v = null; }
+
+  isClosed(session, v) { return this.closed.has(`${session}/${v.id}`); }
+
+  dismiss() {
+    if (!this.v) return;
+    const pick = this.mine.get(this.v.id);
+    if (pick && pick.choice && this.open()) this.send(this.v);  // a prediction made before closing still counts
+    this.closed.add(`${this.session}/${this.v.id}`);
+    const focused = this.box.contains(document.activeElement);
+    this.hide();
+    if (focused) document.getElementById("video")?.focus({ preventScroll: true });
+  }
+
+  show(session, v, now) {
+    const key = `${session}/${v.id}`;
+    if (this.built !== key) { this.build(session, v); this.built = key; }
+    this.v = v;
+    this.now = now;
+    const pick = this.mine.get(v.id), lock = lockOf(v, v.locks_at, now);
+    if (pick && pick.choice && !pick.sent && !pick.sending && !v.result && now >= lock - VOTE_SEND_MS) this.send(v);
+    this.update();
+    this.box.hidden = false;
+  }
+
+  build(session, v) {
+    this.session = session;
+    const b = this.box;
+    const head = el("div", "game-head");
+    const close = el("button", "game-close", "✕");
+    close.type = "button";
+    close.title = "Szavazás bezárása";
+    close.setAttribute("aria-label", close.title);
+    close.addEventListener("click", () => this.dismiss());
+    const max = (v.points || 0) + ((v.bands || []).length ? v.band_points || 0 : 0);
+    head.append(el("span", "game-tag", "[ SZAVAZÁS ]"), el("span", "game-time"), el("span", "game-worth", `max +${max} pont`),
+      close);
+    const item = el("p", "vote-item", v.item ? `Napirend: ${v.item}` : "");
+    item.title = v.item || "";
+    item.hidden = !v.item;
+    const motion = el("p", "vote-item", v.motion || "");
+    motion.title = v.motion || "";
+    motion.hidden = !v.motion;
+    const mode = el("p", "vote-mode", v.mode ? `Szavazás ${v.mode}` : "");
+    mode.hidden = !v.mode;
+    const opts = el("div", "game-options");
+    for (const o of v.options || []) {
+      const btn = el("button", "game-opt");
+      btn.type = "button";
+      btn.dataset.option = o;
+      btn.append(el("span", "opt-label", (v.labels || {})[o] || o), el("span", "opt-count"));
+      btn.addEventListener("click", () => this.choose(o));
+      opts.append(btn);
+    }
+    const bands = el("div", "vote-bands");
+    bands.setAttribute("role", "group");
+    bands.setAttribute("aria-label", "Hány igen szavazat lesz?");
+    (v.bands || []).forEach((band, i) => {
+      const chip = el("button", "vote-band", band.label);
+      chip.type = "button";
+      chip.dataset.band = String(i);
+      chip.title = `${band.lo}–${band.hi} igen`;
+      chip.addEventListener("click", () => this.chooseBand(i));
+      bands.append(chip);
+    });
+    const bandQ = el("p", "vote-band-q", `Hány igen szavazat lesz? Nem kötelező, +${v.band_points || 0} pont`);
+    bandQ.hidden = bands.hidden = !(v.bands || []).length;
+    b.replaceChildren(head, el("h3", "game-q", v.question || "Elfogadja az Országgyűlés?"), item, motion, mode, bar(), opts,
+      bandQ, bands, el("p", "game-status"), el("div", "game-after"));
+  }
+
+  open() {
+    const v = this.v;
+    return Boolean(v && !v.result && this.now < lockOf(v, v.locks_at, this.now));
+  }
+
+  choose(option) {
+    const v = this.v;
+    if (!this.open()) return;
+    const pick = this.mine.get(v.id) || { choice: null, band: null, sent: false, sending: false, error: null };
+    if (pick.sent || pick.sending) return;
+    pick.choice = option;
+    this.mine.set(v.id, pick);
+    if (pick.band != null) this.send(v); else this.update();
+  }
+
+  chooseBand(i) {
+    const v = this.v;
+    if (!this.open()) return;
+    const pick = this.mine.get(v.id) || { choice: null, band: null, sent: false, sending: false, error: null };
+    if (pick.sent || pick.sending) return;
+    pick.band = pick.band === i ? null : i;
+    this.mine.set(v.id, pick);
+    if (pick.choice && pick.band != null) this.send(v); else this.update();
+  }
+
+  async send(v) {
+    const pick = this.mine.get(v.id);
+    if (!pick || !pick.choice || pick.sent || pick.sending) return;
+    if (!account.registered) { pick.sent = true; if (this.v === v) this.update(); return; }  // visitors: unscored
+    pick.sending = true;
+    if (this.v === v) this.update();
+    try {
+      await api("/predict", { session: this.session, vote: v.id, choice: pick.choice, band: pick.band });
+      pick.sent = true;
+    } catch (e) {
+      pick.error = e.code === "closed" ? "Lejárt az idő, ez a tipp nem számít." : e.message || "A tipp nem ment át.";
+    }
+    pick.sending = false;
+    if (this.v === v) this.update();
+  }
+
+  update() {
+    const v = this.v, now = this.now, b = this.box;
+    const pick = this.mine.get(v.id), r = v.result, lock = lockOf(v, v.locks_at, now);
+    const open = !r && now < lock, fixed = Boolean(pick && (pick.sent || pick.sending || pick.error));
+    b.dataset.state = r ? "result" : open ? "open" : "locked";
+    b.querySelector(".game-bar span").style.width = open ? pct(lock - now, v.locks_at - v.opens_at) : "0%";
+    b.querySelector(".game-time").textContent = open ? `${secs(lock - now)} mp` : "";
+    const total = r ? Math.max(1, r.total || 0) : 0;
+    for (const btn of b.querySelectorAll(".game-opt")) {
+      const o = btn.dataset.option;
+      btn.disabled = !open || fixed;
+      btn.classList.toggle("picked", Boolean(pick && pick.choice === o));
+      btn.classList.toggle("right", Boolean(r && r.outcome === o));
+      btn.classList.toggle("wrong", Boolean(r && pick && pick.choice === o && r.outcome !== o));
+      const n = r ? (r.counts || {})[o] || 0 : null;
+      btn.querySelector(".opt-count").textContent = r && r.total ? `${Math.round((100 * n) / total)}%` : "";
+      btn.style.setProperty("--share", r && r.total ? `${(100 * n) / total}%` : "0%");
+    }
+    for (const chip of b.querySelectorAll(".vote-band")) {
+      const i = Number(chip.dataset.band);
+      chip.disabled = !open || fixed;
+      chip.classList.toggle("picked", Boolean(pick && pick.band === i));
+      chip.classList.toggle("right", Boolean(r && r.band === i));
+      chip.classList.toggle("wrong", Boolean(r && pick && pick.band === i && r.band !== i));
+      chip.setAttribute("aria-pressed", String(Boolean(pick && pick.band === i)));
+    }
+    const status = b.querySelector(".game-status"), after = b.querySelector(".game-after");
+    const label = (o) => ((v.labels || {})[o] || o);
+    const key = `${v.id}|${open}|${Boolean(r)}|${pick ? `${pick.choice}|${pick.band}|${pick.sent}|${pick.sending}|${pick.error}` : "-"}|${account.registered}`;
+    if (key === this.bodyKey) return;
+    this.bodyKey = key;
+    after.replaceChildren();
+    delete status.dataset.right;
+    if (!r) {
+      if (pick && pick.error) status.textContent = pick.error;
+      else if (open && !pick) status.textContent = "Mit dönt az Országgyűlés? Tippelj, mielőtt kiderül!";
+      else if (open && !pick.choice) status.textContent = "Elfogadják vagy elvetik? Válassz!";
+      else if (open && !fixed) status.textContent = `Tipped: ${label(pick.choice)}. A sávot még megadhatod.`;
+      else if (open) status.textContent = pick.sending ? "Küldés…" : "Tipp rögzítve. Figyeld a szavazótáblát!";
+      else status.textContent = pick && pick.choice ? "Lezárva, jön az eredmény…" : "Lejárt az idő, jön az eredmény…";
+      if (open && !account.registered) after.append(upsell("Vendégként játszol, pontot belépve kapsz."));
+      return;
+    }
+    const counts = `${r.yes} igen · ${r.no} nem${r.abstain != null ? ` · ${r.abstain} tartózkodás` : ""}`;
+    const past = (v.past || {})[r.outcome] || (r.outcome === "yes" ? "Elfogadta" : "Elvetette");
+    const choice = pick && pick.choice, rightOutcome = choice === r.outcome;
+    const rightBand = Boolean(pick && pick.band != null && pick.band === r.band);
+    const pts = (rightOutcome ? v.points || 0 : 0) + (rightBand ? v.band_points || 0 : 0);
+    status.dataset.right = String(Boolean(choice) && rightOutcome);
+    status.textContent = !choice ? `${past}: ${counts}.`
+      : rightOutcome ? `Eltaláltad! ${past}: ${counts}.` : `Nem talált. ${past}: ${counts}.`;
+    if (choice && pick.sent && account.registered) {
+      const parts = [rightOutcome && `+${v.points} a kimenetelért`, rightBand && `+${v.band_points} a sávért`].filter(Boolean);
+      after.append(el("p", "game-won", pts ? `+${pts} pont` : "ezúttal 0 pont"));
+      if (parts.length > 1) after.append(el("p", "game-same", parts.join(", ")));
+    } else if (!account.registered) {
+      after.append(upsell(pts ? `Belépve most +${pts} pontot kaptál volna.` : "Lépj be, és gyűjts pontokat!"));
+    }
+    if (r.total) {
+      const share = Math.round((100 * ((r.counts || {})[r.outcome] || 0)) / Math.max(1, r.total));
+      after.append(el("p", "game-same", `${r.total} játékosból ${share}% tippelt így.`));
+    }
+  }
+}
+
 // ------------------------------------------------------------------ a speech tip: a card at the bottom left, from the
 // start of a speech until a while after its result. It is open while the 20 s window runs; once the tip is in, it folds
 // by itself into a bar (the speaker, the tip, later its points) that the player can open and close again.
@@ -370,26 +571,27 @@ export function mountGame({ now: streamNow }) {
   document.body.append(dock);
   const pop = new ChallengeView(dock);
   const tipView = new TipView(dock);
+  const voteView = new VoteView(dock);
   let session = null, unsub = [];
-  const challenges = new Map(), tips = new Map(), seen = new Map(), looked = new Set();
+  const challenges = new Map(), tips = new Map(), votes = new Map(), seen = new Map(), looked = new Set();
 
   function follow(s) {
     if (s === session) return;
     unsub.forEach((u) => u());
     unsub = [];
     session = s;
-    challenges.clear(); tips.clear(); seen.clear();
-    pop.hide(); tipView.hide();
+    challenges.clear(); tips.clear(); votes.clear(); seen.clear();
+    pop.hide(); tipView.hide(); voteView.hide();
     if (!s) return;
     const watch = (name, into) => onSnapshot(collection(db, "games", s, name), (snap) => {
       snap.docChanges().forEach((c) => (c.type === "removed" ? into.delete(c.doc.id) : into.set(c.doc.id, { ...c.doc.data(), id: c.doc.id })));
     }, (e) => console.warn(`${name}:`, e));
-    unsub = [watch("challenges", challenges), watch("tips", tips)];
+    unsub = [watch("challenges", challenges), watch("tips", tips), watch("votes", votes)];
   }
 
   function tick() {
     const now = streamNow();
-    if (now == null || !session) { pop.hide(); tipView.hide(); return; }
+    if (now == null || !session) { pop.hide(); tipView.hide(); voteView.hide(); return; }
     // the challenge on screen: from its opening until its result has been shown for a while
     let current = null;
     for (const ch of challenges.values()) {
@@ -400,6 +602,15 @@ export function mountGame({ now: streamNow }) {
     }
     // a closed challenge leaves the dock empty: an older one still in its window does not come back in its place
     if (current && !pop.isClosed(session, current)) pop.show(session, current, now); else pop.hide();
+    // the vote: the newest from its question until its result has been shown for a while
+    let vote = null;
+    for (const v of votes.values()) {
+      if (now < v.opens_at || now - v.locks_at > STALE_MS) continue;
+      if (v.result && !seen.has(`v:${v.id}`)) seen.set(`v:${v.id}`, now);
+      if (v.result && now - seen.get(`v:${v.id}`) > RESULT_MS) continue;
+      if (!vote || v.opens_at > vote.opens_at) vote = v;
+    }
+    if (vote && !voteView.isClosed(session, vote)) voteView.show(session, vote, now); else voteView.hide();
     // the speech tip: the newest whose window is open or that the player tipped (until a while after its result)
     let card = null;
     for (const t of tips.values()) {

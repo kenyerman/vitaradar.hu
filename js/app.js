@@ -12,7 +12,7 @@ import { mountAccount } from "./account.js?v=202611241005";
 import { factSocial } from "./social.js?v=202611241005";
 import { mountChat } from "./chat.js?v=202611241005";
 import { scrollHint } from "./scrollhint.js?v=202611241005";
-import { mountGame } from "./game.js?v=202611241005";
+import { mountGame } from "./game.js?v=202611241020";
 import { cdnReady, cdnUrl, cdnXhr } from "./cdn.js?v=202611241005";
 
 cdnReady();  // the stream is on cdn.vitaradar.hu, which needs its cookie: get it before the player asks
