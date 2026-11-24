@@ -1122,7 +1122,7 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   .m-tab[data-live="true"]::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
   .m-tab-n { min-width: 18px; padding: 2px 5px; background: var(--green); color: #000; font-size: 10px; letter-spacing: 0; }
   .m-tab-n[hidden] { display: none; }
-  .m-ai { margin: 0; padding: 5px 12px; border-top: 1px solid var(--line-dim); color: var(--muted); font-size: 10px;
+  .m-ai { margin: 0; padding: 5px 12px; border-top: 1px solid var(--line-dim); background: var(--bg); color: var(--muted); font-size: 10px;
     letter-spacing: .8px; text-transform: uppercase; }
   body:not([data-m-tab="feed"]) .m-ai { display: none; }
   .m-live .m-strip .chat-open { display: none !important; }  /* the Chat tab stands for it */
@@ -1158,6 +1158,7 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   }
   body { font-family: var(--sans); }
   body::after { display: none; }  /* no scanlines */
+  .site-header { background: var(--bg); backdrop-filter: none; }  /* solid: the feed never shows through it */
   .brand img, .menu-bars span { filter: none; box-shadow: none; }
   .brand-name, .page-title, .section-head h2, .speaker-name, .m-sep-name, .m-tab, .m-new, .m-ai, .tally, .verdict,
   .fact-time, .t-btn, .btn, .acct-btn, .hdr-support, .brand-beta, .online-badge, .menu-panel .nav a, .menu-title,
