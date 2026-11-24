@@ -547,6 +547,37 @@ a.ext { color: var(--cyan); text-decoration: underline dotted; overflow-wrap: an
   .chat { contain: none; height: 360px; }
   .acct { order: 2; margin-left: auto; }
 }
+/* the chat closed (js/chat.js; :root[data-chat="closed"] is set in the head, before the first paint): the player takes
+   the full width, and the chat folds into a button on the player's top right corner that counts the messages missed
+   meanwhile. The column narrows to nothing while the chat fades, so nothing jumps. */
+.stage { position: relative; }
+.stage[data-chat="on"] { transition: grid-template-columns .25s ease, column-gap .25s ease; }
+.stage[data-chat="on"] > .chat { min-width: 0; transition: opacity .15s .15s; }
+:root[data-chat="closed"] .stage[data-chat="on"] { grid-template-columns: minmax(0, 1fr) 0px; column-gap: 0; }
+:root[data-chat="closed"] .stage > .chat { opacity: 0; visibility: hidden; overflow: hidden; border-width: 0;
+  transition: opacity .12s, visibility 0s .25s, border-width 0s .25s; }
+.chat-close { flex: none; margin: -4px -6px -4px auto; padding: 3px 6px; background: transparent; border: 1px solid transparent;
+  color: var(--muted); font: 13px/1 var(--mono); cursor: pointer; }
+.chat-close:hover, .chat-close:focus-visible { color: var(--green); border-color: var(--line); outline: none; }
+.chat-open { display: none; position: absolute; z-index: 5; top: 10px; right: 10px; align-items: center; padding: 6px 10px;
+  background: rgba(0, 0, 0, .78); border: 1px solid var(--line); color: var(--green); font: 13px/1.55 var(--mono);
+  letter-spacing: .8px; text-transform: uppercase; text-shadow: var(--glow); cursor: pointer; }
+.chat-open:hover, .chat-open:focus-visible { border-color: var(--green); box-shadow: var(--glow); outline: none; }
+:root[data-chat="closed"] .chat-open { display: inline-flex; }
+.chat-missed { position: absolute; top: -9px; right: -10px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px;
+  background: var(--green); color: #000; font: 700 10px/18px var(--mono); letter-spacing: 0; text-align: center;
+  text-shadow: none; box-shadow: 0 0 6px rgba(0, 255, 65, .6); pointer-events: none; }
+.chat-missed[hidden] { display: none; }
+.chat-missed.bump { animation: bump .6s ease-out; }
+@media (max-width: 860px) {  /* the chat sits below the player there: closed, it simply goes */
+  :root[data-chat="closed"] .stage[data-chat="on"] { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  :root[data-chat="closed"] .stage > .chat { display: none; }
+  .chat-open { top: 8px; right: 8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .stage[data-chat="on"], .stage[data-chat="on"] > .chat, :root[data-chat="closed"] .stage > .chat { transition: none; }
+  .chat-missed.bump { animation: none; }
+}
 @media (max-width: 1399px) { .tagline { display: none; } }  /* the tagline only where the header has room for it */
 
 /* locked content (js/social.js locked()): placeholder text, blurred, with a prompt on top */

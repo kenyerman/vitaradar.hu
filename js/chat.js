@@ -18,10 +18,86 @@ const SHOWN = 120;
 
 const messages = () => collection(db, "chat", "live", "messages");
 
-function head() {
+function head(onClose) {
   const h = el("div", "chat-head");
-  h.append(el("h2", null, "Chat"), el("span", "count", "18+ · 1 óra után törlődik"));
+  const close = el("button", "chat-close", "✕");
+  close.type = "button";
+  close.title = "Chat bezárása";
+  close.setAttribute("aria-label", close.title);
+  close.setAttribute("aria-controls", "chat");
+  close.setAttribute("aria-expanded", "true");
+  close.addEventListener("click", onClose);
+  h.append(el("h2", null, "Chat"), el("span", "count", "18+ · 1 óra után törlődik"), close);
   return h;
+}
+
+// Closing: the chat folds into a button on the player (#chat-open, in the page, like the column) that counts the messages
+// that arrive while it is closed: not the ones already there, not the reader's own, not the blocked users'. The choice
+// is kept in vr-chat; the head's script sets :root[data-chat="closed"] from it before the first paint.
+const KEY = "vr-chat";
+
+function folding(stage, col) {
+  const root = document.documentElement;
+  let button = document.getElementById("chat-open");
+  if (!button) {
+    button = el("button", "chat-open");
+    button.type = "button";
+    button.id = "chat-open";
+    button.setAttribute("aria-controls", "chat");
+    button.setAttribute("aria-expanded", "false");
+    const label = el("span", null, "Chat");
+    label.setAttribute("aria-hidden", "true");
+    const n = el("span", "chat-missed");
+    n.setAttribute("aria-hidden", "true");
+    n.hidden = true;
+    button.append(label, n);
+    stage.append(button);
+  }
+  const badge = button.querySelector(".chat-missed");
+  let closed = root.dataset.chat === "closed";
+  let seen = new Set();     // message ids already there, or counted
+  const missed = new Set();
+  let docs = [], uid = null;
+
+  function show() {
+    const n = missed.size;
+    const had = badge.textContent;
+    badge.textContent = n > 99 ? "99+" : String(n);
+    badge.hidden = !n;
+    if (n && had !== badge.textContent) { badge.classList.remove("bump"); void badge.offsetWidth; badge.classList.add("bump"); }
+    button.setAttribute("aria-label", n ? `Chat megnyitása, ${n > 99 ? "több mint 99" : n} új üzenet` : "Chat megnyitása");
+    col.inert = closed;
+  }
+
+  function set(next) {
+    closed = next;
+    if (closed) root.dataset.chat = "closed"; else delete root.dataset.chat;
+    try { localStorage.setItem(KEY, closed ? "closed" : "open"); } catch { /* private mode: for this page only */ }
+    seen = new Set(docs.map((m) => m.id));
+    missed.clear();
+    show();
+  }
+
+  button.addEventListener("click", () => {
+    set(false);
+    col.querySelector(".chat-close")?.focus({ preventScroll: true });
+  });
+  show();
+
+  return {
+    close() { set(true); button.focus({ preventScroll: true }); },
+    // every snapshot of the messages; backlog: what a new subscription finds already there, which never counts
+    messages(list, reader, backlog) {
+      docs = list;
+      uid = reader;
+      for (const m of list) {
+        if (seen.has(m.id)) continue;
+        seen.add(m.id);
+        if (closed && !backlog && m.uid !== uid && !isBlocked(m.uid)) missed.add(m.id);
+      }
+      if (closed) show();
+    },
+  };
 }
 
 function fakeChat() {
@@ -45,6 +121,8 @@ export function mountChat(stage) {
     col.setAttribute("aria-label", "Chat");
     stage.append(col);
   }
+  col.id = "chat";
+  const fold = folding(stage, col);
   let state = null, stop = null;
   onAccount((a) => {
     const uid = a.registered && a.a18 && a.user ? a.user.uid : null;
@@ -52,8 +130,9 @@ export function mountChat(stage) {
     if (next === state) return;
     state = next;
     if (stop) { stop(); stop = null; }
-    col.replaceChildren(head());
-    if (uid) { stop = liveChat(col, uid); return; }
+    col.replaceChildren(head(fold.close));
+    if (uid) { stop = liveChat(col, uid, fold); return; }
+    fold.messages([], null, true);  // a visitor can't read the chat: nothing to count
     const text = a.registered ? "A chat 18 év feletti felhasználóknak szól."
       : a.user ? "Fejezd be a regisztrációt, és csevegj élőben a közvetítés alatt (18+)."
         : "Lépj be, és csevegj élőben a közvetítés alatt (18+).";
@@ -62,7 +141,7 @@ export function mountChat(stage) {
   });
 }
 
-function liveChat(col, uid) {
+function liveChat(col, uid, fold) {
   const list = el("ol", "chat-list");
   list.setAttribute("aria-live", "polite");
   const form = el("form", "chat-form");
@@ -88,9 +167,12 @@ function liveChat(col, uid) {
     list.replaceChildren(...shown.map((m) => nodes.get(m.id) || remember(m)));
     if (atEnd) list.scrollTop = list.scrollHeight;
   }
+  let backlog = true;  // until the server's first answer: what was there before
   const unsub = onSnapshot(query(messages(), orderBy("createdAt", "desc"), limit(SHOWN)), (snap) => {
     docs = snap.docs.map((d) => ({ id: d.id, ...d.data({ serverTimestamps: "estimate" }) })).reverse();
     render();
+    fold.messages(docs, uid, backlog);
+    if (!snap.metadata.fromCache) backlog = false;
   }, (e) => {
     console.warn("chat:", e);
     list.replaceChildren(el("li", "empty", "a chat most nem érhető el"));

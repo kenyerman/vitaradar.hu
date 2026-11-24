@@ -10,7 +10,7 @@ import { defaultStream } from "./config.js?v=202611240130";
 import { db, el, badge, sourceList, setPhoto, mpHref } from "./common.js?v=202611240130";
 import { mountAccount } from "./account.js?v=202611240130";
 import { factSocial } from "./social.js?v=202611240130";
-import { mountChat } from "./chat.js?v=202611240130";
+import { mountChat } from "./chat.js?v=202611240134";
 import { mountGame } from "./game.js?v=202611240130";
 import { cdnReady, cdnUrl, cdnXhr } from "./cdn.js?v=202611240130";
 
