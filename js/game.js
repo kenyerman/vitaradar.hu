@@ -8,8 +8,8 @@
 // unscored, and are asked to sign in.
 
 import { collection, doc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { db, el } from "./common.js?v=202611240846";
-import { account, onAccount, api, needAccount, toast } from "./account.js?v=202611240846";
+import { db, el } from "./common.js?v=202611240954";
+import { account, onAccount, api, needAccount, toast } from "./account.js?v=202611240954";
 
 const TRUTH = { true: "IGAZ", false: "HAMIS" };
 const MASKED = "Hibás érvelés?";
@@ -62,17 +62,34 @@ function bar() {
 }
 
 // ------------------------------------------------------------------ a challenge (in the dock)
+// Its ✕ (or Escape inside it) dismisses that challenge for good on this page: it stays away for the rest of its window
+// and its result; the next challenge pops up as usual. An answer already given still counts.
 class ChallengeView {
   constructor(host) {
     this.box = el("section", "game-pop panel");
     this.box.setAttribute("aria-live", "polite");
     this.box.hidden = true;
+    this.box.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && this.ch) { e.preventDefault(); this.dismiss(); }
+    });
     host.append(this.box);
     this.ch = null;
-    this.mine = new Map();  // challenge id -> {choice, sent, error}
+    this.mine = new Map();     // challenge id -> {choice, sent, error}
+    this.closed = new Set();   // "session/challenge id" of the challenges the player closed
   }
 
   hide() { this.box.hidden = true; this.ch = null; }
+
+  isClosed(session, ch) { return this.closed.has(`${session}/${ch.id}`); }
+
+  dismiss() {
+    if (!this.ch) return;
+    this.closed.add(`${this.session}/${this.ch.id}`);
+    const focused = this.box.contains(document.activeElement);
+    this.hide();
+    // keyboard focus goes back to the player rather than into nothing
+    if (focused) document.getElementById("video")?.focus({ preventScroll: true });
+  }
 
   show(session, ch, now) {
     const key = `${session}/${ch.id}`;  // built once per challenge: a brief hide must not swap the buttons under a click
@@ -88,8 +105,13 @@ class ChallengeView {
     const b = this.box;
     b.dataset.kind = ch.kind;
     const head = el("div", "game-head");
+    const close = el("button", "game-close", "✕");
+    close.type = "button";
+    close.title = "Kihívás bezárása";
+    close.setAttribute("aria-label", close.title);
+    close.addEventListener("click", () => this.dismiss());
     head.append(el("span", "game-tag", ch.kind === "truth" ? "[ KIHÍVÁS ]" : "[ KIHÍVÁS · HIBÁS ÉRVELÉS ]"),
-      el("span", "game-time"), el("span", "game-worth", `+${ch.points} pont`));
+      el("span", "game-time"), el("span", "game-worth", `+${ch.points} pont`), close);
     // What is being judged comes first: the claim itself (true/false) or the argument as summarized (fallacy). The
     // words as transcribed are only context, two lines at most: a transcript runs long and wanders off the point.
     const statement = el("p", "game-statement", (ch.kind === "truth" ? ch.claim || ch.summary : ch.summary) || ch.quote || "");
@@ -376,7 +398,8 @@ export function mountGame({ now: streamNow }) {
       if (ch.result && now - seen.get(ch.id) > RESULT_MS) continue;
       if (!current || ch.opens_at > current.opens_at) current = ch;
     }
-    if (current) pop.show(session, current, now); else pop.hide();
+    // a closed challenge leaves the dock empty: an older one still in its window does not come back in its place
+    if (current && !pop.isClosed(session, current)) pop.show(session, current, now); else pop.hide();
     // the speech tip: the newest whose window is open or that the player tipped (until a while after its result)
     let card = null;
     for (const t of tips.values()) {

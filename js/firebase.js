@@ -11,7 +11,7 @@ import {
   initializeAuth, indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence,
   browserPopupRedirectResolver, GoogleAuthProvider, signInWithPopup, signOut as fbSignOut,
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-import { firebaseConfig, recaptchaSiteKey } from "./config.js?v=202611240846";
+import { firebaseConfig, recaptchaSiteKey } from "./config.js?v=202611240954";
 
 export const app = initializeApp(firebaseConfig);
 

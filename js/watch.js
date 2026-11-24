@@ -7,12 +7,12 @@
 // ?t= opens the video at that second (the MP page's fact links).
 
 import { doc, getDoc, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { db, el, badge, sourceList, setPhoto, hms, huDate, mpHref, watchLiveBadge } from "./common.js?v=202611240846";
-import { mountAccount } from "./account.js?v=202611240846";
-import { factSocial } from "./social.js?v=202611240846";
-import { watchHref } from "./links.js?v=202611240846";
-import { cdnReady, cdnUrl, cdnXhr } from "./cdn.js?v=202611240846";
-import { scrollHint } from "./scrollhint.js?v=202611240846";
+import { db, el, badge, sourceList, setPhoto, hms, huDate, mpHref, watchLiveBadge } from "./common.js?v=202611240954";
+import { mountAccount } from "./account.js?v=202611240954";
+import { factSocial } from "./social.js?v=202611240954";
+import { watchHref } from "./links.js?v=202611240954";
+import { cdnReady, cdnUrl, cdnXhr } from "./cdn.js?v=202611240954";
+import { scrollHint } from "./scrollhint.js?v=202611240954";
 
 watchLiveBadge();
 mountAccount();

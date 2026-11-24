@@ -690,6 +690,11 @@ a.acct-me, a.acct-me:hover { text-decoration: none; text-shadow: none; }
 .game-time { margin-left: auto; color: var(--unverifiable); font-size: 14px; }
 .game-worth { color: var(--muted); }
 .game-time:empty + .game-worth { margin-left: auto; }
+.game-close { flex: none; align-self: center; display: grid; place-items: center; width: 32px; height: 32px;
+  margin: -9px -9px -9px -4px; padding: 0; background: transparent; border: 1px solid transparent; color: var(--muted);
+  font: 14px/1 var(--mono); cursor: pointer; }
+.game-close:hover, .game-close:focus-visible { color: var(--green); border-color: var(--line); outline: none; }
+@media (pointer: coarse) { .game-close { width: 44px; height: 44px; margin: -15px -12px -15px -6px; } }
 .game-q { margin: 0; font-size: 15px; color: var(--text); letter-spacing: .3px; }
 .game-statement { margin: 0; color: var(--text); font-size: 14px; font-weight: 700; line-height: 1.45; }
 .game-who { margin: -4px 0 0; color: var(--muted); font-size: 12px; text-align: right; }
