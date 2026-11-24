@@ -1064,4 +1064,20 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   .m-strip .tally dt { font-size: 9.5px; letter-spacing: .3px; }
   .m-strip .tally dd { margin: 0; font-size: 13px; }
   .m-live .speaker-col { display: none; }  /* its speaker card and tally are in the strip */
+
+  /* the menu opens below the pinned player, so it never covers the video */
+  .m-live .menu-panel, .m-watch .menu-panel, .m-live .menu-backdrop, .m-watch .menu-backdrop { top: var(--m-top, 0px); }
+  .m-live .menu-head, .m-watch .menu-head { min-height: 52px; }
+  /* "Élő adás" while live: a small filled red dot, not a red row */
+  .menu-panel .nav a.nav-live[data-live="on"] { color: var(--text); border-left-color: transparent; background: none; }
+  .menu-panel .nav a.nav-live[data-live="on"][aria-current="page"] { color: var(--green); border-left-color: var(--green);
+    background: rgba(0, 255, 65, .08); }
+  .menu-panel .nav a.nav-live[data-live="on"]::before { color: var(--muted); }
+  .menu-panel .nav-live .live-dot { width: 8px; height: 8px; background: #ff4d5a; box-shadow: none; }
+  /* support: a button with a red heart, the menu's last item */
+  .menu-panel .nav a.nav-support { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 14px 16px 6px;
+    padding: 12px 14px; border: 1px solid var(--green); background: transparent; color: var(--green); font-weight: 700;
+    letter-spacing: 1.2px; text-transform: uppercase; }
+  .menu-panel .nav a.nav-support::before { content: "\2665"; color: #ff4d5a; text-shadow: none; }
+  .m-live .support-line { display: none; }  /* the header's heart and the menu's button stand for it */
 }
