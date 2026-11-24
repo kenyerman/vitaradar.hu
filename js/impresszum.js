@@ -1,7 +1,7 @@
 // vitaradar.hu impresszum: a static page; only the header's live badge and account button, as on the other pages.
 
-import { watchLiveBadge } from "./common.js?v=202611240125";
-import { mountAccount } from "./account.js?v=202611240125";
+import { watchLiveBadge } from "./common.js?v=202611240130";
+import { mountAccount } from "./account.js?v=202611240130";
 
 watchLiveBadge();
 mountAccount();

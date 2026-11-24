@@ -1,10 +1,12 @@
 // Who is on the site right now, visitors included: a heartbeat to the user API (/presence) about every 30 s, answered
 // with the counts. The header shows "N online", and its tooltip says how many are signed in and how many watch the
-// live stream. The browser keeps a random id (several tabs count once); App Check still guards the call, and the ID
-// token, when someone is signed in, only marks them as signed in.
+// live stream. Each heartbeat carries a random id; App Check still guards the call, and the ID token, when someone is
+// signed in, only marks them as signed in. Only with the visitor's consent (consent.js) does the browser keep that id,
+// so that several pages and tabs count once; without it the id lives in this page's memory and nothing is stored.
 
-import { auth, appCheckHeaders } from "./firebase.js?v=202611240125";
-import { apiUrl } from "./config.js?v=202611240125";
+import { auth, appCheckHeaders } from "./firebase.js?v=202611240130";
+import { apiUrl } from "./config.js?v=202611240130";
+import { consented, onConsentChange } from "./consent.js?v=202611240130";
 
 const EVERY_MS = 30_000;
 const KEY = "vr-presence-id";
@@ -14,6 +16,10 @@ function browserId() {
     const b = crypto.getRandomValues(new Uint8Array(16));
     return btoa(String.fromCharCode(...b)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
   };
+  if (!consented()) {
+    try { localStorage.removeItem(KEY); } catch { /* nothing stored */ }  // one kept before the consent bar existed
+    return fresh();
+  }
   try {
     let id = localStorage.getItem(KEY);
     if (!id || !/^[A-Za-z0-9_-]{16,64}$/.test(id)) { id = fresh(); localStorage.setItem(KEY, id); }
@@ -73,6 +79,9 @@ function unknown() {  // no figure rather than a wrong one; the badge keeps its 
 
 const id = browserId();
 const page = pageName();
+onConsentChange((ok) => {  // keep this page's id once allowed, drop it when the consent is withdrawn
+  try { if (ok) localStorage.setItem(KEY, id); else localStorage.removeItem(KEY); } catch { /* no storage */ }
+});
 let busy = false;
 
 async function beat() {

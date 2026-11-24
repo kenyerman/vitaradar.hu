@@ -779,3 +779,22 @@ a.fact-time { display: inline-block; padding-top: 4px; padding-bottom: 4px; marg
   .menu-panel, .menu-panel[data-open], .menu-backdrop, .menu-backdrop[data-open] { transition: none; }
   .menu-btn[data-live="on"]::after { animation: none; }
 }
+
+/* the cookie and storage bar (js/consent.js), until the visitor chooses: fixed to the bottom, so nothing moves; the page
+   gets the same room at its end, and the bottom-anchored game dock and toasts sit above it */
+.consent { position: fixed; z-index: 45; left: 0; right: 0; bottom: 0; display: flex; align-items: center;
+  justify-content: center; flex-wrap: wrap; gap: 8px 18px; padding: 9px 16px calc(9px + env(safe-area-inset-bottom));
+  background: var(--panel-solid); border-top: 1px solid var(--line); box-shadow: 0 -8px 24px rgba(0, 0, 0, .55);
+  font-size: 12px; line-height: 1.45; }
+.consent-text { margin: 0; color: var(--text); }
+.consent-actions { display: flex; align-items: center; gap: 8px; flex: none; }
+.consent-actions a { margin-left: 4px; padding: 4px 2px; text-decoration: underline; text-underline-offset: 3px; }
+:root[data-consent="open"] body { margin-bottom: var(--consent-h, 0px); }  /* a margin, so the body's own layout stays put */ 
+:root[data-consent="open"] .toasts { bottom: calc(20px + var(--consent-h, 0px)); }
+:root[data-consent="open"] .game-dock { bottom: calc(20px + var(--consent-h, 0px)); }
+@media (max-width: 860px) {
+  .consent { justify-content: flex-start; gap: 7px; padding: 8px 12px calc(8px + env(safe-area-inset-bottom)); font-size: 11.5px; }
+  :root[data-consent="open"] .game-dock { bottom: calc(8px + var(--consent-h, 0px)); }
+}
+.imp-sec code { font: inherit; color: var(--green-soft); overflow-wrap: anywhere; }
+#sutik { scroll-margin-top: 88px; }  /* the banner's Részletek link lands below the sticky header */
