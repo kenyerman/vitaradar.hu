@@ -62,6 +62,11 @@ parliament's stream ──► fact-check pipeline (GPU VM) ──► HLS video p
 - **Backend:** the search function, the user API, the profile-picture service, the security rules and the fact-check
   pipeline are in a private repository; this repository is the website only.
 
+## Issues
+
+Bugs, wrong verdicts and ideas: [open an issue](https://github.com/kenyerman/vitaradar.hu/issues). The tracker is
+public and linked from every page's footer and the impresszum; for anything private, write to help@vitaradar.hu.
+
 ## Run locally
 
 ```bash
