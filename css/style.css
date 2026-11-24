@@ -33,6 +33,7 @@ body {
 }
 /* the rain behind everything, and scanlines over it */
 #rain { position: fixed; inset: 0; z-index: -2; opacity: .32; }
+@media (max-width: 860px) { #rain { display: none; } }  /* phones: no rain behind the text */
 body::after {
   content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
   background: repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0) 0 2px, rgba(0, 0, 0, .28) 2px 3px),
@@ -52,7 +53,7 @@ h1, h2, h3 { font-family: var(--mono); }
 .brand { display: flex; align-items: center; gap: 10px; color: var(--green); text-decoration: none !important; }
 .brand img { filter: drop-shadow(0 0 6px rgba(0, 255, 65, .6)); }
 .brand-name { font: 700 22px/1 var(--mono); letter-spacing: -.3px; text-shadow: var(--glow); }
-.brand-name::after { content: "_"; animation: blink 1s steps(1) infinite; margin-left: 1px; }
+.brand-name::after { content: "_"; margin-left: 1px; }
 .brand-tld { color: var(--green-soft); }
 /* Under the name, from its bottom left: BETA and the online count (js/presence.js) as one small line. Out of the flow,
    so the header keeps its height and the name its width; outside the link, so the count's tooltip is its own. The
@@ -63,7 +64,6 @@ h1, h2, h3 { font-family: var(--mono); }
 .brand-beta { padding: 2px 4px 1px; border: 1px solid var(--line);
   background: rgba(0, 255, 65, .08); color: var(--green); font: 700 9px/1 var(--mono); letter-spacing: 1.6px;
   text-shadow: none; }
-@keyframes blink { 50% { opacity: 0; } }
 .tagline { margin: 0; color: var(--muted); font-size: 12px; letter-spacing: 1.2px; text-transform: uppercase; }
 .nav { display: flex; gap: 4px; margin-left: auto; }
 .nav a { padding: 6px 10px; border: 1px solid transparent; color: var(--muted); font-size: 13px; letter-spacing: .8px;
@@ -79,7 +79,7 @@ h1, h2, h3 { font-family: var(--mono); }
 .live-off, .nav-live[data-live="off"] .live-on { visibility: hidden; }
 .nav-live[data-live="off"] .live-off { visibility: visible; }
 .live-dot { flex: none; align-self: center; width: 7px; height: 7px; border-radius: 50%; background: currentColor; opacity: .45; }
-.nav-live[data-live="on"] .live-dot { opacity: 1; box-shadow: 0 0 6px #ff4d4d; animation: blink 1s steps(1) infinite; }
+.nav-live[data-live="on"] .live-dot { opacity: 1; box-shadow: 0 0 6px #ff4d4d; }
 .nav a.nav-live[data-live="on"] { color: #ff4d4d; border-color: rgba(255, 77, 77, .6); background: rgba(255, 77, 77, .1);
   text-shadow: 0 0 6px rgba(255, 77, 77, .75); box-shadow: 0 0 10px rgba(255, 77, 77, .35), inset 0 0 8px rgba(255, 77, 77, .12); }
 .nav a.nav-live[data-live="on"]:hover, .nav a.nav-live[data-live="on"]:focus-visible { border-color: #ff4d4d;
@@ -88,9 +88,7 @@ h1, h2, h3 { font-family: var(--mono); }
 .online-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 4px 1px; border: 1px solid var(--line);
   font: 700 9px/1 var(--mono); letter-spacing: 1.2px; text-transform: uppercase; color: var(--green); cursor: default;
   text-shadow: none; }
-.online-badge .dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; box-shadow: 0 0 4px currentColor;
-  animation: pulse-dot 2s ease-in-out infinite; }
-@keyframes pulse-dot { 50% { opacity: .35; } }
+.online-badge .dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; box-shadow: 0 0 4px currentColor; }
 /* The header's slots that fill in after load (js/presence.js, js/account.js, js/menu.js) are in the page from the
    start, at their final size, so nothing in the header moves when their data arrives. */
 .online-n { display: inline-block; min-width: calc(6em + 12px); text-align: center; }  /* 10 monospace characters with their letter-spacing: "999 online" (em, not ch: ch follows whichever font has loaded) */
@@ -141,26 +139,20 @@ main.wrap { padding-top: 32px; padding-bottom: 56px; }  /* main.wrap: beats .wra
 
 /* a fact, like the stream's claim cards */
 .fact { position: relative; background: var(--panel); border: 1px solid var(--line-dim); border-left: 3px solid var(--pending);
-  padding: 12px 14px 13px; animation: pop .45s cubic-bezier(.2, .9, .3, 1.2); }
+  padding: 12px 14px 13px; }
 .fact[data-verdict="true"] { border-left-color: var(--true); }
 .fact[data-verdict="false"] { border-left-color: var(--false); }
 .fact[data-verdict="unverifiable"] { border-left-color: var(--unverifiable); }
 .fact[data-verdict="fallacy"] { border-left-color: var(--fallacy); }
-.fact.flash { animation: glitch .7s steps(2) 1, flash 1.2s ease-out; }
 @keyframes pop { from { opacity: 0; transform: translateX(-12px); } to { opacity: 1; transform: none; } }
 @keyframes flash { from { background: rgba(0, 255, 65, .12); } to { background: var(--panel); } }
-@keyframes glitch {
-  0% { transform: translate(2px, 0); text-shadow: -2px 0 var(--false), 2px 0 var(--cyan); }
-  50% { transform: translate(-2px, 0); text-shadow: 2px 0 var(--false), -2px 0 var(--cyan); }
-  100% { transform: none; text-shadow: none; }
-}
 .fact-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
 .verdict { font: 700 11px/1 var(--mono); letter-spacing: .8px; padding: 5px 7px; color: #000; background: var(--pending); }
 .verdict[data-v="true"] { background: var(--true); }
 .verdict[data-v="false"] { background: var(--false); color: #fff; }
 .verdict[data-v="unverifiable"] { background: var(--unverifiable); }
 .verdict[data-v="fallacy"] { background: var(--fallacy); }
-.verdict[data-v="pending"]::after { content: " ░▒"; animation: blink .8s steps(1) infinite; }
+.verdict[data-v="pending"]::after { content: " ░▒"; }
 .fact-who { font-size: 12px; color: var(--muted); }
 .fact-who a { color: var(--muted); }
 .fact-time { font-size: 11px; color: var(--muted); margin-left: auto; }
@@ -290,7 +282,7 @@ input.field { flex: 1; min-width: 200px; }
 .dd-option[aria-selected="true"] { color: var(--green); }
 .dd-option[aria-selected="true"]::before { content: "✓"; }
 .dd-option.active { background: rgba(0, 255, 65, .14); color: #eafff0; }
-.dd-option.active::after { content: " _"; color: var(--green); animation: blink 1s steps(1) infinite; }
+.dd-option.active::after { content: " _"; color: var(--green); }
 
 /* MP page */
 .mp-head { display: grid; grid-template-columns: 180px 1fr; gap: 22px; align-items: start; margin-bottom: 24px; }
@@ -446,9 +438,6 @@ details[open] > summary .lvl-title::before { content: "▾ "; }
   .mp-head h1 { font-size: 20px; }
   .scores { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
-@media (prefers-reduced-motion: reduce) {
-  .fact, .fact.flash, .live-dot, .online-badge .dot, .verdict::after, .brand-name::after { animation: none !important; }
-}
 
 /* accounts (js/account.js), votes and comments (js/social.js), the live chat (js/chat.js) */
 .acct { display: flex; align-items: center; }
@@ -598,10 +587,9 @@ a.ext { color: var(--cyan); text-decoration: underline dotted; overflow-wrap: an
    the facts; the script sets its height (under the player, or above the video's controls, above the cookie bar). Fixed,
    so nothing moves; gone while a game card is up at the bottom. */
 @keyframes hint-in { from { opacity: 0; } }
-@keyframes hint-bob { 50% { transform: translate(-50%, 5px); } }
 .scroll-hint { position: fixed; z-index: 44; left: 50%; bottom: 20px; transform: translateX(-50%); display: grid;
   place-items: center; width: 42px; height: 42px; padding: 0; background: rgba(0, 0, 0, .8); border: 1px solid var(--green);
-  color: var(--green); cursor: pointer; box-shadow: var(--glow); animation: hint-in .4s ease-out, hint-bob 1.8s ease-in-out .4s infinite; }
+  color: var(--green); cursor: pointer; box-shadow: var(--glow); animation: hint-in .4s ease-out; }
 .scroll-hint svg { width: 20px; height: 20px; filter: drop-shadow(0 0 4px rgba(0, 255, 65, .6)); }
 .scroll-hint:hover, .scroll-hint:focus-visible { background: rgba(0, 255, 65, .14); outline: none; }
 .scroll-hint[hidden] { display: none; }
@@ -910,7 +898,7 @@ a.fact-time { display: inline-block; padding-top: 4px; padding-bottom: 4px; marg
   .menu-bars { display: grid; gap: 4px; width: 18px; }
   .menu-bars span { height: 2px; background: currentColor; box-shadow: 0 0 6px rgba(0, 255, 65, .6); }
   .menu-btn[data-live="on"]::after { content: ""; position: absolute; top: -5px; right: -5px; width: 10px; height: 10px;
-    border-radius: 50%; background: #ff4d4d; box-shadow: 0 0 8px #ff4d4d; animation: blink 1s steps(1) infinite; }
+    border-radius: 50%; background: #ff4d4d; box-shadow: 0 0 8px #ff4d4d; }
   .menu-backdrop { display: block; position: fixed; inset: 0; z-index: 69; background: rgba(0, 0, 0, .6);
     backdrop-filter: blur(2px); opacity: 0; visibility: hidden; transition: opacity .28s, visibility 0s .28s; }
   .menu-backdrop[data-open] { opacity: 1; visibility: visible; transition: opacity .28s; }
@@ -956,7 +944,6 @@ a.fact-time { display: inline-block; padding-top: 4px; padding-bottom: 4px; marg
 }
 @media (prefers-reduced-motion: reduce) {
   .menu-panel, .menu-panel[data-open], .menu-backdrop, .menu-backdrop[data-open] { transition: none; }
-  .menu-btn[data-live="on"]::after { animation: none; }
 }
 
 /* the cookie and storage bar (js/consent.js), until the visitor chooses: fixed to the bottom, so nothing moves; the page
