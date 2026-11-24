@@ -16,6 +16,7 @@ import { watchHref } from "./links.js?v=202611241021";
 import { cdnReady, cdnUrl, cdnXhr } from "./cdn.js?v=202611241021";
 import { scrollHint } from "./scrollhint.js?v=202611241021";
 import { setPageMeta } from "./meta.js?v=202611241124";
+import { youtubeMedia } from "./ytplayer.js?v=202611241433";
 
 watchLiveNav();
 mountAccount();
@@ -25,6 +26,7 @@ const params = new URLSearchParams(location.search);
 const session = params.get("s") || "";
 const startAt = Math.max(0, parseFloat(params.get("t") || "0") || 0);
 const video = $("video");
+let media = video;  // the <video>, or the YouTube player behind the same calls (ytplayer.js)
 let facts = [];      // {c, speech, li}, newest first (those past the end of the video at the top)
 let speakers = [];   // archive doc's speeches: {mp_id, name, party, start_s, end_s}
 let turns = [];      // archive doc's floor turns: {speaker_id, name, party, role, color, photo, chair, start_s, end_s}
@@ -41,8 +43,8 @@ function clock(ms) {
 }
 
 function seek(t, play = true) {
-  video.currentTime = t;
-  if (play) video.play().catch(() => {});
+  media.currentTime = t;
+  if (play) media.play().catch(() => {});
 }
 
 function factItem(f) {
@@ -133,13 +135,13 @@ function renderFacts(t) {
 }
 
 function tick() {
-  const t = video.currentTime;
+  const t = media.currentTime;
   renderFacts(t);
   renderSpeaker(t);
 }
 
 function shareUrl() {
-  return new URL(watchHref(session, video.currentTime), location.href).href;
+  return new URL(watchHref(session, media.currentTime), location.href).href;
 }
 
 async function load() {
@@ -187,8 +189,26 @@ async function load() {
     try { mps.set(id, (await getDoc(doc(db, "mps", id))).data() || {}); } catch { /* the card shows initials */ }
   }));
 
+  // YouTube when the run was uploaded there (pfc youtube), else our own archive; ?player=cdn forces ours, ?yt=<id> a
+  // given YouTube video (testing)
+  const yt = params.get("yt") || (params.get("player") === "cdn" ? null : a.youtube);
+  if (yt) {
+    video.hidden = true;
+    media = await youtubeMedia(video.parentElement, yt, startAt);
+    wire(media);
+    note(null);
+    tick();
+    return;
+  }
+  wire(video);
   await cdnReady();  // the recording is on cdn.vitaradar.hu, which needs its cookie
   play(cdnUrl(a.video));
+}
+
+function wire(m) {
+  m.addEventListener("timeupdate", tick);
+  m.addEventListener("seeked", tick);
+  m.addEventListener("pause", () => history.replaceState(null, "", watchHref(session, media.currentTime)));
 }
 
 function play(url) {
@@ -208,9 +228,6 @@ function play(url) {
   }
 }
 
-video.addEventListener("timeupdate", tick);
-video.addEventListener("seeked", tick);
-video.addEventListener("pause", () => history.replaceState(null, "", watchHref(session, video.currentTime)));
 $("copy-link").addEventListener("click", async () => {
   try { await navigator.clipboard.writeText(shareUrl()); } catch { prompt("A link:", shareUrl()); return; }
   $("copied").hidden = false;
@@ -219,7 +236,7 @@ $("copy-link").addEventListener("click", async () => {
 $("show-all").addEventListener("click", () => {
   showAll = !showAll;
   $("show-all").setAttribute("aria-pressed", String(showAll));
-  renderFacts(video.currentTime);
+  renderFacts(media.currentTime);
 });
 
 load().catch((e) => { note("az adás most nem tölthető be"); console.warn(e); });
