@@ -103,19 +103,29 @@ function compactFacts(list) {
     for (const r of records) r.addedNodes.forEach(mark);
   }).observe(list, { childList: true });
 
-  // a closed row shows how many comments it has (js/social.js writes "N hozzászólás" into the fact's .talk label)
+  // a row shows how many comments it has (js/social.js writes "N hozzászólás" into the fact's .talk label), and on
+  // phones the verdict badges drop their [ ] (js/common.js writes "[ IGAZ ]"; wider screens keep them)
   let queued = false;
-  const counts = () => {
+  const tidy = () => {
     queued = false;
     for (const li of list.querySelectorAll("li.fact")) {
-      const top = li.querySelector(".fact-top");
       const m = /^(\d+)/.exec((li.querySelector(".social .talk") || {}).textContent || "");
-      if (!top) continue;
-      if (m && m[1] !== "0") top.dataset.talk = m[1]; else delete top.dataset.talk;
+      let talk = li.querySelector(":scope > .m-talk");
+      if (m && m[1] !== "0") {
+        if (!talk) { talk = el("span", "m-talk"); li.append(talk); }
+        if (talk.textContent !== m[1]) talk.textContent = m[1];
+        talk.setAttribute("aria-label", `${m[1]} hozzászólás`);
+      } else if (talk) talk.remove();
+      const v = li.querySelector(".verdict");
+      if (!v) continue;
+      const t = v.textContent;
+      if (PHONE.matches && t.startsWith("[ ") && t.endsWith(" ]")) v.textContent = t.slice(2, -2);
+      else if (!PHONE.matches && !t.startsWith("[")) v.textContent = `[ ${t} ]`;
     }
   };
-  new MutationObserver(() => { if (!queued) { queued = true; requestAnimationFrame(counts); } })
-    .observe(list, { childList: true, subtree: true, characterData: true });
+  const later = () => { if (!queued) { queued = true; requestAnimationFrame(tidy); } };
+  new MutationObserver(later).observe(list, { childList: true, subtree: true, characterData: true });
+  PHONE.addEventListener("change", later);
   list.querySelectorAll("li.fact").forEach(mark);
   PHONE.addEventListener("change", () => list.querySelectorAll("li.fact").forEach(mark));
 }
