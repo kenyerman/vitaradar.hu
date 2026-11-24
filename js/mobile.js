@@ -96,6 +96,45 @@ function compactFacts(list) {
   PHONE.addEventListener("change", () => list.querySelectorAll("li.fact").forEach(mark));
 }
 
+// Phones, live page: the feed follows the newest fact at its bottom, like a chat. Scrolled up, it stays where the
+// reader is, and a button counts the facts that came meanwhile; a tap on it (or scrolling back down) follows again.
+function followFeed(list) {
+  if (!list) return;
+  const calm = matchMedia("(prefers-reduced-motion: reduce)");
+  const pill = el("button", "m-new");
+  pill.type = "button";
+  pill.hidden = true;
+  document.body.append(pill);
+  let following = true, unseen = 0;
+  const known = new WeakSet();
+  const atEnd = () => list.getBoundingClientRect().bottom <= innerHeight + 80;
+  const toEnd = (smooth) => {
+    const y = scrollY + list.getBoundingClientRect().bottom - innerHeight + 16;
+    if (y > scrollY) scrollTo({ top: y, behavior: smooth && !calm.matches ? "smooth" : "auto" });
+  };
+  const show = () => {
+    pill.hidden = !PHONE.matches || following || !unseen || list.offsetParent === null;
+    pill.textContent = `↓ ${unseen} új állítás`;
+  };
+  addEventListener("scroll", () => {
+    if (!PHONE.matches) return;
+    following = atEnd();
+    if (following) unseen = 0;
+    show();
+  }, { passive: true });
+  pill.addEventListener("click", () => { following = true; unseen = 0; show(); toEnd(true); });
+  new MutationObserver((records) => {
+    let fresh = 0;
+    for (const r of records) r.addedNodes.forEach((n) => {
+      if (n.classList && n.classList.contains("fact") && !known.has(n)) { known.add(n); fresh += 1; }
+    });
+    if (!fresh || !PHONE.matches) return;
+    if (following) toEnd(false); else { unseen += fresh; show(); }
+  }).observe(list, { childList: true });
+  PHONE.addEventListener("change", show);
+  return { show };
+}
+
 // page: "live" (index.html) or "watch" (watch.html)
 export function mountPhone({ page }) {
   const main = document.querySelector("main");
@@ -121,6 +160,7 @@ export function mountPhone({ page }) {
   }
 
   compactFacts(document.getElementById("facts"));
+  if (page === "live") followFeed(document.getElementById("facts"));
 
   const remeasure = measure(document.querySelector(".site-header"), top);
   const place = () => { moves.place(); remeasure(); };

@@ -1035,7 +1035,8 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
 /* ------------------------------------------------------------------ phones (js/mobile.js)
    The player stays pinned under the header with a compact strip under it (the speaker, the sitting's tally, the chat
    button), so the video never scrolls away and nothing covers it. Everything here is for phones only. */
-.m-top, .m-chat-slot { display: none; }
+.m-top, .m-chat-slot, .m-new { display: none; }
+.m-sep { display: none; }
 @media (max-width: 860px) {
   .m-top { display: block; position: sticky; top: var(--m-hdr, 0px); z-index: 9; margin: -20px -16px 0;
     background: var(--bg); border-bottom: 1px solid var(--line); }
@@ -1095,4 +1096,16 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   :is(.m-live, .m-watch) .fact:not([data-open="true"]) .fact-top[data-talk]::after { content: attr(data-talk) " hozzászólás";
     flex-basis: 100%; order: 9; font-size: 11px; color: var(--muted); }
   :is(.m-live, .m-watch) .fact[data-open="true"] .social { margin-top: 12px; }
+
+  /* the live feed in spoken order: a divider where the speaker changes (so the rows leave out the name), and a button
+     that counts the facts that came while the reader was scrolled up */
+  .m-live .fact-who { display: none; }
+  .m-sep { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; margin: 10px 0 0; padding: 6px 10px;
+    border-left: 3px solid var(--party, var(--green)); background: var(--panel-solid); }
+  .m-sep-name { color: #eafff0; font-weight: 700; font-size: 12px; letter-spacing: .6px; text-transform: uppercase; }
+  .m-sep-meta { color: var(--muted); font-size: 11px; }
+  .m-new { display: block; position: fixed; z-index: 30; left: 50%; bottom: calc(16px + var(--consent-h, 0px)); transform: translateX(-50%);
+    min-height: 44px; padding: 0 18px; background: var(--green); border: 0; color: #000; font: 700 13px/1 var(--mono);
+    letter-spacing: .6px; white-space: nowrap; cursor: pointer; box-shadow: 0 8px 24px rgba(0, 0, 0, .6); }
+  .m-new[hidden] { display: none; }
 }
