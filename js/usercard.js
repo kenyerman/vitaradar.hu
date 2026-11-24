@@ -6,8 +6,8 @@
 // Only registered users can read profiles (rules), and only they see real names in the chat and the comments.
 
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { db, el } from "./common.js?v=202611240052";
-import { avatar } from "./account.js?v=202611240052";
+import { db, el } from "./common.js?v=202611240125";
+import { avatar } from "./account.js?v=202611240125";
 
 const KEEP_MS = 60_000;
 const SHOW_MS = 250, HIDE_MS = 200;

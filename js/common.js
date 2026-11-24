@@ -1,9 +1,10 @@
 // Shared by every page: Firebase, the digital rain behind the page, and small helpers.
 
 import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { db } from "./firebase.js?v=202611240052";
-import "./presence.js?v=202611240052";  // the header's "N online" (visitors included), on every page
-import "./menu.js?v=202611240052";      // the hamburger menu on phones, on every page
+import { db } from "./firebase.js?v=202611240125";
+import "./presence.js?v=202611240125";  // the header's "N online" (visitors included), on every page
+import "./menu.js?v=202611240125";      // the hamburger menu on phones, on every page
+import { CDN, cdnReady, cdnUrl } from "./cdn.js?v=202611240125";
 
 export { db };  // set up once, with App Check, in firebase.js
 
@@ -120,15 +121,17 @@ export function setPhoto(img, fallback, url, name, { id, color } = {}) {
   const sources = [];
   const m = url && url.match(OFFICIAL);
   if (m) sources.push(`img/mps/${m[1]}.webp`);  // our cut-out first, the official photo as it is next
-  if (url) sources.push(url);
+  if (url) sources.push(cdnUrl(url));  // our copies (non-MPs) are on cdn.vitaradar.hu
   img.hidden = true;
   fallback.hidden = false;
+  const token = (img.dataset.photo = String(Number(img.dataset.photo || 0) + 1));  // a newer setPhoto wins
   if (!sources.length) { img.removeAttribute("src"); return; }
   let i = 0;
   img.onload = () => { img.hidden = false; fallback.hidden = true; root.classList.toggle("cutout", i === 0 && Boolean(m)); };
   img.onerror = () => { i += 1; if (i < sources.length) img.src = sources[i]; else { img.hidden = true; fallback.hidden = false; } };
   img.alt = name || "";
-  img.src = sources[0];
+  const start = () => { if (img.dataset.photo === token) img.src = sources[0]; };
+  if (sources.some((s) => s.startsWith(CDN))) cdnReady().then(start); else start();  // the CDN needs its cookie
 }
 
 // ------------------------------------------------------------------ digital rain (like the stream's overlay)

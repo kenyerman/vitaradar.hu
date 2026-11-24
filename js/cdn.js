@@ -5,11 +5,11 @@
 // stores the cookie for .vitaradar.hu, so the browser sends it with the player's requests (withCredentials) and
 // with the images, and renews it before the hour is up. Elsewhere (localhost) the addresses are left as they were.
 
-import { apiUrl } from "./config.js?v=202611240052";
-import { appCheckHeaders } from "./firebase.js?v=202611240052";
+import { apiUrl } from "./config.js?v=202611240125";
+import { appCheckHeaders } from "./firebase.js?v=202611240125";
 
 export const CDN = "https://cdn.vitaradar.hu/";
-const ENABLED = false;  // off until cdn.vitaradar.hu has its certificate; then true
+const ENABLED = true;
 const ON_SITE = ENABLED && /(^|\.)vitaradar\.hu$/.test(location.hostname);
 const EXP = "vr-cdn-exp";  // when our cookie runs out (unix s): document.cookie can't tell
 const RENEW_S = 600;       // renew this long before
