@@ -15,7 +15,7 @@ import { scrollHint } from "./scrollhint.js?v=202611241021";
 import { mountGame } from "./game.js?v=202611241317";
 import { cdnReady, cdnUrl, cdnXhr } from "./cdn.js?v=202611241021";
 import { useTwitch, mountTwitch, twitchNow } from "./twitch.js?v=202611241408";
-import { mountPhone, PHONE } from "./mobile.js?v=202611250110";
+import { mountPhone, PHONE } from "./mobile.js?v=202611250112";
 
 const TWITCH = useTwitch();  // the stream from twitch.tv/vitaradar; ?player=cdn: our own CDN (supporters)
 if (!TWITCH) cdnReady();  // the stream is on cdn.vitaradar.hu, which needs its cookie: get it before the player asks
@@ -204,7 +204,6 @@ function render() {
     .sort((a, b) => b.show_at - a.show_at)
     .slice(0, MAX_SHOWN);
   const phone = PHONE.matches;
-  if (phone) visible.reverse();  // phones: in spoken order, the newest at the bottom (js/mobile.js follows it)
 
   const keep = new Set(visible.map((c) => c.id));
   for (const [id, s] of shown) if (!keep.has(id)) { s.li.remove(); shown.delete(id); }
@@ -219,7 +218,7 @@ function render() {
   let turnKey = null;
   const tally = { true: 0, false: 0, unverifiable: 0, fallacy: 0 };
   for (const c of visible) {
-    if (phone) {  // a divider where the speaker changes
+    if (phone) {  // phones: a divider above each speaker's facts (newest first, as everywhere)
       const t = turnAt(c.show_at);
       const key = t ? `${t.speaker_id}|${t.start_at}` : null;
       if (key && key !== turnKey) { place(separator(key, t)); usedSeps.add(key); }

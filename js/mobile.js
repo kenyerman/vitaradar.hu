@@ -120,8 +120,9 @@ function compactFacts(list) {
   PHONE.addEventListener("change", () => list.querySelectorAll("li.fact").forEach(mark));
 }
 
-// Phones, live page: the feed follows the newest fact at its bottom, like a chat. Scrolled up, it stays where the
-// reader is, and a button counts the facts that came meanwhile; a tap on it (or scrolling back down) follows again.
+// Phones, live page: the newest fact comes in at the top of the feed. Further down, the page keeps the reader's place
+// (a fact coming in above doesn't push the text they are reading; the browser's own scroll anchoring is off, as Safari
+// has none), and a button counts the new facts; a tap on it, or scrolling back up, brings them back to the newest.
 function followFeed(list) {
   if (!list) return;
   const calm = matchMedia("(prefers-reduced-motion: reduce)");
@@ -129,34 +130,51 @@ function followFeed(list) {
   pill.type = "button";
   pill.hidden = true;
   document.body.append(pill);
-  let following = true, unseen = 0;
+  const edge = () => parseFloat(getComputedStyle(root).getPropertyValue("--m-top")) || 0;
+  const atTop = () => list.getBoundingClientRect().top >= edge() - 60;
+  let top = true, unseen = 0, anchor = null, anchorY = 0;
   const known = new WeakSet();
-  const atEnd = () => list.getBoundingClientRect().bottom <= innerHeight + 80;
-  const toEnd = (smooth) => {
-    const y = scrollY + list.getBoundingClientRect().bottom - innerHeight + 16;
-    if (y > scrollY) scrollTo({ top: y, behavior: smooth && !calm.matches ? "smooth" : "auto" });
+  const remember = () => {  // the first row in view, and where it is
+    const e = edge();
+    anchor = null;
+    for (const li of list.children) {
+      const b = li.getBoundingClientRect();
+      if (b.bottom > e) { anchor = li; anchorY = b.top; break; }
+    }
   };
   const show = () => {
-    pill.hidden = !PHONE.matches || following || !unseen || list.offsetParent === null;
-    pill.textContent = `↓ ${unseen} új állítás`;
+    pill.hidden = !PHONE.matches || top || !unseen || list.offsetParent === null;
+    pill.textContent = `↑ ${unseen} új állítás`;
   };
   addEventListener("scroll", () => {
     if (!PHONE.matches) return;
-    following = atEnd();
-    if (following) unseen = 0;
+    top = atTop();
+    if (top) unseen = 0;
+    remember();
     show();
   }, { passive: true });
-  pill.addEventListener("click", () => { following = true; unseen = 0; show(); toEnd(true); });
+  pill.addEventListener("click", () => {
+    unseen = 0;
+    top = true;
+    show();
+    scrollTo({ top: scrollY + list.getBoundingClientRect().top - edge() - 8, behavior: calm.matches ? "auto" : "smooth" });
+  });
   new MutationObserver((records) => {
     let fresh = 0;
     for (const r of records) r.addedNodes.forEach((n) => {
       if (n.classList && n.classList.contains("fact") && !known.has(n)) { known.add(n); fresh += 1; }
     });
-    if (!fresh || !PHONE.matches) return;
-    if (following) toEnd(false); else { unseen += fresh; show(); }
+    if (!PHONE.matches) return;
+    if (!top && anchor && anchor.isConnected) {  // keep the row being read where it was
+      const dy = anchor.getBoundingClientRect().top - anchorY;
+      if (dy) scrollBy(0, dy);
+      unseen += fresh;
+    }
+    remember();
+    show();
   }).observe(list, { childList: true });
   PHONE.addEventListener("change", show);
-  return { show, resume() { show(); if (following) toEnd(false); } };
+  return { show, resume() { show(); } };
 }
 
 // Phones, live page: three tabs under the pinned block. Állítások: the facts (with the AI notice above them); Chat:
