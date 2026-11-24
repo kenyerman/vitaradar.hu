@@ -39,13 +39,37 @@ function measure(header, top) {
   const set = () => {
     const h = header ? header.offsetHeight : 0;
     root.style.setProperty("--m-hdr", `${h}px`);
-    root.style.setProperty("--m-top", `${h + (PHONE.matches && top ? top.offsetHeight : 0)}px`);
+    // where the pinned block ends on screen (on the replay page it starts below the title and pins only later)
+    const end = PHONE.matches && top ? Math.max(h, Math.round(top.getBoundingClientRect().bottom)) : h;
+    root.style.setProperty("--m-top", `${end}px`);
   };
   const ro = new ResizeObserver(set);
   if (header) ro.observe(header);
   if (top) ro.observe(top);
+  let queued = false;
+  addEventListener("scroll", () => {
+    if (!queued) { queued = true; requestAnimationFrame(() => { queued = false; set(); }); }
+  }, { passive: true });
   set();
   return set;
+}
+
+// Phones, replay page: the fact playing now stays in view as the video goes on, unless the reader has just scrolled.
+function followReplay(list) {
+  if (!list) return;
+  let touched = 0;
+  for (const ev of ["wheel", "touchmove", "keydown"]) addEventListener(ev, () => { touched = Date.now(); }, { passive: true });
+  new MutationObserver((records) => {
+    if (!PHONE.matches || Date.now() - touched < 4000) return;
+    for (const r of records) {
+      const li = r.target;
+      if (li.classList.contains("now") && !(r.oldValue || "").split(" ").includes("now")) {
+        const b = li.getBoundingClientRect();
+        const top = parseFloat(getComputedStyle(root).getPropertyValue("--m-top")) || 0;
+        if (b.top < top || b.bottom > innerHeight) li.scrollIntoView({ block: "nearest" });
+      }
+    }
+  }).observe(list, { subtree: true, attributes: true, attributeFilter: ["class"], attributeOldValue: true });
 }
 
 // Phones: each fact is a compact row (verdict, time, headline); a tap, or Enter, opens it to show the quote, the
@@ -254,6 +278,7 @@ export function mountPhone({ page }) {
 
   compactFacts(document.getElementById("facts"));
   if (page === "live") liveTabs(top, slots, followFeed(document.getElementById("facts")));
+  if (page === "watch") followReplay(document.getElementById("facts"));
 
   const remeasure = measure(document.querySelector(".site-header"), top);
   const place = () => { moves.place(); remeasure(); };

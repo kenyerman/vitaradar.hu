@@ -1136,4 +1136,9 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   .m-game-empty { margin: 0; padding: 14px; border: 1px solid var(--line-dim); background: var(--panel); color: var(--muted);
     font-size: 13px; line-height: 1.5; }
   .m-game-slot:has(.game-dock > :not([hidden])) .m-game-empty { display: none; }
+
+  /* the replay page: the same pinned player and strip, below the title (it pins once the title has scrolled away) */
+  .m-watch .m-top { margin: 14px -16px 0; }
+  .m-watch .m-top .player { aspect-ratio: 16 / 9; }
+  .m-watch .fact.now { scroll-margin-bottom: 16px; }
 }

@@ -17,10 +17,12 @@ import { cdnReady, cdnUrl, cdnXhr } from "./cdn.js?v=202611241021";
 import { scrollHint } from "./scrollhint.js?v=202611241021";
 import { setPageMeta } from "./meta.js?v=202611241124";
 import { youtubeMedia } from "./ytplayer.js?v=202611241433";
+import { mountPhone, PHONE } from "./mobile.js?v=202611250110";
 
 watchLiveNav();
 mountAccount();
 scrollHint(document.querySelector(".below"), document.querySelector(".player"));  // the facts, when the full-width player hides them
+mountPhone({ page: "watch" });  // phones: the player pinned under the header, the speaker strip under it
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
 const session = params.get("s") || "";
@@ -181,7 +183,9 @@ async function load() {
   facts = speeches.flatMap((sp) => (sp.claims || []).map((c) => ({ c, speech: sp })))
     .sort((x, y) => at(y) - at(x));
   for (const f of facts) f.li = factItem(f);
-  $("facts").replaceChildren(...facts.map((f) => f.li));
+  const order = () => $("facts").replaceChildren(...(PHONE.matches ? [...facts].reverse() : facts).map((f) => f.li));
+  order();  // phones: in spoken order, as on the live page; wider screens: newest first
+  PHONE.addEventListener("change", order);
   renderFacts(startAt);  // the speaker card waits for the MPs' photos (play() ticks)
 
   // the MPs' photos and roles for the speaker card
