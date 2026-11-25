@@ -116,7 +116,8 @@ function fakeChat() {
 // stage: the box the chat column joins (next to the player).
 export function mountChat(stage) {
   stage.dataset.chat = "on";
-  let col = stage.querySelector(":scope > .chat");  // in the page already, so the player has its final size from the start
+  let col = document.getElementById("chat");  // in the page already, so the player has its final size from the start
+  // (by id: on phones js/mobile.js has moved it under the player by now)
   if (!col) {
     col = el("aside", "chat panel");
     col.setAttribute("aria-label", "Chat");

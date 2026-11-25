@@ -140,9 +140,7 @@ function loading() {
   setTimeout(done, 6000);
 }
 
-function mountShell() {
-  if (document.body.classList.contains("m-site")) return;
-  document.body.classList.add("m-site");
+function mountShell() {  // body.m-site is in each page's markup, so the css has it from the first paint
   const moves = mover();
   onAir();
   menuParts(moves);

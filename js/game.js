@@ -574,8 +574,8 @@ class TipView {
 // mountGame({now}): now() is the date (ms) of the frame on screen. The dock spans the bottom of the window: the speech
 // tip on the left, the challenge on the right (on a phone, one above the other).
 export function mountGame({ now: streamNow }) {
-  const dock = el("div", "game-dock");
-  document.body.append(dock);
+  // in the page already (index.html), so js/mobile.js can take it into the phone's Játék tab from the start
+  const dock = document.querySelector(".game-dock") || document.body.appendChild(el("div", "game-dock"));
   const pop = new ChallengeView(dock);
   const tipView = new TipView(dock);
   const voteView = new VoteView(dock);

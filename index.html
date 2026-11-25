@@ -51,9 +51,10 @@
   <link rel="modulepreload" href="js/consent.js?v=202611241021">
   <link rel="modulepreload" href="js/presence.js?v=202611241206">
   <link rel="modulepreload" href="js/menu.js?v=202611241206">
-  <link rel="stylesheet" href="css/style.css?v=202611251132">
+  <link rel="modulepreload" href="js/mobile.js?v=202611251200">
+  <link rel="stylesheet" href="css/style.css?v=202611251200">
 </head>
-<body>
+<body class="m-site m-live">  <!-- the page's kind, for the phone layout from the first paint (css, js/mobile.js) -->
   <canvas id="rain" aria-hidden="true"></canvas>
   <header class="site-header">
     <div class="wrap header-row">
@@ -169,8 +170,11 @@
     </div>
   </footer>
 
-  <script type="module" src="js/app.js?v=202611251130"></script>
+  <!-- the games (js/game.js): here from the start, so the phone layout takes it into its Játék tab -->
+  <div class="game-dock"></div>
 
-  <script type="module" src="js/shell.js?v=202611250840"></script>
+  <script type="module" src="js/mobile.js?v=202611251200"></script>  <!-- the phone layout, before the data scripts -->
+  <script type="module" src="js/app.js?v=202611251200"></script>
+  <script type="module" src="js/shell.js?v=202611251200"></script>
 </body>
 </html>

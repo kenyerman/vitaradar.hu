@@ -1361,7 +1361,7 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
     --true: #3df082; --false: #ff5d52; --unverifiable: #ffc23d; --fallacy: #b8a0ff; --pending: #6fd3e6;
     --glow: none;
     --sans: "Inter Tight", system-ui, -apple-system, "Segoe UI", sans-serif;
-    --display: "Chakra Petch", var(--mono);
+    --display: "Chakra Petch", system-ui, -apple-system, "Segoe UI", sans-serif;  /* while it loads: a sans like it */
   }
   body { font-family: var(--sans); }
   body::after { display: none; }  /* no scanlines */
@@ -1430,6 +1430,15 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   .portrait > :is(.pt-sweep, .pt-lines) { display: none; }
   .portrait.cutout > img { filter: none; }
   .initials { color: var(--muted); text-shadow: none; }
+}
+
+/* ------------------------------------------------------------------ phones: the live and replay pages, laid out
+   js/mobile.js puts their parts in place (the player pinned, the strip, the tabs) as soon as the page is parsed and
+   then marks the body .m-ready; until then a phone sees the header only, never the wide layout squeezed in. Should
+   the script not run at all, the page shows after 3 s anyway. */
+@keyframes m-reveal { to { visibility: visible; } }
+@media (max-width: 860px) {
+  body:is(.m-live, .m-watch):not(.m-ready) > main { visibility: hidden; animation: m-reveal 0s 3s forwards; }
 }
 
 /* ------------------------------------------------------------------ phones: the live page as an app
@@ -1518,7 +1527,7 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
    wordmark keeps it); Chakra Petch, upper case, for titles, labels and buttons, Inter Tight for what people read and
    type; solid buttons (green for the main action, dark for the rest), quiet fields, flat cards. */
 @media (max-width: 860px) {
-  :root { --mono: "Chakra Petch", ui-monospace, monospace; }
+  :root { --mono: var(--display); }  /* the old monospace text takes the display font (never a monospace while loading) */
   .brand-name, code, kbd, pre { font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace; }
   * { text-shadow: none !important; }
   .panel { border-color: var(--line-dim); }

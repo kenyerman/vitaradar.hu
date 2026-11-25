@@ -2,11 +2,16 @@
 // scrolls away (Twitch pauses an embed that is off-screen or covered) and nothing is ever drawn over it; under it a
 // compact strip shows the speaker and the sitting's tally. On wider screens every part goes back where the page has it.
 //
-// The parts are moved, not copied, so the scripts that fill them (app.js, chat.js, watch.js) keep working wherever
-// they are. --m-hdr is the header's height (where the pinned block starts) and --m-top where it ends (menus and panels
-// open below it, never over the video). The header and the menu are js/shell.js's, on every page.
+// The parts are moved, not copied, so the scripts that fill them (app.js, chat.js, game.js, watch.js) keep working
+// wherever they are: they find them by id. --m-hdr is the header's height (where the pinned block starts) and --m-top
+// where it ends (menus and panels open below it, never over the video). The header and the menu are js/shell.js's.
+//
+// The page says what it is in its markup (index.html: body.m-live, watch.html: body.m-watch), so the css has it from
+// the first paint. This script loads on its own, before the page's data scripts, and puts the parts in place as soon
+// as the page is parsed; then .m-ready shows the page (css: until then a phone sees the header only, never the wide
+// layout squeezed in).
 
-export const PHONE = matchMedia("(max-width: 860px)");
+const PHONE = matchMedia("(max-width: 860px)");
 
 const root = document.documentElement;
 
@@ -310,9 +315,11 @@ function liveTabs(top, slots, feed) {
       t.b.tabIndex = on ? 0 : -1;
       if (on && focus) t.b.focus();
     }
-    const closed = root.dataset.chat === "closed";
-    if (id === "chat" && closed && chatOpen) chatOpen.click();
-    if (id !== "chat" && !closed && chatCol) chatCol.querySelector(".chat-close")?.click();
+    if (PHONE.matches) {  // on phones the Chat tab is the chat; wider screens keep the reader's own choice
+      const closed = root.dataset.chat === "closed";
+      if (id === "chat" && closed && chatOpen) chatOpen.click();
+      if (id !== "chat" && !closed && chatCol) chatCol.querySelector(".chat-close")?.click();
+    }
     if (id === "feed") feed.resume();
     else { feed.show(); scrollTo({ top: 0 }); }
   }
@@ -351,6 +358,9 @@ function liveTabs(top, slots, feed) {
   }
 
   for (const t of tabs) t.b.setAttribute("aria-controls", t.b.dataset.tab === "feed" ? "facts" : t.b.dataset.tab === "chat" ? "chat" : "m-game");
+  // phones start on the facts, so the chat starts closed (js/chat.js, mounting later, reads it; the reader's stored
+  // choice stays as it is)
+  if (PHONE.matches) root.dataset.chat = "closed";
   select("feed");
 }
 
@@ -507,11 +517,10 @@ function replayParts(top, moves) {
 }
 
 // page: "live" (index.html) or "watch" (watch.html)
-export function mountPhone({ page }) {
+function mountPhone(page) {
   const main = document.querySelector("main");
   const player = document.querySelector(page === "live" ? "#stage" : "main > .player");
-  if (!main || !player) return null;
-  document.body.classList.add(`m-${page}`);
+  if (!main || !player) return;
 
   const top = el("div", "m-top");
   const strip = el("div", "m-strip");
@@ -568,5 +577,11 @@ export function mountPhone({ page }) {
   const place = () => { moves.place(); remeasure(); };
   PHONE.addEventListener("change", place);
   place();
-  return { top, strip };
+}
+
+const page = document.body.classList.contains("m-live") ? "live" : document.body.classList.contains("m-watch") ? "watch" : null;
+try {
+  if (page) mountPhone(page);
+} finally {
+  document.body.classList.add("m-ready");
 }
