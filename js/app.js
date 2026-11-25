@@ -12,7 +12,7 @@ import { mountAccount } from "./account.js?v=202611250130";
 import { factSocial } from "./social.js?v=202611250130";
 import { mountChat } from "./chat.js?v=202611250130";
 import { scrollHint } from "./scrollhint.js?v=202611241021";
-import { mountGame } from "./game.js?v=202611250130";
+import { mountGame } from "./game.js?v=202611252234";
 import { cdnReady, cdnUrl, cdnXhr } from "./cdn.js?v=202611241021";
 import { useTwitch, mountTwitch, twitchNow } from "./twitch.js?v=202611241408";
 
