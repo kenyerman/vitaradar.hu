@@ -1059,7 +1059,7 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
     clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 0 100%); }
   .m-strip .speaker-photo::after { content: ""; position: absolute; z-index: 5; inset: auto 0 0; height: 3px;
     background: var(--party, var(--green)); }  /* the party's colour, under the photo or the initials */
-  .m-strip .speaker-photo > :is(.pt-sweep, .pt-party, .pt-lines) { display: none; }
+  .m-strip .speaker-photo > .pt-party { display: none; }  /* its own line, below */
   .m-strip .speaker-photo > img { object-position: center top; }
   .m-strip .speaker-photo.cutout > img { object-position: center 12%; filter: none; }
   .m-strip .speaker-photo .initials { display: grid; place-items: center;
@@ -1275,4 +1275,9 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   .fact { border-left-width: 3px; }
   .m-new { font-family: var(--display); font-size: 13px; letter-spacing: 1.2px;
     clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px)); }
+  /* portraits: the photo on a plain panel, without the radar (sweep, rings, grid, scanlines) */
+  .portrait { background: #16231d; }
+  .portrait > :is(.pt-sweep, .pt-lines) { display: none; }
+  .portrait.cutout > img { filter: none; }
+  .initials { color: var(--muted); text-shadow: none; }
 }
