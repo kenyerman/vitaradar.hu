@@ -92,6 +92,18 @@ function speechFacts(id) {
   return list;
 }
 
+// A link to a moment (?t=, as an MP's page links each speech): on phones the Felszólalók tab opens on the speech it
+// falls into, with its facts (js/mobile.js has the tab and opens the speech on a tap); wider screens stay as they are.
+function showSpeechAt(t) {
+  if (!params.has("t")) return;
+  const s = speakerAt(t);
+  const li = s && [...$("speakers").children].find((x) => x.dataset.id === s.speech_id);
+  if (!li) return;
+  document.getElementById("m-tab-speakers")?.click();
+  li.click();
+  if (li.classList.contains("open")) li.scrollIntoView({ block: "start" });  // in its panel (phones)
+}
+
 function speakerAt(t) {
   return speakers.find((s) => s.start_s != null && s.start_s <= t && t < (s.end_s ?? Infinity)) || null;
 }
@@ -204,6 +216,7 @@ async function load() {
   for (const f of facts) f.li = factItem(f);
   $("facts").replaceChildren(...facts.map((f) => f.li));
   for (const li of $("speakers").children) li.append(speechFacts(li.dataset.id));  // phones open them (js/mobile.js)
+  showSpeechAt(startAt);
   renderFacts(startAt);  // the speaker card waits for the MPs' photos (play() ticks)
 
   // the MPs' photos and roles for the speaker card
@@ -235,6 +248,7 @@ async function mountYoutube(id) {
   note(null);
   $("player-note").classList.remove("over-poster");
   tick();
+  if (startAt) media.play();  // a link to a moment plays from there (as the CDN player below)
 }
 
 // Not on YouTube yet: the poster, every fact listed (none is "said" before the video plays), and the player once the
