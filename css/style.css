@@ -1317,15 +1317,19 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   /* the speech tip: its question, three steppers, the send button */
   .m-game-slot .tip-body { display: flex; flex-direction: column; gap: 10px; }
   .m-game-slot .tip-q { margin: 0; color: #e9f2ed; font: 600 16px/1.35 var(--sans); }
-  .m-game-slot .tip-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
-  .m-game-slot .tip-row { grid-template-columns: 44px minmax(16px, auto) 44px; justify-content: center; gap: 0; row-gap: 4px; }
-  .m-game-slot .tip-name { grid-column: 1 / -1; justify-self: center; font: 700 10.5px/1 var(--display); letter-spacing: .8px;
-    white-space: nowrap; }
+  /* one row per count: its name on the left in its colour, then − the number + */
+  .m-game-slot .tip-grid { grid-template-columns: 1fr; gap: 0; }
+  .m-game-slot .tip-row { grid-template-columns: minmax(0, 1fr) 44px 34px 44px; align-items: center; gap: 0 10px; min-height: 52px;
+    border-bottom: 1px solid rgba(61, 240, 130, .1); }
+  .m-game-slot .tip-row:last-child { border-bottom: 0; }
+  .m-game-slot .tip-name { font: 700 12px/1.2 var(--display); letter-spacing: .8px; text-transform: uppercase; white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis; }
   .m-game-slot .tip-row:nth-child(1) .tip-name { color: var(--true); }
   .m-game-slot .tip-row:nth-child(2) .tip-name { color: var(--false); }
   .m-game-slot .tip-row:nth-child(3) .tip-name { color: var(--fallacy); }
   .m-game-slot .tip-step { width: 44px; height: 44px; border: 0; background: #16231d; color: #e9f2ed; box-shadow: none; font: 400 18px/1 var(--sans); }
-  .m-game-slot .tip-val { min-width: 16px; color: #e9f2ed; text-shadow: none; font: 700 18px/1 var(--display); font-variant-numeric: tabular-nums; }
+  .m-game-slot .tip-step:not(:disabled):active { background: #1d2d26; }
+  .m-game-slot .tip-val { text-align: center; color: #e9f2ed; text-shadow: none; font: 700 20px/1 var(--display); font-variant-numeric: tabular-nums; }
   .m-game-slot .tip-send { height: 48px; border: 0; background: var(--green); color: #021108; box-shadow: none; text-shadow: none;
     font: 700 13px/1 var(--display); letter-spacing: 1.4px; clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%); }
   .m-game-slot .tip-sum { color: #c5d3cb; font-size: 12px; }
