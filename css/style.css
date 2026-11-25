@@ -1403,9 +1403,12 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
     clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%); }
   .m-onair::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: #fff; }
   .m-onair[hidden] { display: none; }
-  .m-site .brand-box { margin-right: 0; }
-  .m-site .hdr-support { display: inline-flex !important; margin-left: auto; }
-  .m-site .menu-btn[data-live="on"]::after { display: none; }  /* the "Élő" tag says it */
+  /* the header's phone layout from the first paint (js/shell.js only moves the account into the menu later, so it
+     is never shown here: nothing in the header jumps when the scripts run) */
+  .site-header .brand-box { margin-right: 0; }
+  .site-header .hdr-support { display: inline-flex !important; margin-left: auto; }
+  .site-header .acct { display: none; }
+  .menu-btn[data-live="on"]::after { display: none; }  /* the "Élő" tag says it */
   .brand img, .menu-bars span { filter: none; box-shadow: none; }
   .page-title, .section-head h2, .speaker-name, .m-sep-name, .m-tab, .m-new, .m-ai, .tally, .verdict,
   .fact-time, .t-btn, .btn, .acct-btn, .hdr-support, .brand-beta, .online-badge, .menu-panel .nav a, .menu-title,
