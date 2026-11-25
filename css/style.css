@@ -1232,6 +1232,25 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   .m-live:not([data-m-tab="feed"]) .below { display: none; }
   .m-live:not([data-m-tab="chat"]) .m-chat-slot { display: none; }
   .m-live .m-chat-slot .chat { height: calc(100dvh - var(--m-top, 0px) - 28px); min-height: 300px; }
+  /* the chat, as in the design: full width, no frame, a small head line (the tab closes it, so no ✕), messages as
+     "nick text" lines, the field and a green send button at the bottom */
+  .m-chat-slot { margin: 0 -16px; }
+  .m-chat-slot .chat { border: 0; background: none; }
+  .m-chat-slot .chat-head { min-height: 28px; align-items: center; justify-content: flex-start; gap: 6px; padding: 0 14px;
+    border-bottom: 1px solid rgba(61, 240, 130, .08); }
+  .m-chat-slot .chat-head h2, .m-chat-slot .chat-head .count { color: #7d9187; font: 600 10.5px/1 var(--display); letter-spacing: 1.2px;
+    text-transform: uppercase; }
+  .m-chat-slot .chat-head h2::after { content: " ·"; }
+  .m-chat-slot .chat-close { display: none; }
+  .m-chat-slot .chat-list { padding: 12px 14px; gap: 10px; font: 400 14px/1.4 var(--sans); }
+  .m-chat-slot .msg-nick { color: var(--green); font: 700 14px/1.4 var(--display); letter-spacing: .4px; }
+  .m-chat-slot .msg.own .msg-nick { color: var(--green); }
+  .m-chat-slot .msg-text { color: #c5d3cb; }
+  .m-chat-slot .msg-time { font-family: var(--display); }
+  .m-chat-slot .chat-form { gap: 8px; padding: 10px 14px 14px; border-top: 1px solid rgba(61, 240, 130, .1); }
+  .m-chat-slot .chat-form .btn { min-height: 44px; padding: 0 16px; font-size: 12px; }
+  .locked-card { padding: 16px; border: 0; background: var(--panel); box-shadow: 0 14px 30px rgba(0, 0, 0, .5); }
+  .locked-card p { color: #e9f2ed; font: 400 14px/1.45 var(--sans); }
   /* the Játék tab, as in the design: the game card full width on the page (no frame), then how the games work */
   .m-game-slot { display: grid; margin: 0 -16px; }
   .m-live:not([data-m-tab="game"]) .m-game-slot { display: none; }
@@ -1394,6 +1413,77 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   .portrait > :is(.pt-sweep, .pt-lines) { display: none; }
   .portrait.cutout > img { filter: none; }
   .initials { color: var(--muted); text-shadow: none; }
+}
+
+/* ------------------------------------------------------------------ phones: the rest of the site in the new look
+   The design's parts everywhere, not only on the live page: no corner brackets, glow or monospace text (only the
+   wordmark keeps it); Chakra Petch, upper case, for titles, labels and buttons, Inter Tight for what people read and
+   type; solid buttons (green for the main action, dark for the rest), quiet fields, flat cards. */
+@media (max-width: 860px) {
+  :root { --mono: "Chakra Petch", ui-monospace, monospace; }
+  .brand-name, code, kbd, pre { font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace; }
+  * { text-shadow: none !important; }
+  .panel { border-color: var(--line-dim); }
+  .panel::before, .panel::after { display: none; }
+  /* titles and labels */
+  .page-title { margin: 0 0 6px; color: var(--green); font: 700 24px/1.15 var(--display); letter-spacing: 1px; text-transform: uppercase; }
+  .page-sub, .count-line { font-family: var(--sans); }
+  .arch-date { margin: 0 0 4px; color: var(--green); font: 700 15px/1.3 var(--display); letter-spacing: 1.2px; text-transform: uppercase; }
+  .section-head h2, .dlg-title, .footer-h { font-family: var(--display); letter-spacing: 1.4px; text-transform: uppercase; }
+  .dlg-title { color: var(--green); }
+  .dlg-title::before { content: none; }
+  .empty::before { content: none; }
+  /* buttons: the main action green, the others dark; 44px to tap */
+  .btn { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 0 16px; border: 0;
+    background: var(--green); color: #021108; box-shadow: none; font: 700 12px/1 var(--display); letter-spacing: 1.4px;
+    text-transform: uppercase; }
+  .btn:hover, .btn:focus-visible { background: #5df59a; box-shadow: none; }
+  :is(.btn.ghost, .btn.toggle, .btn.toggle-plain), .consent-actions .btn + .btn { background: #16231d; color: #e9f2ed; border: 0; }
+  :is(.btn.ghost, .btn.toggle, .btn.toggle-plain):hover, .consent-actions .btn + .btn:hover { background: #1d2d26; color: #e9f2ed; }
+  .btn.small { min-height: 40px; padding: 0 12px; font-size: 11px; }
+  .btn.toggle::before { content: ""; flex: none; width: 10px; height: 10px; box-shadow: inset 0 0 0 1.5px currentColor; }
+  .btn.toggle[aria-pressed="true"] { background: rgba(61, 240, 130, .14); color: var(--green); box-shadow: inset 0 0 0 1px var(--green); }
+  .btn.toggle[aria-pressed="true"]::before { content: ""; background: var(--green); box-shadow: none; }
+  .link-btn, .linkish { font-family: var(--display); font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+  /* fields and the sort list */
+  .field, .dd-button { min-height: 44px; padding: 10px 12px; border: 1px solid var(--line-dim); background: var(--panel); color: #e9f2ed;
+    font: 400 15px/1.3 var(--sans); box-shadow: none; }
+  .field::placeholder { color: #6f8279; }
+  .field:focus, .dd-button:hover, .dd-button:focus-visible, .dd[data-open="true"] .dd-button { border-color: var(--green); box-shadow: none; }
+  .dd-button::before { content: none; }
+  .dd-value { color: #e9f2ed; font-family: var(--sans); }
+  .dd-caret { color: var(--muted); font-family: var(--sans); }
+  .dd-list { border-color: var(--line); background: var(--panel); box-shadow: 0 14px 30px rgba(0, 0, 0, .6); }
+  .dd-option { font-family: var(--sans); }
+  .dd-option.active { background: rgba(61, 240, 130, .1); color: #e9f2ed; }
+  .dd-option.active::after { content: none; }
+  /* cards: flat, a quiet line; the names in Chakra */
+  .arch-card:hover, .mp-card:hover { border-color: var(--line); box-shadow: none; }
+  .arch-body h3 { color: #e9f2ed; font: 700 16px/1.2 var(--display); letter-spacing: .6px; font-variant-numeric: tabular-nums; }
+  .arch-len, .arch-wait { background: rgba(4, 7, 6, .85); color: #e9f2ed; font: 600 11px/1.3 var(--display); letter-spacing: .6px; }
+  .arch-poster::before { color: var(--green); }
+  .mp-card h2, .mp-head h1, .ucard-nick { font-family: var(--display); letter-spacing: 1px; text-transform: uppercase; }
+  .mp-card h2 { color: #e9f2ed; font-size: 15px; font-weight: 700; }
+  .mp-head h1 { color: #e9f2ed; font-size: 24px; }
+  .mp-party { color: var(--green); font: 600 11px/1.6 var(--display); letter-spacing: 1.2px; text-transform: uppercase; }
+  .mp-role { font-family: var(--sans); }
+  .scores div { border-color: var(--line-dim); background: var(--panel); }
+  .scores dt { font-family: var(--display); letter-spacing: 1.2px; }
+  .scores dd { font-family: var(--display); }
+  .speech { border-color: var(--line-dim); background: var(--panel); }
+  /* dialogs, toasts, the cookie bar, the user card */
+  .dlg, .ucard { border: 1px solid var(--line); background: var(--panel); box-shadow: 0 20px 50px rgba(0, 0, 0, .7); }
+  .toast { border: 0; border-left: 3px solid var(--green); background: var(--panel); font-family: var(--sans); box-shadow: 0 10px 30px rgba(0, 0, 0, .6); }
+  .consent { background: var(--panel); border-top: 1px solid var(--line); font-family: var(--sans); }
+  .consent-actions a { color: var(--muted); font-family: var(--sans); }
+  /* the old prompt marks before headings: the design has none */
+  :is(.section-head h2, .imp-sec h2, .chat-head h2, .talk)::before { content: none; }
+  .imp-sec h2 { font-family: var(--display); letter-spacing: 1.2px; text-transform: uppercase; }
+  .mp-head .meta { color: var(--green); font: 600 12px/1.5 var(--display); letter-spacing: 1.2px; text-transform: uppercase; }
+  .cal-nav { width: 44px; height: 44px; border: 0; background: #16231d; color: #e9f2ed; box-shadow: none; font-family: var(--sans); }
+  .cal-nav:disabled { background: none; color: #2a4434; }
+  .cal-title { font-family: var(--display); letter-spacing: 1.2px; }
+  .cal-day { font-family: var(--display); }
 }
 
 /* ------------------------------------------------------------------ phones: loading
