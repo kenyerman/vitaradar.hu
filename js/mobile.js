@@ -391,7 +391,7 @@ export function mountPhone({ page }) {
   // a verdict lands (js/app.js marks the fact .flash): once the stamp is over the mark goes, so moving the row
   // around later does not replay it
   document.getElementById("facts")?.addEventListener("animationend", (e) => {
-    if (e.animationName === "m-glow") e.target.classList.remove("flash");
+    if (e.animationName === "m-frame") e.target.classList.remove("flash");
   });
 
   const remeasure = measure(document.querySelector(".site-header"), top,

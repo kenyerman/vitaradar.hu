@@ -80,6 +80,29 @@ function headerHeight() {
   set();
 }
 
+// Loading (css: the strip under the header and the grey blocks): until the page's data is in. It comes from
+// Firestore after the scripts ran: the pages with a list are ready once its first entry is there; the others once
+// the page starts changing and then stays still for a moment. At most a few seconds, and at once on a page that has
+// nothing to fetch.
+const READY = { "": "#facts > li", "index.html": "#facts > li", "watch.html": "#facts > li", "archive.html": "#days > *",
+  "mps.html": "#mps > li" };
+
+function loading() {
+  const done = () => { root.dataset.loaded = "1"; mo.disconnect(); };
+  const main = document.querySelector("main");
+  const page = location.pathname.split("/").pop();
+  const ready = READY[page];
+  let quiet = 0;
+  const mo = new MutationObserver(() => {
+    if (ready) { if (main.querySelector(ready)) done(); return; }
+    clearTimeout(quiet);
+    quiet = setTimeout(done, 400);
+  });
+  if (!main || page === "impresszum.html" || (ready && main.querySelector(ready))) { done(); return; }
+  mo.observe(main, { childList: true, subtree: true, characterData: true });
+  setTimeout(done, 6000);
+}
+
 function mountShell() {
   if (document.body.classList.contains("m-site")) return;
   document.body.classList.add("m-site");
@@ -87,6 +110,7 @@ function mountShell() {
   onAir();
   menuParts(moves);
   headerHeight();
+  loading();
   PHONE.addEventListener("change", () => moves.place());
   moves.place();
 }

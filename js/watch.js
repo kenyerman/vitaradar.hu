@@ -17,7 +17,7 @@ import { cdnReady, cdnUrl, cdnXhr } from "./cdn.js?v=202611241021";
 import { scrollHint } from "./scrollhint.js?v=202611241021";
 import { setPageMeta } from "./meta.js?v=202611241124";
 import { youtubeMedia } from "./ytplayer.js?v=202611241433";
-import { mountPhone } from "./mobile.js?v=202611250240";
+import { mountPhone } from "./mobile.js?v=202611250350";
 
 watchLiveNav();
 mountAccount();

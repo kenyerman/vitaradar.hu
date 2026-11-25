@@ -1294,119 +1294,127 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   .initials { color: var(--muted); text-shadow: none; }
 }
 
+/* ------------------------------------------------------------------ phones: loading
+   Until the page's data is in (js/shell.js sets :root[data-loaded]): a green strip under the header, "BETÖLTÉS" and a
+   black block jumping along it, and grey blocks in the shape of the rows or cards that are coming. */
+@media (max-width: 860px) {
+  html:not([data-loaded]) .site-header::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 4px;
+    background: linear-gradient(#021108, #021108) 0 0 / 48px 100% no-repeat, var(--green); }  /* inside the header: never over the video */
+  html:not([data-loaded]) :is(#facts, #days, #mps):empty { position: relative; }
+  html:not([data-loaded]) :is(#facts, #days, #mps):empty::before { content: "BETÖLTÉS"; position: absolute; top: 6px; left: 16px;
+    padding: 4px 8px; background: var(--green); color: #021108; font: 700 11px/1 var(--display); letter-spacing: 2.4px; }
+  html:not([data-loaded]) :is(#days, #mps):empty::before { left: 0; }
+  html:not([data-loaded]) #facts-empty, html:not([data-loaded]) #arch-empty, html:not([data-loaded]) #mps-empty { display: none; }
+  html:not([data-loaded]) :is(.m-live, .m-watch) #facts:empty { display: block; min-height: 420px; margin: 0 -16px;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 360 84' preserveAspectRatio='none'%3E%3Cg fill='%2316231d'%3E%3Crect x='16' y='18' width='40' height='12'/%3E%3Crect x='76' y='16' width='64' height='18'/%3E%3Crect x='76' y='44' width='250' height='12'/%3E%3Crect x='76' y='62' width='170' height='12'/%3E%3C/g%3E%3Crect y='83' width='360' height='1' fill='%230f1a15'/%3E%3C/svg%3E") 0 0 / 100% 84px repeat-y content-box; padding-top: 34px; background-clip: content-box; }
+  html:not([data-loaded]) :is(#days, #mps):empty { display: block; min-height: 620px;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 360 300' preserveAspectRatio='none'%3E%3Cg fill='%2316231d'%3E%3Crect width='360' height='160'/%3E%3Crect x='16' y='180' width='120' height='18'/%3E%3Crect x='16' y='210' width='220' height='12'/%3E%3Crect x='16' y='236' width='328' height='8'/%3E%3Crect x='16' y='256' width='280' height='12'/%3E%3C/g%3E%3C/svg%3E") 0 0 / 100% 300px repeat-y content-box; padding-top: 40px; background-clip: content-box; }
+}
+
 /* ------------------------------------------------------------------ phones: motion
-   Where something changes, it moves: the menu drops and its links slide in one by one, the tab's underline slides to
-   the chosen tab and its content rises in, an opened fact unfolds step by step, a new fact slides in with a green
-   sweep, a verdict lands like a stamp, the tally ticks, a new speaker's name wipes in, the live dot sends out rings,
-   the cards of the lists rise in. Nothing blinks or loops fast, and readers who ask for less motion get none. */
+   Brutalist: things cut in and jump into place in a few hard steps, with no easing, no bounce and no fades. Blocks
+   arrive with a hard green offset shadow that snaps away, text types in, the menu comes up from the bottom, the tab
+   underline jumps across, a verdict lands like a stamp, a new fact shoves in from the left on a green slab, the tally's
+   figure inverts for a moment, the logo is put together part by part. Nothing flashes on and off, and readers who ask
+   for less motion get none of it. */
 @media (max-width: 860px) and (prefers-reduced-motion: no-preference) {
-  @keyframes m-fade { from { opacity: 0; } }
-  @keyframes m-drop { from { opacity: 0; transform: translateY(-18px); } }
-  @keyframes m-slide-in { from { opacity: 0; transform: translateX(-28px); } }
-  @keyframes m-rise { from { opacity: 0; transform: translateY(18px); } }
-  @keyframes m-unfold { from { opacity: 0; transform: translateY(-10px); } }
-  @keyframes m-arrive {
-    0% { opacity: 0; transform: translateX(-40px); background: rgba(61, 240, 130, .22); }
-    35% { opacity: 1; transform: none; background: rgba(61, 240, 130, .18); }
-    100% { background: transparent; } }
-  @keyframes m-sweep { from { transform: scaleY(0); } }
-  @keyframes m-stamp {
-    0% { opacity: 0; transform: scale(2.2) rotate(-8deg); }
-    60% { opacity: 1; transform: scale(.92) rotate(1deg); }
-    100% { transform: none; } }
-  @keyframes m-glow { 0% { box-shadow: inset 0 0 0 1px var(--glow-c, var(--green)), 0 0 24px -4px var(--glow-c, var(--green)); } }
-  @keyframes m-bump { 35% { transform: scale(1.6); } }
-  @keyframes m-wipe { from { clip-path: inset(0 100% 0 0); } }
-  @keyframes m-pop { from { opacity: 0; transform: scale(.7); } }
-  @keyframes m-pill { 0% { opacity: 0; transform: translate(-50%, -24px); } 70% { transform: translate(-50%, 4px); } }
-  @keyframes m-ring { 0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, .85); } 100% { box-shadow: 0 0 0 7px rgba(255, 255, 255, 0); } }
-  @keyframes m-ring-red { 0% { box-shadow: 0 0 0 0 rgba(255, 77, 90, .8); } 100% { box-shadow: 0 0 0 8px rgba(255, 77, 90, 0); } }
+  @keyframes m-cut { from { clip-path: inset(0 0 100% 0); } }            /* top to bottom, in steps */
+  @keyframes m-wipe { from { clip-path: inset(0 100% 0 0); } }           /* left to right, in steps */
+  @keyframes m-shove { from { transform: translate(-10px, -10px); box-shadow: 10px 10px 0 var(--green); } }
+  @keyframes m-jump { from { transform: translateY(28px); } }
+  @keyframes m-up { from { transform: translateY(100%); } }
+  @keyframes m-in-left { from { transform: translateX(-100%); } }
+  @keyframes m-slab { 0%, 70% { background: var(--green); color: #021108; } }
+  @keyframes m-stamp { 0% { transform: scale(2); } 50% { transform: scale(.9); } }
+  @keyframes m-frame { 0%, 80% { outline: 3px solid var(--frame, var(--green)); outline-offset: -3px; } }
+  @keyframes m-invert { 0%, 99% { background: var(--green); color: #021108; } }
+  @keyframes m-show { from { visibility: hidden; } }
+  @keyframes m-sq { 0% { box-shadow: 0 0 0 0 currentColor; } 100% { box-shadow: 0 0 0 7px transparent; } }
+  @keyframes m-scan { from { background-position: 0 0, 0 0; } to { background-position: 100% 0, 0 0; } }
+  @keyframes m-page { from { transform: translateY(40px); clip-path: inset(0 0 100% 0); } }
+  @keyframes m-logo-ring { 0% { opacity: 1; transform: scale(1); } 100% { opacity: 1; transform: scale(2.6); } }
 
-  /* the menu */
-  .m-site .menu-panel[data-open] { animation: m-drop .32s cubic-bezier(.2, .9, .25, 1.1); }
-  .m-site .menu-panel[data-open] .nav a { animation: m-slide-in .36s cubic-bezier(.2, .8, .2, 1) backwards; }
-  .m-site .menu-panel[data-open] .nav a:nth-child(2) { animation-delay: .05s; }
-  .m-site .menu-panel[data-open] .nav a:nth-child(3) { animation-delay: .1s; }
-  .m-site .menu-panel[data-open] .nav a:nth-child(4) { animation-delay: .15s; }
-  .m-site .menu-panel[data-open] .nav a:nth-child(n+5) { animation-delay: .2s; }
-  .m-site .menu-panel[data-open] > :not(.nav, .menu-head) { animation: m-rise .4s cubic-bezier(.2, .8, .2, 1) .22s backwards; }
-  .m-site .menu-panel[data-open] > a.nav-support { animation-delay: .28s; }
-  .m-site .menu-panel[data-open] > .m-menu-foot { animation-delay: .34s; }
-  html.menu-open .menu-btn::before { display: inline-block; animation: m-pop .25s cubic-bezier(.2, .9, .3, 1.4); }
+  /* loading: the black block jumps along the strip */
+  html:not([data-loaded]) .site-header::after { animation: m-scan 1.2s steps(8) infinite; }
 
-  /* the tabs: a sliding underline, the content rising in */
+  /* the page opening: on a visit's first page the logo is put together (the speaker's dot, then the seats one by
+     one, a square ring), the name types in, the page jumps up; on the next pages only the dot and the page */
+  .m-logo .seat { transform-box: view-box; transform-origin: 120px 18.5px; }
+  .m-logo .spk, .m-logo .spk-ring { transform-box: fill-box; transform-origin: center; }
+  .m-logo .spk-ring { opacity: 0; }
+  .m-logo .spk { animation: m-stamp .24s steps(2) backwards; }
+  main { animation: m-page .3s steps(3) .08s backwards; }
+  html:not([data-intro="seen"]) .site-header { animation: m-cut .2s steps(2); }
+  html:not([data-intro="seen"]) .m-logo .spk { animation-delay: .15s; }
+  html:not([data-intro="seen"]) .m-logo .seat { animation: m-show 0s steps(1) backwards; }
+  html:not([data-intro="seen"]) .m-logo .s5 { animation-delay: .35s; }
+  html:not([data-intro="seen"]) .m-logo .s4 { animation-delay: .43s; }
+  html:not([data-intro="seen"]) .m-logo .s6 { animation-delay: .51s; }
+  html:not([data-intro="seen"]) .m-logo .s2 { animation-delay: .59s; }
+  html:not([data-intro="seen"]) .m-logo .s1 { animation-delay: .67s; }
+  html:not([data-intro="seen"]) .m-logo .s3 { animation-delay: .75s; }
+  html:not([data-intro="seen"]) .m-logo .spk-ring { animation: m-logo-ring .36s steps(3) .85s backwards; }
+  html:not([data-intro="seen"]) .brand-name { animation: m-wipe .65s steps(13) .85s backwards; }  /* typed, letter by letter */
+  html:not([data-intro="seen"]) main { animation-delay: .5s; }
+  html:not([data-intro="seen"]) :is(.hdr-support, .menu-btn) { animation: m-show 0s 1.5s backwards; }
+  body:has(.nav-live[data-live="on"]) .m-logo .spk-ring { animation: m-logo-ring 1.6s steps(4) 1.6s infinite; }
+  .brand:active .m-logo .spk { animation: m-stamp .2s steps(2); }
+
+  /* the menu: up from the bottom in hard steps, then its rows cut in one by one */
+  .m-site .menu-panel[data-open] { animation: m-up .24s steps(4); }
+  .m-site .menu-panel[data-open] .nav a { animation: m-wipe .16s steps(4) backwards; }
+  .m-site .menu-panel[data-open] .nav a:nth-child(1) { animation-delay: .24s; }
+  .m-site .menu-panel[data-open] .nav a:nth-child(2) { animation-delay: .3s; }
+  .m-site .menu-panel[data-open] .nav a:nth-child(3) { animation-delay: .36s; }
+  .m-site .menu-panel[data-open] .nav a:nth-child(4) { animation-delay: .42s; }
+  .m-site .menu-panel[data-open] .nav a:nth-child(n+5) { animation-delay: .48s; }
+  .m-site .menu-panel[data-open] > :not(.nav, .menu-head) { animation: m-cut .16s steps(3) .54s backwards; }
+  .m-site .menu-panel[data-open] > a.nav-support { animation: m-cut .12s steps(2) .6s backwards, m-shove .18s steps(3) .72s backwards; }
+  .m-site .menu-backdrop[data-open] { transition: none; }
+  html.menu-open .menu-btn { animation: m-stamp .16s steps(2); }
+
+  /* the tabs: the underline jumps across, the content cuts in */
   .m-tabs { position: relative; }
-  .m-tabs::after { content: ""; position: absolute; left: 0; bottom: 0; width: calc(100% / 3); height: 3px; background: var(--green);
-    transition: transform .35s cubic-bezier(.2, .9, .25, 1.1); }
+  .m-tabs::after { content: ""; position: absolute; left: 0; bottom: 0; width: calc(100% / 3); height: 4px; background: var(--green);
+    transition: transform .18s steps(3); }
   body[data-m-tab="chat"] .m-tabs::after { transform: translateX(100%); }
   body[data-m-tab="game"] .m-tabs::after { transform: translateX(200%); }
   .m-tab[aria-selected="true"] { box-shadow: none; }
-  .m-tab { transition: color .25s, background-color .25s; }
-  .m-live .below, .m-live .m-chat-slot, .m-live .m-game-slot { animation: m-rise .35s cubic-bezier(.2, .8, .2, 1); }
+  .m-live .below, .m-live .m-chat-slot, .m-live .m-game-slot { animation: m-cut .2s steps(4); }
 
   /* the facts */
-  .m-live .fact.m-intro { animation: m-rise .45s cubic-bezier(.2, .8, .2, 1) calc(var(--i, 0) * 60ms) backwards; }
-  .m-live .facts > .m-sep { animation: m-wipe .5s cubic-bezier(.6, 0, .2, 1); }
-  :is(.m-live, .m-watch) .fact { position: relative; transition: background-color .25s; }
+  .m-live .fact.m-intro { animation: m-wipe .2s steps(4) calc(var(--i, 0) * 70ms) backwards; }
+  .m-live .facts > .m-sep { animation: m-shove .18s steps(3); }
+  :is(.m-live, .m-watch) .fact { position: relative; }
   :is(.m-live, .m-watch) .fact[data-open="true"] > :is(.fact-claim, .fact-expl, .fact-sources, .social) {
-    animation: m-unfold .35s cubic-bezier(.2, .8, .2, 1) backwards; }
-  :is(.m-live, .m-watch) .fact[data-open="true"] > .fact-expl { animation-delay: .07s; }
-  :is(.m-live, .m-watch) .fact[data-open="true"] > .fact-sources { animation-delay: .14s; }
-  :is(.m-live, .m-watch) .fact[data-open="true"] > .social { animation-delay: .2s; }
-  .m-live .fact.m-in { animation: m-arrive 1.4s cubic-bezier(.2, .8, .2, 1); }
-  .m-live .fact.m-in::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--green);
-    transform-origin: top; animation: m-sweep .5s cubic-bezier(.6, 0, .2, 1), m-fade 1s ease-in .9s reverse forwards; }
-  .m-live .fact.flash .verdict { animation: m-stamp .5s cubic-bezier(.2, .8, .3, 1.2); }
-  .m-live .fact.flash { animation: m-glow 1.2s ease-out; }
-  .m-live .fact.flash:has(.verdict[data-v="false"]) { --glow-c: var(--false); }
-  .m-live .fact.flash:has(.verdict[data-v="unverifiable"]) { --glow-c: var(--unverifiable); }
-  .m-live .fact.flash:has(.verdict[data-v="fallacy"]) { --glow-c: var(--fallacy); }
-  .m-strip .tally dd { display: inline-block; }
-  .m-strip .tally dd.m-bump { animation: m-bump .5s cubic-bezier(.2, .8, .3, 1.4); }
+    animation: m-cut .18s steps(3) backwards; }
+  :is(.m-live, .m-watch) .fact[data-open="true"] > .fact-expl { animation-delay: .09s; }
+  :is(.m-live, .m-watch) .fact[data-open="true"] > .fact-sources { animation-delay: .18s; }
+  :is(.m-live, .m-watch) .fact[data-open="true"] > .social { animation-delay: .27s; }
+  .m-live .fact.m-in { animation: m-in-left .2s steps(4), m-slab .9s steps(1); }
+  .m-live .fact.m-in .fact-bullet { animation: m-slab .9s steps(1); }
+  .m-live .fact.flash .verdict { animation: m-stamp .24s steps(2); }
+  .m-live .fact.flash { animation: m-frame 1s steps(1); }
+  .m-live .fact.flash:has(.verdict[data-v="false"]) { --frame: var(--false); }
+  .m-live .fact.flash:has(.verdict[data-v="unverifiable"]) { --frame: var(--unverifiable); }
+  .m-live .fact.flash:has(.verdict[data-v="fallacy"]) { --frame: var(--fallacy); }
+  .m-strip .tally dd { display: inline-block; padding: 0 2px; }
+  .m-strip .tally dd.m-bump { animation: m-invert .7s steps(1); }
 
   /* the speaker, the live tag, the new-facts button */
-  .m-strip .speaker.m-swap .speaker-photo { animation: m-pop .4s cubic-bezier(.2, .9, .3, 1.3); }
-  .m-strip .speaker.m-swap .speaker-name { animation: m-wipe .45s cubic-bezier(.6, 0, .2, 1) .1s backwards; }
-  .m-strip .speaker.m-swap :is(.speaker-party, .speaker-role) { animation: m-fade .4s ease-out .35s backwards; }
-  .m-onair:not([hidden]) { animation: m-pop .35s cubic-bezier(.2, .9, .3, 1.4); }
-  .m-onair::before { animation: m-ring 1.8s ease-out infinite; }
-  .m-viewers::before, .menu-panel .nav-live .live-dot { animation: m-ring-red 1.8s ease-out infinite; }
-  .m-new:not([hidden]) { animation: m-pill .45s cubic-bezier(.2, .8, .3, 1.2); }
+  .m-strip .speaker.m-swap .speaker-photo { animation: m-shove .18s steps(3); }
+  .m-strip .speaker.m-swap .speaker-name { animation: m-wipe .4s steps(10) .1s backwards; }
+  .m-strip .speaker.m-swap :is(.speaker-party, .speaker-role) { animation: m-cut .15s steps(2) .5s backwards; }
+  .m-onair:not([hidden]) { animation: m-wipe .2s steps(4); }
+  .m-onair::before { color: #fff; border-radius: 0; animation: m-sq 1.2s steps(3) infinite; }
+  .m-viewers::before, .menu-panel .nav-live .live-dot { color: #ff4d5a; border-radius: 0; animation: m-sq 1.2s steps(3) infinite; }
+  .m-new:not([hidden]) { animation: m-shove .18s steps(3); }
 
-  /* the lists on the other pages: the cards rise in, one after the other */
-  .m-site :is(.arch-grid, .mp-grid) > li { animation: m-rise .5s cubic-bezier(.2, .8, .2, 1) backwards; }
-  .m-site :is(.arch-grid, .mp-grid) > li:nth-child(2) { animation-delay: .08s; }
-  .m-site :is(.arch-grid, .mp-grid) > li:nth-child(3) { animation-delay: .16s; }
-  .m-site :is(.arch-grid, .mp-grid) > li:nth-child(4) { animation-delay: .24s; }
-  .m-site .page-title { animation: m-wipe .6s cubic-bezier(.6, 0, .2, 1); }
-  .menu-panel .nav a:active, .arch-card:active, .mp-grid a:active { background: rgba(61, 240, 130, .08); }
-
-  /* the page opening: on a visit's first page the icon builds itself (the speaker's dot first, then the seats fanning
-     out from it, a ring), the name wipes in with its cursor, the header drops and the page rises; on the next pages
-     only the dot and its ring, and the page rises */
-  @keyframes m-seat { from { opacity: 0; transform: scale(.15); } }
-  @keyframes m-spk { 0% { transform: scale(0); } 70% { transform: scale(1.35); } }
-  @keyframes m-logo-ring { 0% { opacity: .9; transform: scale(1); } 100% { opacity: 0; transform: scale(3.2); } }
-  @keyframes m-cursor { 50% { opacity: 0; } }
-  @keyframes m-page { from { opacity: 0; transform: translateY(14px); } }
-  .m-logo .seat { transform-box: view-box; transform-origin: 120px 18.5px; }
-  .m-logo .spk, .m-logo .spk-ring { transform-box: fill-box; transform-origin: center; }
-  .m-logo .spk { animation: m-spk .45s cubic-bezier(.2, .9, .3, 1.3) backwards; }
-  .m-logo .spk-ring { animation: m-logo-ring .9s ease-out .3s; }
-  main { animation: m-page .45s cubic-bezier(.2, .8, .2, 1) .1s backwards; }
-  html:not([data-intro="seen"]) .site-header { animation: m-drop .45s cubic-bezier(.2, .8, .2, 1); }
-  html:not([data-intro="seen"]) .m-logo .spk { animation-delay: .15s; }
-  html:not([data-intro="seen"]) .m-logo .seat { animation: m-seat .5s cubic-bezier(.2, .9, .3, 1.15) backwards; }
-  html:not([data-intro="seen"]) .m-logo .s5 { animation-delay: .35s; }
-  html:not([data-intro="seen"]) .m-logo :is(.s4, .s6) { animation-delay: .42s; }
-  html:not([data-intro="seen"]) .m-logo .s2 { animation-delay: .5s; }
-  html:not([data-intro="seen"]) .m-logo :is(.s1, .s3) { animation-delay: .57s; }
-  html:not([data-intro="seen"]) .m-logo .spk-ring { animation-delay: .75s; }
-  html:not([data-intro="seen"]) .brand-name { animation: m-wipe .55s cubic-bezier(.6, 0, .2, 1) .6s backwards; }
-  html:not([data-intro="seen"]) .brand-name::after { animation: m-cursor .5s steps(1) 1.15s 3; }
-  html:not([data-intro="seen"]) main { animation-delay: .55s; animation-duration: .6s; }
-  html:not([data-intro="seen"]) :is(.hdr-support, .menu-btn) { animation: m-fade .4s ease-out .9s backwards; }
-  /* while the stream is live the speaker's dot keeps sending rings; a tap on the logo sends one too */
-  body:has(.nav-live[data-live="on"]) .m-logo .spk-ring { animation: m-logo-ring 2.2s ease-out 1.4s infinite; }
-  .brand:active .m-logo .spk { animation: m-spk .35s cubic-bezier(.2, .9, .3, 1.3); }
+  /* the lists on the other pages: the cards jump up one after the other, with the hard shadow */
+  .m-site :is(.arch-grid, .mp-grid) > li { animation: m-shove .2s steps(3) backwards; }
+  .m-site :is(.arch-grid, .mp-grid) > li:nth-child(2) { animation-delay: .1s; }
+  .m-site :is(.arch-grid, .mp-grid) > li:nth-child(3) { animation-delay: .2s; }
+  .m-site :is(.arch-grid, .mp-grid) > li:nth-child(4) { animation-delay: .3s; }
+  .m-site .page-title { animation: m-wipe .4s steps(8) .5s backwards; }
+  .menu-panel .nav a:active, .arch-card:active, .mp-grid a:active { background: var(--green); color: #021108; }
 }
