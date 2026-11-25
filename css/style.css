@@ -1260,8 +1260,9 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   }
   body { font-family: var(--sans); }
   body::after { display: none; }  /* no scanlines */
-  .fact, .fact.flash, .nav-live[data-live="on"] .live-dot, .online-badge .dot, .verdict[data-v="pending"]::after,
-  .menu-btn[data-live="on"]::after { animation: none; }  /* the old site's loops and glitches: not on phones */
+  .fact, .fact.flash, .nav-live[data-live="on"] .live-dot, .online-badge .dot,
+  .menu-btn[data-live="on"]::after { animation: none; }  /* the old site's loops and glitches: not on phones (the
+  "░▒" of a fact still being checked blinks, as on the desktop) */
   .scroll-hint { animation: hint-in .4s ease-out; }
   html { -webkit-tap-highlight-color: transparent; }  /* no blue flash on a tap: the rows and buttons show their own state */
   :is(.m-live, .m-watch) .fact:focus:not(:focus-visible) { outline: none; }
