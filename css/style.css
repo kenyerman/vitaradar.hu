@@ -1572,10 +1572,9 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
     color: #e9f2ed; text-decoration: none !important; }
   .replay:active { background: rgba(61, 240, 130, .05); }
   .replay .replay-counts { margin-top: 6px; }
-  .replay-go { grid-row: 1 / span 2; grid-column: 2; display: inline-flex; align-items: center; gap: 6px; height: 36px;
-    padding: 0 12px; background: #16231d; color: var(--green); font: 700 11px/1 var(--display); letter-spacing: 1.2px;
-    text-transform: uppercase; }
-  .replay-go::before { content: "▶"; font-size: 9px; }
+  .replay-go { grid-row: 1 / span 2; grid-column: 2; width: 44px; height: 44px; background: #16231d center / 14px no-repeat
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 2.5v11l9.5-5.5z' fill='%233df082'/%3E%3C/svg%3E"); }
+  .replay:active .replay-go { background-color: #1d2d26; }
 }
 
 /* ------------------------------------------------------------------ phones: loading

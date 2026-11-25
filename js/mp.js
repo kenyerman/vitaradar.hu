@@ -166,7 +166,7 @@ function replays(speeches) {
     days.get(s.date).push(s);
   }
   const open = new Set([...list.querySelectorAll(".replay-day")].filter((d) => d.open).map((d) => d.dataset.date));
-  list.replaceChildren(...[...days.entries()].map(([date, day], i) => {
+  list.replaceChildren(...[...days.entries()].map(([date, day]) => {
     day = day.slice().sort((x, y) => (at(x) ?? Infinity) - (at(y) ?? Infinity)
       || x.session.localeCompare(y.session) || x.start_s - y.start_s);
     const t = COUNTS();
@@ -179,7 +179,7 @@ function replays(speeches) {
     const li = el("li");
     const det = el("details", "replay-day");
     det.dataset.date = date || "";
-    det.open = open.size ? open.has(det.dataset.date) : i === 0;  // the newest day open, then as the reader left it
+    det.open = open.has(det.dataset.date);  // all closed at first, then as the reader left them
     const sum = el("summary", "replay-sum");
     const b = el("div", "bar");
     bar(b, t);
@@ -196,7 +196,8 @@ function replays(speeches) {
       a.append(el("span", "replay-title", from != null
         ? `${clockOf(from)}–${clockOf(from + (s.duration_s || 0) * 1000)}` : `${n + 1}. felszólalás`),
       el("span", "replay-meta", `${hms(s.duration_s)} perc · ${(s.claims || []).length} állítás`),
-      el("span", "replay-go", "Visszanézés"), countLine(st));
+      el("span", "replay-go"), countLine(st));
+      a.setAttribute("aria-label", `${a.querySelector(".replay-title").textContent} visszanézése`);
       row.append(a);
       rows.append(row);
     });
