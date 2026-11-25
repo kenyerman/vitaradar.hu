@@ -1165,7 +1165,10 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   :is(.m-live, .m-watch) .fact-expl::before { content: "INDOKLÁS"; color: var(--green); }
   :is(.m-live, .m-watch) .fact-sources { gap: 6px; font: 400 12px/1.4 var(--sans); }
   :is(.m-live, .m-watch) .fact-sources li::before { content: none; }
-  :is(.m-live, .m-watch) .fact-sources a { color: var(--green); text-decoration: underline; text-underline-offset: 3px; }
+  :is(.m-live, .m-watch) .fact-sources a { color: var(--muted); text-decoration: underline; text-decoration-color: rgba(138, 158, 148, .4);
+    text-underline-offset: 3px; }  /* quiet: the reasoning is what is read, the sources are there to check */
+  :is(.m-live, .m-watch) .fact-sources a:hover, :is(.m-live, .m-watch) .fact-sources a:focus-visible { color: var(--text);
+    text-decoration-color: currentColor; }
   :is(.m-live, .m-watch) .fact[data-open="true"] > .social { padding: 10px 12px 12px; border-top: 0;
     clip-path: polygon(0 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%); }
   :is(.m-live, .m-watch) .vote { border: 0; padding: 6px 8px; min-height: 44px; }
