@@ -71,25 +71,16 @@ function factItem(f) {
   return li;
 }
 
-// A speech's facts under it in the speakers list (shown on phones, when the speech is opened): in the order they were
-// said, each with its verdict and a jump to its moment.
-function speechFacts(id) {
-  const list = el("ol", "speech-facts");
-  const mine = facts.filter((f) => f.speech.id === id)
+// A speech's facts under it in the speakers list (shown on phones, when the speech is opened; js/mobile.js opens it
+// and says so with a "speech-open" event): the same cards as the facts list, in the order they were said, built the
+// first time the speech opens.
+function fillSpeech(li) {
+  const list = li.querySelector(":scope > .speech-facts");
+  if (!list || list.children.length || !facts.length) return;
+  const mine = facts.filter((f) => f.speech.id === li.dataset.id)
     .sort((x, y) => (x.c.video_s ?? Infinity) - (y.c.video_s ?? Infinity));
-  for (const { c } of mine) {
-    const item = el("li");
-    const at = el("button", "t-btn", c.video_s == null ? "–" : `▶ ${hms(c.video_s)}`);
-    at.type = "button";
-    at.disabled = c.video_s == null;
-    at.addEventListener("click", () => seek(c.video_s));
-    const v = badge(c.kind === "fallacy" ? "fallacy" : c.verdict || "pending", c.kind);
-    v.textContent = v.textContent.replace(/^\[ | \]$/g, "");  // a phone's list: its badges go without [ ], as in the feed
-    item.append(at, v, el("p", "fact-bullet", c.bullet || c.claim));
-    list.append(item);
-  }
+  list.append(...mine.map(factItem));
   if (!mine.length) list.append(el("li", "empty", "ebben a felszólalásban nem volt ellenőrizhető állítás"));
-  return list;
 }
 
 // A link to a moment (?t=, as an MP's page links each speech): on phones the Felszólalók tab opens on the speech it
@@ -204,9 +195,10 @@ async function load() {
     const b = el("button", "t-btn", `▶ ${hms(s.start_s)}`);
     b.type = "button";
     b.addEventListener("click", () => seek(s.start_s));
-    li.append(b, el("span", null, s.name), el("span", "count", `${s.claims} állítás`));
+    li.append(b, el("span", null, s.name), el("span", "count", `${s.claims} állítás`), el("ol", "speech-facts"));
     return li;
   }));
+  $("speakers").addEventListener("speech-open", (e) => fillSpeech(e.target));
 
   // the facts, newest first (those said after the end of the video at the very top)
   const speeches = spSnap.docs.map((d) => d.data());
@@ -215,7 +207,7 @@ async function load() {
     .sort((x, y) => at(y) - at(x));
   for (const f of facts) f.li = factItem(f);
   $("facts").replaceChildren(...facts.map((f) => f.li));
-  for (const li of $("speakers").children) li.append(speechFacts(li.dataset.id));  // phones open them (js/mobile.js)
+  for (const li of $("speakers").querySelectorAll(":scope > li.open")) fillSpeech(li);  // opened before the facts came
   showSpeechAt(startAt);
   renderFacts(startAt);  // the speaker card waits for the MPs' photos (play() ticks)
 

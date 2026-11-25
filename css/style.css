@@ -870,10 +870,10 @@ a.acct-me, a.acct-me:hover { text-decoration: none; text-shadow: none; }
   box-shadow: var(--glow); }
 .speeches-head { margin-top: 18px; }
 .speaker-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 13px; }
-.speaker-list li { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border: 1px solid var(--line-dim);
+.speaker-list > li { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border: 1px solid var(--line-dim);
   background: var(--panel); }
-.speaker-list li .count { margin-left: auto; }
-.speaker-list li.now { border-color: var(--green); color: #eafff0; }
+.speaker-list > li > .count { margin-left: auto; }
+.speaker-list > li.now { border-color: var(--green); color: #eafff0; }
 a.fact-time { color: var(--green); }
 a.fact-time:hover { text-shadow: var(--glow); }
 /* a finger-sized target (24px) without changing the line: the padding is taken back by the margin */
@@ -1523,13 +1523,11 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   .m-watch .speaker-list > li:focus-visible { outline: 1px solid var(--green); outline-offset: -2px; }
   .m-watch .speaker-list > li.open { background: rgba(61, 240, 130, .04); }
   .m-watch .speaker-list > li.open > .speech-facts { display: block; }
-  .speech-facts { grid-column: 1 / -1; margin: 0 0 8px; padding: 0; list-style: none; cursor: auto; }
-  .speech-facts > li { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 4px 8px; align-items: start; padding: 10px 0;
-    border: 0; border-top: 1px solid rgba(61, 240, 130, .08); background: none; }
-  .speech-facts .t-btn { grid-row: 1 / span 2; align-self: start; padding: 2px 0 0; color: var(--green); font: 600 11.5px/1.2 var(--display); }
-  .speech-facts .verdict { justify-self: start; }
-  .speech-facts .fact-bullet { grid-column: 2; margin: 0; color: #e9f2ed; font: 500 14px/1.35 var(--sans); }
-  .speech-facts > li.empty { display: block; padding: 10px 0; color: var(--muted); font-size: 13px; }
+  /* its facts: the same cards as the facts list, full width, without the speaker's name on each */
+  .speech-facts { grid-column: 1 / -1; margin: 0 -16px; padding: 0; list-style: none; cursor: auto;
+    border-top: 1px solid rgba(61, 240, 130, .08); }
+  .speech-facts .fact-who { display: none; }
+  .speech-facts > li.empty { padding: 12px 16px; color: var(--muted); font-size: 13px; }
 }
 @media (max-width: 860px) and (prefers-reduced-motion: no-preference) {
   .m-tabs.m-tabs-2::after { width: 50%; }

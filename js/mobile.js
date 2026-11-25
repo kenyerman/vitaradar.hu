@@ -165,7 +165,7 @@ function compactFacts(list) {
   });
   new MutationObserver((records) => {
     for (const r of records) r.addedNodes.forEach(mark);
-  }).observe(list, { childList: true });
+  }).observe(list, { childList: true, subtree: true });  // subtree: a speech's facts, inside the speakers list
 
   // a row shows how many comments it has (js/social.js writes "N hozzászólás" into the fact's .talk label), and on
   // phones the verdict badges drop their [ ] (js/common.js writes "[ IGAZ ]"; wider screens keep them)
@@ -441,8 +441,9 @@ function gameTags(box) {
   later();
 }
 
-// Phones, replay page: a tap on a speech (or Enter / Space on it) opens its facts under it (js/watch.js puts them there),
-// one speech at a time, and closes them again; its time button plays it from its start, as on wider screens.
+// Phones, replay page: a tap on a speech (or Enter / Space on it) opens its facts under it (js/watch.js puts them there,
+// the same cards as in the facts list), one speech at a time, and closes them again; its time button plays it from its
+// start, as on wider screens.
 function openingSpeeches(list) {
   if (!list) return;
   const mark = (li) => {
@@ -453,7 +454,10 @@ function openingSpeeches(list) {
   const toggle = (li) => {
     const open = !li.classList.contains("open");
     for (const o of list.querySelectorAll(":scope > li.open")) { o.classList.remove("open"); mark(o); }
-    if (open) li.classList.add("open");
+    if (open) {
+      li.dispatchEvent(new CustomEvent("speech-open", { bubbles: true }));  // js/watch.js fills it the first time
+      li.classList.add("open");
+    }
     mark(li);
   };
   list.addEventListener("click", (e) => {
@@ -593,7 +597,11 @@ function mountPhone(page) {
 
   compactFacts(document.getElementById("facts"));
   if (page === "live") liveTabs(top, slots, followFeed(document.getElementById("facts")));
-  if (page === "watch") { replayParts(top, moves); followReplay(document.getElementById("facts")); }
+  if (page === "watch") {
+    replayParts(top, moves);
+    compactFacts(document.getElementById("speakers"));  // a speech's facts open as the facts list's do
+    followReplay(document.getElementById("facts"));
+  }
 
   speakerSwap(document.getElementById("speaker"));
   tallyBump(document.querySelector(".speaker-col .tally"));
