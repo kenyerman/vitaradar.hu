@@ -1055,11 +1055,16 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
     padding: 7px 52px 7px 14px; background: none; border: 0; }
   .m-strip .speaker::before, .m-strip .speaker::after { display: none; }
   .m-strip .speaker .speaker-photo { flex: none; width: 38px; height: 38px; min-height: 0; aspect-ratio: auto; border: 0;
-    background: #16231d; box-shadow: inset 0 -3px 0 var(--party, var(--green));
+    background: #16231d;
     clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 0 100%); }
-  .m-strip .speaker-photo > :not(.initials) { display: none !important; }  /* no photo, no radar: the initials */
-  .m-strip .speaker-photo .initials, .m-strip .speaker-photo .initials[hidden] { display: grid !important; place-items: center;
+  .m-strip .speaker-photo::after { content: ""; position: absolute; z-index: 5; inset: auto 0 0; height: 3px;
+    background: var(--party, var(--green)); }  /* the party's colour, under the photo or the initials */
+  .m-strip .speaker-photo > :is(.pt-sweep, .pt-party, .pt-lines) { display: none; }
+  .m-strip .speaker-photo > img { object-position: center top; }
+  .m-strip .speaker-photo.cutout > img { object-position: center 12%; filter: none; }
+  .m-strip .speaker-photo .initials { display: grid; place-items: center;
     width: 100%; height: 100%; color: var(--text); font: 700 14px/1 var(--display); text-shadow: none; }
+  .m-strip .speaker-photo .initials[hidden] { display: none; }
   .m-strip .speaker-text { min-width: 0; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: baseline;
     gap: 4px 6px; padding: 0; border: 0; }
   .m-strip .speaker-name { grid-column: 1 / -1; justify-self: start; max-width: 100%; margin: 0; padding: 2px 16px 1px 8px;
