@@ -1242,7 +1242,7 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
     letter-spacing: .8px; text-transform: uppercase; }
   body:not([data-m-tab="feed"]) .m-ai { display: none; }
   .m-ai:has(.m-viewers:not([hidden])) { display: flex; justify-content: space-between; gap: 10px; }
-  .m-ai > span:first-child { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .m-ai > span:first-child { min-width: 0; }  /* wraps on a narrow screen: the notice is never cut */
   .m-viewers { display: inline-flex; align-items: center; gap: 5px; flex: none; color: var(--text); }
   .m-viewers::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: #ff4d5a; }  /* live */
   .m-viewers[hidden] { display: none; }
@@ -1514,12 +1514,10 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   .m-tab[aria-selected="true"] .m-tab-count { color: var(--green); }
   .m-tab-count:empty { display: none; }
   .m-watch .m-ai { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-top: 4px; padding-bottom: 4px; }
-  .m-watch .m-ai > span:first-child { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
   .m-watch .m-ai { letter-spacing: .6px; }
   .m-watch .m-ai #show-all { flex: none; min-height: 26px; padding: 0 8px; gap: 6px; font-size: 0; letter-spacing: 1px; }
   .m-watch .m-ai #show-all::before { width: 8px; height: 8px; }
   .m-watch .m-ai #show-all::after { content: "Összes"; font-size: 10px; }  /* short on screen; its name stays "összes állítás" */
-  .m-watch .m-ai > span:first-child { overflow: visible; text-overflow: clip; }
   /* the panels */
   .m-watch[data-m-tab="feed"] .speaker-col, .m-watch[data-m-tab="speakers"] .facts-col { display: none; }
   .m-watch .speaker-col { display: block; }
