@@ -9,6 +9,7 @@ import { factSocial } from "./social.js?v=202611250130";
 import { calendar } from "./calendar.js?v=202611241021";
 import { watchHref } from "./links.js?v=202611241021";
 import { setPageMeta } from "./meta.js?v=202611241124";
+import { AI_NOTE, loadTranscript, transcriptBody, wordCount } from "./transcript.js?v=202611251600";
 
 watchLiveNav();
 mountAccount();
@@ -70,6 +71,44 @@ function factItem(c, session) {
   return li;
 }
 
+// a paragraph's moment: into the replay when the speech is in the archive's video, else its time in the sitting
+function speechTime(s, rel) {
+  if (s.video_start_s != null) {
+    const a = el("a", "fact-time", `▶ ${hms(s.video_start_s + rel)}`);
+    a.href = watchHref(s.session, s.video_start_s + rel);
+    a.title = "visszanézés ettől a pillanattól";
+    return a;
+  }
+  return el("span", "fact-time", `T+${hms(s.start_s + rel)}`);
+}
+
+// the speech's Gemini transcript (sessions/{session}/transcripts/{speech id}), loaded when it is opened
+function geminiTranscript(s) {
+  const det = el("details", "transcript-d gtranscript-d");
+  const sum = el("summary", null, "Gemini-leirat");
+  det.append(sum);
+  let loaded = false;
+  det.addEventListener("toggle", async () => {
+    if (!det.open || loaded) return;
+    loaded = true;
+    const wait = el("p", "empty", "betöltés…");
+    det.append(wait);
+    try {
+      const tr = await loadTranscript(s.session, s.id);
+      if (!tr) { wait.textContent = "ehhez a felszólaláshoz még nincs Gemini-leirat"; return; }
+      wait.remove();
+      sum.textContent = `Gemini-leirat (${wordCount(tr)} szó)`;
+      det.append(el("p", "gtranscript-note", `${AI_NOTE}; a felszólalót a közvetítés képe alapján azonosítjuk`),
+        transcriptBody(tr, (rel) => speechTime(s, rel)));
+    } catch (e) {
+      wait.textContent = "a leirat most nem tölthető be";
+      loaded = false;
+      console.warn("transcript:", e);
+    }
+  });
+  return det;
+}
+
 // level 2: a speech, with its facts (and the transcript, where the run saved one)
 function speechItem(s, open) {
   const t = { ...COUNTS(), ...(s.counts || {}) };
@@ -96,6 +135,7 @@ function speechItem(s, open) {
     tr.append(el("summary", null, `leirat (${s.words} szó)`), el("p", "transcript", s.text));
     body.append(tr);
   }
+  if (s.session && s.id) body.append(geminiTranscript(s));
   det.append(sum, body);
   return det;
 }

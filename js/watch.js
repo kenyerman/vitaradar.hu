@@ -6,6 +6,7 @@
 // click on a fact's time jumps there, the latest fact said is highlighted, and the speaker card follows the video:
 // whoever had the floor, the chair included (the archive's floor turns; runs archived before them have only the
 // fact-checked speeches, so their card is empty while the chair speaks).
+// Beside them, the playing speech's Gemini transcript follows the video word by word (transcript.js).
 // ?t= opens the video at that second (the MP page's fact links).
 
 import { doc, getDoc, onSnapshot, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
@@ -17,6 +18,7 @@ import { cdnReady, cdnUrl, cdnXhr } from "./cdn.js?v=202611241021";
 import { scrollHint } from "./scrollhint.js?v=202611241021";
 import { setPageMeta } from "./meta.js?v=202611241124";
 import { youtubeMedia } from "./ytplayer.js?v=202611241433";
+import { AI_NOTE, loadTranscript, paragraphs, wordCount } from "./transcript.js?v=202611251600";
 
 watchLiveNav();
 mountAccount();
@@ -110,6 +112,62 @@ function renderSpeaker(t) {
   if (sk === shownSpeech) return;
   shownSpeech = sk;
   document.querySelectorAll(".speaker-list li").forEach((li) => li.classList.toggle("now", li.dataset.id === sk));
+  showTranscript(s);
+}
+
+// The playing speech's Gemini transcript beside the video: the word being said is lit, a click on a word jumps there.
+let trWords = [];  // {t (video seconds), span}, in order
+let trLit = null;
+async function showTranscript(s) {
+  const box = $("transcript"), empty = $("transcript-empty");
+  trWords = [];
+  trLit = null;
+  box.replaceChildren();
+  box.hidden = true;
+  $("transcript-count").textContent = "";
+  empty.hidden = false;
+  if (!s) { empty.textContent = "a felszólalás leirata itt követi a videót"; return; }
+  empty.textContent = "leirat betöltése…";
+  let tr = null;
+  try { tr = await loadTranscript(session, s.speech_id); } catch (e) { console.warn("transcript:", e); }
+  if (shownSpeech !== s.speech_id) return;  // the video moved on meanwhile
+  if (!tr) { empty.textContent = "ehhez a felszólaláshoz nincs leirat"; return; }
+  for (const p of paragraphs(tr.words)) {
+    const para = el("p", "gtranscript-p");
+    for (const w of p.words) {
+      const span = el("span", "w", w.w);
+      span.dataset.t = String(s.start_s + w.s);
+      para.append(span, " ");
+      trWords.push({ t: s.start_s + w.s, span });
+    }
+    box.append(para);
+  }
+  if (!trWords.length && tr.text) box.append(el("p", "gtranscript-p", tr.text));
+  box.append(el("p", "gtranscript-note", AI_NOTE));
+  $("transcript-count").textContent = `${wordCount(tr)} szó`;
+  box.hidden = false;
+  empty.hidden = true;
+  litWord(media.currentTime);
+}
+
+function litWord(t) {
+  if (!trWords.length) return;
+  let lo = 0, hi = trWords.length - 1, i = -1;
+  while (lo <= hi) {  // the last word started by t
+    const mid = (lo + hi) >> 1;
+    if (trWords[mid].t <= t + 0.05) { i = mid; lo = mid + 1; } else hi = mid - 1;
+  }
+  const w = i >= 0 ? trWords[i].span : null;
+  if (w === trLit) return;
+  if (trLit) trLit.classList.remove("now");
+  trLit = w;
+  if (!w) return;
+  w.classList.add("now");
+  const box = $("transcript");
+  if (box.matches(":hover")) return;  // the reader is scrolling it: leave it
+  if (w.offsetTop < box.scrollTop || w.offsetTop > box.scrollTop + box.clientHeight - 24) {
+    box.scrollTop = Math.max(0, w.offsetTop - box.clientHeight / 3);
+  }
 }
 
 let current = null;
@@ -138,6 +196,7 @@ function tick() {
   const t = media.currentTime;
   renderFacts(t);
   renderSpeaker(t);
+  litWord(t);
 }
 
 function shareUrl() {
@@ -268,6 +327,10 @@ function play(url) {
   }
 }
 
+$("transcript").addEventListener("click", (e) => {
+  const w = e.target.closest(".w");
+  if (w) seek(parseFloat(w.dataset.t));
+});
 $("copy-link").addEventListener("click", async () => {
   try { await navigator.clipboard.writeText(shareUrl()); } catch { prompt("A link:", shareUrl()); return; }
   $("copied").hidden = false;

@@ -362,6 +362,15 @@ details[open] > summary .lvl-title::before { content: "▾ "; }
 .transcript-d[open] > summary::before { content: "▾ "; }
 .transcript { margin: 8px 0 0; white-space: pre-wrap; font-size: 13px; color: var(--text); opacity: .9; max-height: 420px; overflow: auto;
   border-left: 2px solid var(--line); padding-left: 12px; }
+/* the Gemini transcript (js/transcript.js): MP page paragraphs with replay links; on the replay it follows the video */
+.gtranscript-note { margin: 8px 0 0; font-size: 11px; color: var(--muted); }
+.gtranscript-p { margin: 8px 0 0; font-size: 13px; line-height: 1.55; color: var(--text); opacity: .92; }
+.gtranscript-p .fact-time { margin: 0 8px 0 0; }
+.transcript-d .gtranscript { max-height: 420px; overflow: auto; }
+.gtranscript.live { max-height: 320px; overflow: auto; padding: 2px 10px 10px; }
+.gtranscript.live .w { cursor: pointer; }
+.gtranscript.live .w:hover { text-decoration: underline; }
+.gtranscript.live .w.now { color: #eafff0; background: rgba(0, 255, 65, .2); }
 
 /* the day picker (js/calendar.js) and the controls beside it */
 .days-tools { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 16px; align-items: start; margin-bottom: 14px; }
