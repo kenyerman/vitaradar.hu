@@ -1353,25 +1353,30 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   @keyframes m-scan { from { background-position: 0 0, 0 0; } to { background-position: 100% 0, 0 0; } }
   @keyframes m-seat { from { opacity: 0; transform: scale(.15); } }
   @keyframes m-spk { 0% { transform: scale(0); } 70% { transform: scale(1.35); } }
+  @keyframes m-radar { 0%, 100% { opacity: 1; } 30% { opacity: .25; } 65% { opacity: 1; } }  /* a seat in the sweep */
   @keyframes m-logo-ring { 0% { opacity: .9; transform: scale(1); } 100% { opacity: 0; transform: scale(3.2); } }
 
   /* loading: the black block glides along the header's edge */
   html:not([data-loaded]) .site-header::after { animation: m-scan 1.1s var(--m-in-out) infinite alternate; }
 
-  /* the logo: on every page it builds itself (the speaker's dot, the seats spreading from it, a ring) and the name
-     wipes in; after that only the cursor blinks (as on the desktop). The rest of the opening (the header, the buttons,
+  /* the logo: on every page it builds itself (the speaker's dot, the seats spreading from it, a ring), the name wipes
+     in, and a radar sweep runs over the seats twice; after that only the cursor blinks (as on the desktop). The rest of the opening (the header, the buttons,
      the page's longer wait) only on a visit's first page */
   .m-logo .seat { transform-box: view-box; transform-origin: 120px 18.5px; }
   .m-logo .spk, .m-logo .spk-ring { transform-box: fill-box; transform-origin: center; }
   html:not([data-intro="seen"]) .site-header { animation: m-fade .3s ease-out; }
   .m-logo .spk { animation: m-spk .45s cubic-bezier(.2, .9, .3, 1.3) .15s backwards; }
-  .m-logo .seat { animation: m-seat .5s cubic-bezier(.2, .9, .3, 1.15) var(--build) backwards; }
+  .m-logo .seat { animation: m-seat .5s cubic-bezier(.2, .9, .3, 1.15) var(--build) backwards,
+    m-radar 1.6s ease-in-out var(--sweep) 2; }
   .m-logo .s5 { --build: .35s; }
   .m-logo :is(.s4, .s6) { --build: .42s; }
   .m-logo .s2 { --build: .5s; }
   .m-logo :is(.s1, .s3) { --build: .57s; }
-  .m-logo .spk-ring { animation: m-logo-ring .9s ease-out .75s; }
-  .brand-name { animation: m-wipe .65s steps(13) .85s backwards; }  /* typed in, letter by letter (12 letters and the cursor) */
+  .m-logo :is(.s1, .s4) { --sweep: 1.05s; }  /* then the radar sweeps over the seats twice, left to right */
+  .m-logo :is(.s2, .s5) { --sweep: 1.3s; }
+  .m-logo :is(.s3, .s6) { --sweep: 1.55s; }
+  .m-logo .spk-ring { animation: m-logo-ring 1.6s ease-out .75s 2; }  /* a ring leaves the dot each round */
+  .brand-name { animation: m-wipe .55s cubic-bezier(.6, 0, .2, 1) .6s backwards; }
   html:not([data-intro="seen"]) :is(.hdr-support, .menu-btn) { animation: m-fade .4s ease-out 1s backwards; }
   .brand-name::after { animation: blink 1s steps(1) infinite; }  /* the original cursor */
   .brand:active .m-logo .spk { animation: m-stamp .35s var(--m-out); }
