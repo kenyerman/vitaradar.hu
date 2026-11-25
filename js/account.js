@@ -441,24 +441,32 @@ export function mountAccount() {
       if (known === "out") localStorage.removeItem(ACCT_KEY); else localStorage.setItem(ACCT_KEY, known);
     } catch { /* no storage: the placeholder stays the visitor's */ }
     box.replaceChildren();
+    // The phone menu shows more of each state (css: hidden in the header): a door for newcomers next to "Belépés"
+    // (the same sign-in; the nickname is asked for after it), why the registration waits, the nick and the points.
     if (!a.user) {
       const b = el("button", "btn acct-btn", "Belépés");
       b.type = "button";
       b.addEventListener("click", signIn);
-      box.append(b);
+      const n = el("button", "btn acct-btn acct-new", "Regisztráció");
+      n.type = "button";
+      n.addEventListener("click", signIn);
+      box.append(b, n);
     } else if (!a.registered) {
       const b = el("button", "btn acct-btn acct-reg", "Regisztráció");
       b.append(el("span", "acct-more", " befejezése"));  // phones show only the first word (css)
       b.type = "button";
       b.title = "Regisztráció befejezése";
       b.addEventListener("click", () => openRegister({}));
-      box.append(b);
+      box.append(el("span", "acct-hint", "Már csak a beceneved hiányzik."), b);
     } else {
       const b = el("a", "acct-me");  // to one's own profile page, where it can be edited
       b.href = profileHref(null);
       const pts = el("span", "acct-points");
       pts.hidden = true;
-      b.append(avatar(a.profile?.photo && a.profile.photo["64"], a.profile?.nick, 32), pts);
+      const sub = el("span", "acct-sub", "profil");
+      const text = el("span", "acct-text");
+      text.append(el("b", "acct-nick", a.profile?.nick || "Profil"), sub);
+      b.append(avatar(a.profile?.photo && a.profile.photo["64"], a.profile?.nick, 32), pts, text);
       const label = (p) => {
         b.title = p == null ? "Profil" : `Profil · ${p.toLocaleString("hu-HU")} pont`;
         b.setAttribute("aria-label", b.title);
@@ -470,6 +478,7 @@ export function mountAccount() {
         pts.dataset.points = String(p);
         pts.textContent = p.toLocaleString("hu-HU");
         pts.hidden = false;
+        sub.textContent = `${p.toLocaleString("hu-HU")} pont · profil`;
         label(p);
         if (before != null && p > before) { pts.classList.remove("bump"); void pts.offsetWidth; pts.classList.add("bump"); }
       });
