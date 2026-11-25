@@ -189,7 +189,12 @@ function followFeed(list) {
     } else if (fresh && fresh <= 3 && performance.now() > settled) {
       for (const n of added) {
         n.classList.add("m-in");
-        n.addEventListener("animationend", () => n.classList.remove("m-in"), { once: true });
+        const end = (e) => {  // the last of its animations (the slide, then the slab)
+          if (e.target !== n || e.animationName !== "m-slab") return;
+          n.classList.remove("m-in");
+          n.removeEventListener("animationend", end);
+        };
+        n.addEventListener("animationend", end);
       }
     }
     if (!PHONE.matches) return;
