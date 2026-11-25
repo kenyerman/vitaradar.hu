@@ -58,17 +58,34 @@ function menuParts(moves) {
     nav.insertBefore(imp, nav.querySelector(".nav-support"));
   }
   moves.add(document.getElementById("acct"), panel);
-  moves.add(document.querySelector(".site-header .brand-sub"), panel);
   moves.add(nav.querySelector(".nav-support"), panel);
-  const foot = el("p", "m-menu-foot");
+  // what the footer says (phones have no footer): the contact links, the maker's pages, the copyright, the source
+  const foot = el("div", "m-menu-foot");
+  const line = (...parts) => {
+    const p = el("p");
+    parts.forEach((x, i) => { if (i) p.append(" · "); p.append(x); });
+    foot.append(p);
+  };
   const link = (href, text, ext) => {
     const a = el("a", null, text);
     a.href = href;
     if (ext) { a.target = "_blank"; a.rel = "noopener"; }
     return a;
   };
-  foot.append(link("impresszum.html#tamogatas", "Mire megy a pénz?"), " · ", link("mailto:help@vitaradar.hu", "help@vitaradar.hu"),
-    " · ", link("https://github.com/kenyerman/vitaradar.hu/issues", "hibakövető (GitHub)", true));
+  const copy = (a) => { const c = a.cloneNode(true); c.removeAttribute("id"); return c; };
+  line(link("impresszum.html#tamogatas", "Mire megy a pénz?"), link("mailto:help@vitaradar.hu", "help@vitaradar.hu"),
+    link("https://github.com/kenyerman/vitaradar.hu/issues", "hibakövető (GitHub)", true));
+  const maker = [...document.querySelectorAll('.site-footer nav[aria-label="A készítő máshol"] a')].map(copy);
+  if (maker.length) {
+    const label = el("span", "m-menu-foot-h", "A készítő:");
+    const p = el("p");
+    p.append(label, " ");
+    maker.forEach((a, i) => { if (i) p.append(" · "); p.append(a); });
+    foot.append(p);
+  }
+  const year = document.getElementById("year")?.textContent || String(new Date().getFullYear());
+  const source = document.querySelector('.site-footer .footer-row a[href*="github.com"]');
+  line(`© ${year} vitaradar.hu`, "Felvétel: Országgyűlés", ...(source ? [link(source.href, "forráskód a GitHubon", true)] : []));
   panel.append(foot);
 }
 
