@@ -43,6 +43,7 @@ function card(m) {
   const li = el("li");
   const a = el("a", hasData(m) ? "mp-card panel" : "mp-card panel no-data");
   a.href = mpHref(m.id);
+  if (m.color) a.style.setProperty("--party", m.color);  // phones: a square of it before the party (css)
   const thumb = el("div", "mp-thumb");
   const img = el("img"); img.hidden = true;
   const ini = el("span", "initials");
@@ -69,7 +70,9 @@ function card(m) {
     stats.append(row);
   }
   body.append(stats);
-  a.append(thumb, body);
+  const total = el("p", "mp-total");  // phones: the number of facts on the right (the table is for wider screens)
+  total.append(el("b", null, String(m.claims || 0)), el("span", null, "állítás"));
+  a.append(thumb, body, total);
   li.append(a);
   return li;
 }

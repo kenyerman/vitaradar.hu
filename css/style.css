@@ -1631,6 +1631,42 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   .arch-body .empty { margin: 0; font-size: 11.5px; }
 }
 
+/* ------------------------------------------------------------------ phones: the MPs
+   A compact list, as the archive: a small photo with the party's colour under it, the name, the party and the role in
+   one line, the bar of the verdicts, and the number of facts on the right; the table of counts stays on wider
+   screens (and the MP's own page has them all). The search on its own line, the sort and the filter as two chips. */
+.mp-total { display: none; }
+@media (max-width: 860px) {
+  .toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; }
+  .toolbar #filter { flex: 1 1 100%; }
+  .toolbar .dd { min-width: 0; }
+  .toolbar :is(.dd-button, .btn.toggle) { min-height: 36px; padding: 0 10px; border: 0; background: #16231d; color: #e9f2ed;
+    font: 700 10.5px/1 var(--display); letter-spacing: 1px; text-transform: uppercase; }
+  .toolbar .dd-button { gap: 8px; }
+  .toolbar .dd-value { font: inherit; color: inherit; }
+  .toolbar .btn.toggle[aria-pressed="true"] { background: rgba(61, 240, 130, .14); color: var(--green); }
+  .mp-grid { display: block; margin: 0 -16px; border-bottom: 1px solid rgba(61, 240, 130, .08); }
+  .mp-grid > li { display: block; border-top: 1px solid rgba(61, 240, 130, .08); }
+  .mp-card { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 10px 16px;
+    border: 0; background: none; }
+  .mp-card:active { background: rgba(61, 240, 130, .06); }
+  .mp-thumb { width: 44px; height: 54px; }
+  .mp-thumb .initials { font-size: 14px; }
+  .mp-thumb .pt-party { background: none; box-shadow: inset 0 -3px 0 var(--party); }
+  .mp-body { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 4px 0; min-width: 0; }
+  .mp-card h2 { grid-column: 1 / -1; min-height: 0; margin: 0; font-size: 13px; line-height: 1.2; white-space: nowrap; overflow: hidden;
+    text-overflow: ellipsis; }
+  .mp-body :is(.mp-party, .mp-role) { color: var(--muted); font: 600 10px/1.3 var(--display); letter-spacing: 1px; text-transform: uppercase; }
+  .mp-body .mp-party { display: flex; align-items: center; gap: 5px; }
+  .mp-body .mp-party::before { content: ""; flex: none; width: 7px; height: 7px; background: var(--party, var(--green)); }
+  .mp-body .mp-role::before { content: " · "; white-space: pre; }
+  .mp-body .bar { grid-column: 1 / -1; height: 3px; margin: 2px 0 0; }
+  .mp-body .mp-stats { display: none; }
+  .mp-total { display: flex; flex-direction: column; align-items: flex-end; margin: 0; }
+  .mp-total b { color: #e9f2ed; font: 700 16px/1 var(--display); font-variant-numeric: tabular-nums; }
+  .mp-total span { color: var(--muted); font: 400 10px/1.4 var(--sans); }
+}
+
 /* ------------------------------------------------------------------ phones: an MP's page
    Only what tells the story: the photo, name and party, the four counts with the bar and the summary line, then the
    speeches as rows that open the replay in the archive (js/mp.js). The search, the calendar, the days, the facts with
@@ -1702,6 +1738,7 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   html:not([data-loaded]) :is(#days, #mps):empty { display: block; min-height: 620px;
     background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 360 300' preserveAspectRatio='none'%3E%3Cg fill='%2316231d'%3E%3Crect width='360' height='160'/%3E%3Crect x='16' y='180' width='120' height='18'/%3E%3Crect x='16' y='210' width='220' height='12'/%3E%3Crect x='16' y='236' width='328' height='8'/%3E%3Crect x='16' y='256' width='280' height='12'/%3E%3C/g%3E%3C/svg%3E") 0 0 / 100% 300px repeat-y content-box; padding-top: 40px; background-clip: content-box; }
   html:not([data-loaded]) #days:empty { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='358' height='74'%3E%3Cg fill='%2316231d'%3E%3Crect y='10' width='96' height='54'/%3E%3Crect x='108' y='16' width='90' height='12'/%3E%3Crect x='108' y='36' width='200' height='10'/%3E%3Crect x='108' y='56' width='240' height='3'/%3E%3C/g%3E%3Crect y='73' width='358' height='1' fill='%230f1a15'/%3E%3C/svg%3E"); background-size: 358px 74px; }  /* the archive's rows */
+  html:not([data-loaded]) #mps:empty { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='358' height='74'%3E%3Cg fill='%2316231d'%3E%3Crect y='10' width='44' height='54'/%3E%3Crect x='56' y='16' width='130' height='12'/%3E%3Crect x='56' y='36' width='170' height='9'/%3E%3Crect x='56' y='54' width='240' height='3'/%3E%3Crect x='322' y='22' width='36' height='16'/%3E%3C/g%3E%3Crect y='73' width='358' height='1' fill='%230f1a15'/%3E%3C/svg%3E"); background-size: 358px 74px; }  /* the MPs' rows */
 }
 
 /* ------------------------------------------------------------------ phones: motion
@@ -1816,8 +1853,7 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
 
   .replay-day[open] > .replay-list { animation: m-page .35s var(--m-out); }  /* a day's speeches come down into view */
   /* the lists on the other pages: the cards come in one after the other, with the hard shadow sliding away */
-  .m-site .mp-grid > li { animation: m-fade .25s ease-out backwards, m-shove .6s var(--m-out) backwards; }
-  .m-site .arch-grid > li { animation: m-from-left .45s var(--m-out) backwards; }  /* the archive's rows slide in */
+  .m-site :is(.arch-grid, .mp-grid) > li { animation: m-from-left .45s var(--m-out) backwards; }  /* the rows slide in */
   .m-site :is(.arch-grid, .mp-grid) > li:nth-child(2) { animation-delay: .08s; }
   .m-site :is(.arch-grid, .mp-grid) > li:nth-child(3) { animation-delay: .16s; }
   .m-site :is(.arch-grid, .mp-grid) > li:nth-child(4) { animation-delay: .24s; }
