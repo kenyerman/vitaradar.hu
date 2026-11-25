@@ -441,6 +441,36 @@ function gameTags(box) {
   later();
 }
 
+// Phones, replay page: a tap on a speech (or Enter / Space on it) opens its facts under it (js/watch.js puts them there),
+// one speech at a time, and closes them again; its time button plays it from its start, as on wider screens.
+function openingSpeeches(list) {
+  if (!list) return;
+  const mark = (li) => {
+    li.tabIndex = PHONE.matches ? 0 : -1;
+    if (PHONE.matches) li.setAttribute("aria-expanded", String(li.classList.contains("open")));
+    else li.removeAttribute("aria-expanded");
+  };
+  const toggle = (li) => {
+    const open = !li.classList.contains("open");
+    for (const o of list.querySelectorAll(":scope > li.open")) { o.classList.remove("open"); mark(o); }
+    if (open) li.classList.add("open");
+    mark(li);
+  };
+  list.addEventListener("click", (e) => {
+    if (!PHONE.matches || e.target.closest(".t-btn, .speech-facts")) return;
+    const li = e.target.closest("#speakers > li");
+    if (li) toggle(li);
+  });
+  list.addEventListener("keydown", (e) => {
+    if (!PHONE.matches || (e.key !== "Enter" && e.key !== " ") || !e.target.matches("#speakers > li")) return;
+    e.preventDefault();
+    toggle(e.target);
+  });
+  const all = () => list.querySelectorAll(":scope > li").forEach(mark);
+  new MutationObserver(all).observe(list, { childList: true });
+  PHONE.addEventListener("change", all);
+}
+
 // Phones, replay page (as the live page): a compact row on top of the pinned block (back to the archive, the date
 // and the time, the link to this moment as an icon), the video and the speaker strip, two tabs (the facts, the
 // speakers) and the AI notice with the "all facts" switch. The tab names show how many there are.
@@ -476,6 +506,7 @@ function replayParts(top, moves) {
     return { b, n };
   };
   const facts = tab("feed", "Állítások"), speakers = tab("speakers", "Felszólalók");
+  openingSpeeches(document.getElementById("speakers"));
   facts.b.setAttribute("aria-controls", "facts");
   speakers.b.setAttribute("aria-controls", "speakers");
   const ai = el("p", "m-ai");

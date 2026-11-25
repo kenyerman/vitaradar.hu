@@ -71,10 +71,11 @@ function factItem(f) {
   return li;
 }
 
-// A speech's facts in the speakers list: in the order they were said, each with its verdict and a jump to its moment.
-function speechFacts(s) {
+// A speech's facts under it in the speakers list (shown on phones, when the speech is opened): in the order they were
+// said, each with its verdict and a jump to its moment.
+function speechFacts(id) {
   const list = el("ol", "speech-facts");
-  const mine = facts.filter((f) => f.speech.id === s.speech_id)
+  const mine = facts.filter((f) => f.speech.id === id)
     .sort((x, y) => (x.c.video_s ?? Infinity) - (y.c.video_s ?? Infinity));
   for (const { c } of mine) {
     const item = el("li");
@@ -89,19 +90,6 @@ function speechFacts(s) {
   }
   if (!mine.length) list.append(el("li", "empty", "ebben a felszólalásban nem volt ellenőrizhető állítás"));
   return list;
-}
-
-function openSpeech(li, s) {
-  seek(s.start_s);
-  const open = !li.classList.contains("open");
-  for (const o of $("speakers").querySelectorAll("li.open")) {
-    o.classList.remove("open");
-    o.querySelector(":scope > .t-btn").setAttribute("aria-expanded", "false");
-  }
-  if (!open) return;
-  if (!li.querySelector(":scope > .speech-facts")) li.append(speechFacts(s));
-  li.classList.add("open");
-  li.querySelector(":scope > .t-btn").setAttribute("aria-expanded", "true");
 }
 
 function speakerAt(t) {
@@ -197,17 +185,14 @@ async function load() {
   speakers = (a.speakers || []).filter((s) => s.start_s != null);
   turns = (a.turns || []).filter((u) => u.start_s != null).sort((x, y) => x.start_s - y.start_s);
 
-  // the speeches list: who spoke when; a tap anywhere on a speech plays it from its start and opens its facts under
-  // it (shown on phones, css .speech-facts), a tap on an open one closes them
+  // the speeches list: who spoke when, a click on the time jumps there
   $("speakers").replaceChildren(...speakers.map((s) => {
     const li = el("li");
     li.dataset.id = s.speech_id;
     const b = el("button", "t-btn", `▶ ${hms(s.start_s)}`);
     b.type = "button";
-    b.setAttribute("aria-expanded", "false");
-    b.setAttribute("aria-label", `${s.name}, ${hms(s.start_s)}: lejátszás innen, és az állításai`);
+    b.addEventListener("click", () => seek(s.start_s));
     li.append(b, el("span", null, s.name), el("span", "count", `${s.claims} állítás`));
-    li.addEventListener("click", (e) => { if (!e.target.closest(".speech-facts")) openSpeech(li, s); });
     return li;
   }));
 
@@ -218,6 +203,7 @@ async function load() {
     .sort((x, y) => at(y) - at(x));
   for (const f of facts) f.li = factItem(f);
   $("facts").replaceChildren(...facts.map((f) => f.li));
+  for (const li of $("speakers").children) li.append(speechFacts(li.dataset.id));  // phones open them (js/mobile.js)
   renderFacts(startAt);  // the speaker card waits for the MPs' photos (play() ticks)
 
   // the MPs' photos and roles for the speaker card

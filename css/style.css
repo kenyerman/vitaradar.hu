@@ -1516,8 +1516,9 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   .m-watch .speaker-list > li > span:not(.count) { color: #e9f2ed; font: 700 13px/1.2 var(--display); letter-spacing: .8px;
     text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .m-watch .speaker-list > li > .count { color: var(--muted); font: 400 12px/1 var(--sans); }
-  /* a tapped speech: it plays from its start, and its facts open under it */
+  /* a tapped speech: its facts open under it (its time plays it) */
   .m-watch .speaker-list > li { cursor: pointer; }
+  .m-watch .speaker-list > li:focus-visible { outline: 1px solid var(--green); outline-offset: -2px; }
   .m-watch .speaker-list > li.open { background: rgba(61, 240, 130, .04); }
   .m-watch .speaker-list > li.open > .speech-facts { display: block; }
   .speech-facts { grid-column: 1 / -1; margin: 0 0 8px; padding: 0; list-style: none; cursor: auto; }
