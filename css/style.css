@@ -1337,8 +1337,8 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
    blinks; the menu goes back down when it closes, and the pages slide into each other. Readers who ask for less motion get none of it. */
 @media (max-width: 860px) and (prefers-reduced-motion: no-preference) {
   :root { --m-out: cubic-bezier(.22, 1, .36, 1); --m-in-out: cubic-bezier(.65, 0, .35, 1); }
-  @keyframes m-cut { from { clip-path: inset(0 0 100% 0); } }
-  @keyframes m-wipe { from { clip-path: inset(0 100% 0 0); } }
+  @keyframes m-cut { from { clip-path: inset(0 0 100% 0); } to { clip-path: inset(0 0 0 0); } }
+  @keyframes m-wipe { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
   @keyframes m-fade { from { opacity: 0; } }
   @keyframes m-shove { from { transform: translate(-12px, -12px); box-shadow: 12px 12px 0 var(--green); } }
   @keyframes m-up { from { transform: translateY(100%); } }
@@ -1371,7 +1371,7 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   .m-logo .s2 { --build: .5s; }
   .m-logo :is(.s1, .s3) { --build: .57s; }
   .m-logo .spk-ring { animation: m-logo-ring .9s ease-out .75s; }
-  .brand-name { animation: m-wipe .55s cubic-bezier(.6, 0, .2, 1) .6s backwards; }
+  .brand-name { animation: m-wipe .65s steps(13) .85s backwards; }  /* typed in, letter by letter (12 letters and the cursor) */
   html:not([data-intro="seen"]) :is(.hdr-support, .menu-btn) { animation: m-fade .4s ease-out 1s backwards; }
   .brand-name::after { animation: blink 1s steps(1) infinite; }  /* the original cursor */
   .brand:active .m-logo .spk { animation: m-stamp .35s var(--m-out); }
