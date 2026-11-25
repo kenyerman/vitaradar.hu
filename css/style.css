@@ -1208,6 +1208,11 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   .m-ai { margin: 0; padding: 5px 12px; border-top: 1px solid var(--line-dim); background: var(--bg); color: var(--muted); font-size: 10px;
     letter-spacing: .8px; text-transform: uppercase; }
   body:not([data-m-tab="feed"]) .m-ai { display: none; }
+  .m-ai:has(.m-viewers:not([hidden])) { display: flex; justify-content: space-between; gap: 10px; }
+  .m-ai > span:first-child { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .m-viewers { display: inline-flex; align-items: center; gap: 5px; flex: none; color: var(--text); }
+  .m-viewers::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: #ff4d5a; }  /* live */
+  .m-viewers[hidden] { display: none; }
   .m-live .m-strip .chat-open { display: none !important; }  /* the Chat tab stands for it */
   .m-live .facts-col > .section-head { display: none; }       /* the Állítások tab names the list */
   .m-live:not([data-m-tab="feed"]) .below { display: none; }

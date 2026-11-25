@@ -215,7 +215,9 @@ function liveTabs(top, slots, feed) {
   const tabs = [tab("feed", "Állítások"), tab("chat", "Chat"), tab("game", "Játék")];
   const [, chatTab, gameTab] = tabs;
   const ai = el("p", "m-ai");
-  ai.textContent = "// automatikus (AI) ellenőrzés — tévedhet";
+  const note = el("span");
+  note.textContent = "// automatikus (AI) ellenőrzés — tévedhet";
+  ai.append(note, viewers());
   top.append(bar, ai);
 
   const chatCol = document.getElementById("chat");
@@ -270,6 +272,27 @@ function liveTabs(top, slots, feed) {
 
   for (const t of tabs) t.b.setAttribute("aria-controls", t.b.dataset.tab === "feed" ? "facts" : t.b.dataset.tab === "chat" ? "chat" : "m-game");
   select("feed");
+}
+
+// How many watch the stream, while it is on: js/presence.js puts the figure in the online badge's label ("… N nézi
+// az élő adást."), every 30 s or so.
+function viewers() {
+  const out = el("span", "m-viewers");
+  out.hidden = true;
+  const live = document.querySelector(".nav-live");
+  const online = document.getElementById("online");
+  if (!live || !online) return out;
+  const sync = () => {
+    const m = /(\d+) nézi az élő adást/.exec(online.title);
+    const n = m ? Number(m[1]) : 0;
+    out.hidden = live.dataset.live !== "on" || !n;
+    out.textContent = `${n} nézi`;
+    out.title = `${n} nézi most az élő adást`;
+  };
+  new MutationObserver(sync).observe(live, { attributes: true, attributeFilter: ["data-live"] });
+  new MutationObserver(sync).observe(online, { attributes: true, attributeFilter: ["title"] });
+  sync();
+  return out;
 }
 
 // page: "live" (index.html) or "watch" (watch.html)
