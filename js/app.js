@@ -138,6 +138,7 @@ async function loadStream(url) {
 function note(text) {
   els.note.hidden = !text;
   if (text) els.note.textContent = text;
+  video.controls = !text;  // nothing to play while the note says why (iOS would draw its play button over the note)
 }
 
 // The date (ms) of the frame on screen, on the stream's clock; null when it is unknown.

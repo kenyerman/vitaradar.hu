@@ -82,7 +82,7 @@
   <main class="wrap">
     <div id="stage" class="stage" data-chat="on">
       <section class="player panel" aria-label="Élő adás">
-        <video id="video" controls playsinline muted preload="none"></video>
+        <video id="video" playsinline muted preload="none"></video>  <!-- its controls come with the stream (js/app.js) -->
         <div id="player-note" class="player-note">várakozás az adásra…</div>
       </section>
       <aside id="chat" class="chat panel" aria-label="Chat"></aside>  <!-- filled by js/chat.js; here so the player keeps its size -->
