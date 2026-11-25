@@ -111,7 +111,7 @@ function compactFacts(list) {
     r.fades.forEach((f) => f.cancel());
     li.style.overflow = "";
   };
-  const details = (li) => [...li.querySelectorAll(":scope > :is(.fact-claim, .fact-expl, .fact-sources, .social)")];
+  const details = (li) => [...li.querySelectorAll(":scope > :is(.fact-claim, .fact-expl, .fact-fallacy, .fact-sources, .social)")];
   // the row's height goes from what it is now to its height open or closed; the text stays where it is (no sliding)
   const resize = (li, open) => {
     const from = li.offsetHeight;

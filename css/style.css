@@ -1203,10 +1203,10 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   /* (the head's spacing is margins, not the grid's gap: an opened fact's panel is gapless, and its head stays put) */
   :is(.m-live, .m-watch) .fact:not([data-open="true"]) .fact-bullet { display: -webkit-box; overflow: hidden;
     -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; }
-  :is(.m-live, .m-watch) .fact:not([data-open="true"]) > :is(.fact-claim, .fact-expl, .fact-sources, .social) { display: none; }
+  :is(.m-live, .m-watch) .fact:not([data-open="true"]) > :is(.fact-claim, .fact-expl, .fact-fallacy, .fact-sources, .social) { display: none; }
   :is(.m-live, .m-watch) .fact[data-open="true"] .fact-bullet { margin-bottom: 12px; }
   /* opened: one panel under the headline */
-  :is(.m-live, .m-watch) .fact[data-open="true"] > :is(.fact-claim, .fact-expl, .fact-sources, .social) { grid-column: 1 / -1;
+  :is(.m-live, .m-watch) .fact[data-open="true"] > :is(.fact-claim, .fact-expl, .fact-fallacy, .fact-sources, .social) { grid-column: 1 / -1;
     margin: 0; padding: 12px 12px 0; background: #0f1814; opacity: 1; }
   :is(.m-live, .m-watch) .fact-claim { color: #c5d3cb; font: italic 400 13px/1.5 var(--sans); }
   :is(.m-live, .m-watch) .fact-claim::before, :is(.m-live, .m-watch) .fact-expl::before { display: block; margin-bottom: 4px;
@@ -1214,6 +1214,7 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   :is(.m-live, .m-watch) .fact-claim::before { content: "ELHANGZOTT"; color: var(--muted); }
   :is(.m-live, .m-watch) .fact-expl { color: #c5d3cb; font: 400 13px/1.5 var(--sans); }
   :is(.m-live, .m-watch) .fact-expl::before { content: "INDOKLÁS"; color: var(--green); }
+  :is(.m-live, .m-watch) .fact-fallacy { color: var(--fallacy); font: 400 13px/1.5 var(--sans); }  /* the fallacy said with it */
   :is(.m-live, .m-watch) .fact-sources { gap: 6px; font: 400 12px/1.4 var(--sans); }
   :is(.m-live, .m-watch) .fact-sources li::before { content: none; }
   :is(.m-live, .m-watch) .fact-sources a { color: var(--muted); text-decoration: underline; text-decoration-color: rgba(138, 158, 148, .4);
