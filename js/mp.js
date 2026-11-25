@@ -70,6 +70,12 @@ function factItem(c, session) {
   return li;
 }
 
+// Where a speech's replay starts: a second into it. The link's time is whole seconds, rounded down, and the replay
+// names whoever has the floor at that moment, so a start like 1263.6 s opened on the previous speaker.
+function replayAt(s) {
+  return s.video_start_s == null ? null : Math.ceil(s.video_start_s) + 1;
+}
+
 // level 2: a speech, with its facts (and the transcript, where the run saved one)
 function speechItem(s, open) {
   const t = { ...COUNTS(), ...(s.counts || {}) };
@@ -84,7 +90,7 @@ function speechItem(s, open) {
   const body = el("div", "speech-body");
   if (s.video_start_s != null) {  // the whole speech in the archive's replay
     const w = el("a", "t-btn", `▶ visszanézés (${hms(s.video_start_s)})`);
-    w.href = watchHref(s.session, s.video_start_s);
+    w.href = watchHref(s.session, replayAt(s));
     body.append(w);
   }
   const list = el("ol", "facts");
@@ -136,12 +142,18 @@ function replays(speeches) {
     const t = { ...COUNTS(), ...(s.counts || {}) };
     const li = el("li");
     const a = el("a", "replay");
-    a.href = s.video_start_s != null ? watchHref(s.session, s.video_start_s) : watchHref(s.session);
+    a.href = watchHref(s.session, replayAt(s));
     const b = el("div", "bar");
     bar(b, t);
+    const counts = el("span", "replay-counts");
+    for (const [k, name] of [["true", "Igaz"], ["false", "Hamis"], ["unverifiable", "N. e."], ["fallacy", "H. é."]]) {
+      const c = el("span", null, name);
+      c.append(el("b", `c-${k}`, String(t[k])));
+      counts.append(c);
+    }
     a.append(el("span", "replay-date", s.date ? huDate(s.date) : "ismeretlen nap"),
       el("span", "replay-meta", `${hms(s.duration_s)} perc · ${(s.claims || []).length} állítás`),
-      el("span", "replay-go", "Visszanézés"), b);
+      el("span", "replay-go", "Visszanézés"), counts, b);
     li.append(a);
     return li;
   }));
