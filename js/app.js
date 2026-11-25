@@ -15,7 +15,7 @@ import { scrollHint } from "./scrollhint.js?v=202611241021";
 import { mountGame } from "./game.js?v=202611241317";
 import { cdnReady, cdnUrl, cdnXhr } from "./cdn.js?v=202611241021";
 import { useTwitch, mountTwitch, twitchNow } from "./twitch.js?v=202611241408";
-import { mountPhone, PHONE } from "./mobile.js?v=202611250620";
+import { mountPhone, PHONE } from "./mobile.js?v=202611250740";
 
 const TWITCH = useTwitch();  // the stream from twitch.tv/vitaradar; ?player=cdn: our own CDN (supporters)
 if (!TWITCH) cdnReady();  // the stream is on cdn.vitaradar.hu, which needs its cookie: get it before the player asks

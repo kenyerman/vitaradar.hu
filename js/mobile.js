@@ -401,6 +401,25 @@ function tallyBump(tally) {
   }
 }
 
+// The game cards' tags ("[ KIHÍVÁS ]", js/game.js) drop their [ ] on phones, as the verdicts do; wider screens keep them.
+function gameTags(box) {
+  let queued = false;
+  const tidy = () => {
+    queued = false;
+    for (const t of document.querySelectorAll(".game-dock .game-tag")) {
+      const text = t.textContent;
+      const bare = text.replace(/^\[[\s\u00a0]*/, "").replace(/[\s\u00a0]*\]$/, "");
+      if (PHONE.matches && bare !== text) { t.dataset.full = text; t.textContent = bare; }
+      else if (!PHONE.matches && t.dataset.full) { t.textContent = t.dataset.full; delete t.dataset.full; }
+    }
+  };
+  const later = () => { if (!queued) { queued = true; requestAnimationFrame(tidy); } };
+  const dock = document.querySelector(".game-dock") || box;
+  new MutationObserver(later).observe(dock, { childList: true, subtree: true });
+  PHONE.addEventListener("change", later);
+  later();
+}
+
 // page: "live" (index.html) or "watch" (watch.html)
 export function mountPhone({ page }) {
   const main = document.querySelector("main");
@@ -427,12 +446,22 @@ export function mountPhone({ page }) {
     // the games: out of the dock over the page, into the Játék tab
     const game = el("div", "m-game-slot");
     game.id = "m-game";
-    const empty = el("p", "m-game-empty");
-    empty.textContent = "Nincs futó kihívás. Kihívás akkor ugrik fel, amikor egy biztos állítás elhangzik; "
-      + "a felszólalások elején a mérlegre tippelhetsz.";
-    game.append(empty);
+    // no game running: the card's empty state, as in the design (its tag, a status line, what to expect)
+    const empty = el("div", "m-game-empty");
+    const line = (cls, text) => { const e = el("p", cls); e.textContent = text; return e; };
+    empty.append(line("m-game-tag", "Játék"), line("m-game-status", "Nincs futó kihívás"),
+      line("m-game-info", "Kihívás akkor ugrik fel, amikor egy biztos állítás elhangzik; a felszólalások elején a mérlegre tippelhetsz."));
+    // how the games work, under the card in any state
+    const how = el("div", "m-game-how");
+    const item = (name, text) => { const p = el("p"); const b = el("b"); b.textContent = name; p.append(b, ` ${text}`); return p; };
+    how.append(line("m-game-how-h", "Hogyan működik?"),
+      item("Kihívás:", "egy biztos állításnál 10 mp (igaz vagy hamis?) vagy 15 mp (melyik hibás érvelés?)."),
+      item("Tipp:", "a felszólalás elején 20 mp, hány igaz, hamis állítás és hibás érvelés lesz benne."),
+      item("Szavazás:", "tippeld meg, mit dönt az Országgyűlés."));
+    game.append(empty, how);
     slot.after(game);
-    moves.add(document.querySelector(".game-dock"), game);
+    moves.add(document.querySelector(".game-dock"), game, how);
+    gameTags(game);
     slots = { chat: slot, game };
   }
 

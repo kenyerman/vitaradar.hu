@@ -1232,13 +1232,92 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   .m-live:not([data-m-tab="feed"]) .below { display: none; }
   .m-live:not([data-m-tab="chat"]) .m-chat-slot { display: none; }
   .m-live .m-chat-slot .chat { height: calc(100dvh - var(--m-top, 0px) - 28px); min-height: 300px; }
-  .m-game-slot { display: grid; gap: 10px; margin-top: 14px; }
+  /* the Játék tab, as in the design: the game card full width on the page (no frame), then how the games work */
+  .m-game-slot { display: grid; margin: 0 -16px; }
   .m-live:not([data-m-tab="game"]) .m-game-slot { display: none; }
-  .m-game-slot .game-dock { position: static; display: flex; flex-direction: column; align-items: stretch; gap: 10px; }
-  .m-game-slot .game-pop, .m-game-slot .tip-box { width: auto; margin: 0; box-shadow: none; animation: none; }
-  .m-game-empty { margin: 0; padding: 14px; border: 1px solid var(--line-dim); background: var(--panel); color: var(--muted);
-    font-size: 13px; line-height: 1.5; }
+  .m-game-slot .game-dock { position: static; display: flex; flex-direction: column; align-items: stretch; gap: 0; }
+  .m-game-slot :is(.game-pop, .tip-box, .m-game-empty) { width: auto; margin: 0; display: flex; flex-direction: column; gap: 10px;
+    padding: 12px 14px 16px; border: 0; background: none; box-shadow: none; animation: none; color: #e9f2ed;
+    font: 400 14px/1.4 var(--sans); }
+  .m-game-slot :is(.game-pop, .tip-box)[hidden] { display: none; }
+  .m-game-slot :is(.game-pop, .tip-box) + :is(.game-pop, .tip-box):not([hidden]) { border-top: 1px solid rgba(61, 240, 130, .12); }
+  .m-game-slot :is(.game-pop, .tip-box)::before, .m-game-slot :is(.game-pop, .tip-box)::after { display: none; }
   .m-game-slot:has(.game-dock > :not([hidden])) .m-game-empty { display: none; }
+  /* the head: the tag, what it is worth, the seconds left, the ✕ */
+  .m-game-slot .game-head { display: flex; align-items: center; gap: 10px; min-height: 28px; font: 600 11px/1.2 var(--display);
+    letter-spacing: 1px; }
+  .m-game-slot .game-tag, .m-game-tag { flex: 1; min-width: 0; margin: 0; color: var(--green); font: 700 11px/1.2 var(--display);
+    letter-spacing: 1.4px; text-transform: uppercase; text-shadow: none; }
+  .m-game-slot .game-pop[data-kind] .game-tag { color: var(--green); text-shadow: none; }
+  .m-game-slot .game-worth { order: 2; margin: 0; color: #9fb2a8; }
+  .m-game-slot .game-time { order: 3; margin: 0; color: var(--green); font: 700 15px/1 var(--display); font-variant-numeric: tabular-nums; }
+  .m-game-slot .game-close, .m-game-slot .tip-toggle { order: 4; flex: none; width: 44px; height: 44px; margin: -8px -10px -8px 0;
+    border: 0; background: none; color: #e9f2ed; box-shadow: none; font-size: 16px; }
+  .m-game-slot .tip-title { order: 1; flex: 0 1 auto; color: #c5d3cb; font: 400 12px/1.3 var(--sans); letter-spacing: 0; }
+  /* what is asked */
+  .m-game-slot .game-q { margin: 0; color: #e9f2ed; font: 700 14px/1.3 var(--display); letter-spacing: .8px; text-transform: uppercase; }
+  .m-game-slot .game-pop[data-kind="truth"] .game-q { display: none; }  /* the claim is the question */
+  .m-game-slot .game-statement { margin: 0; color: #e9f2ed; font: 600 17px/1.35 var(--sans); }
+  .m-game-slot .game-who { order: 0; margin: 0; color: #9fb2a8; font-size: 12px; text-align: left; }
+  .m-game-slot .game-quote { margin: -7px 0 0; color: #c5d3cb; font: 400 13px/1.45 var(--sans); font-style: normal; }
+  .m-game-slot .game-bar { height: 4px; background: rgba(61, 240, 130, .18); }
+  .m-game-slot .game-bar span { background: var(--green); }
+  /* the answers: solid blocks; picked gets a green ring, the right answer turns green, a wrong pick red */
+  .m-game-slot .game-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .m-game-slot :is(.game-opt, .vote-band) { min-height: 48px; display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    padding: 0 12px; border: 0; background: #16231d; color: #e9f2ed; box-shadow: none; opacity: 1;
+    font: 700 13px/1.2 var(--display); letter-spacing: 1px; text-align: left; text-transform: uppercase; }
+  .m-game-slot .vote-band { min-height: 44px; justify-content: center; font-size: 12px; letter-spacing: .6px; }
+  .m-game-slot :is(.game-opt, .vote-band)::before { display: none; }
+  .m-game-slot .game-opt.picked .opt-label::before { content: none; }
+  .m-game-slot :is(.game-opt, .vote-band).picked { background: rgba(61, 240, 130, .14); box-shadow: inset 0 0 0 1px var(--green); }
+  .m-game-slot :is(.game-opt, .vote-band).right { background: var(--green); color: #021108; box-shadow: none; }
+  .m-game-slot :is(.game-opt, .vote-band).wrong { background: #16231d; color: #ff8a80; box-shadow: inset 0 0 0 1px var(--false); }
+  .m-game-slot .game-pop[data-state] :is(.game-opt, .vote-band):not(.right):not(.picked) { opacity: 1; }
+  .m-game-slot .opt-count { font-weight: 600; }
+  .m-game-slot .vote-bands { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .m-game-slot :is(.vote-item, .vote-band-q, .vote-mode) { margin: 0; color: #9fb2a8; font: 400 13px/1.4 var(--sans); letter-spacing: 0; }
+  /* the outcome */
+  .m-game-slot .game-status, .m-game-status { margin: 0; color: #e9f2ed; font: 700 14px/1.35 var(--display); letter-spacing: .6px;
+    text-shadow: none; }
+  .m-game-status { text-transform: uppercase; }
+  .m-game-slot .game-pop:has(.game-opt.picked):not([data-state="result"]) .game-status { color: var(--green); }
+  .m-game-slot .game-status[data-right="true"] { color: var(--green); }
+  .m-game-slot .game-status[data-right="false"] { color: #ff8a80; }
+  .m-game-slot .game-after { display: flex; flex-direction: column; gap: 10px; }
+  .m-game-slot :is(.game-same, .game-expl), .m-game-info { margin: 0; color: #9fb2a8; font: 400 13px/1.45 var(--sans); }
+  .m-game-slot .game-expl::before { content: none; }
+  .m-game-slot .game-won, .m-game-slot .tip-box .game-won { align-self: flex-start; margin: 0; padding: 4px 14px 3px 10px;
+    background: var(--green); color: #021108; font: 700 14px/1.2 var(--display); letter-spacing: 1px; text-shadow: none;
+    clip-path: polygon(0 0, 100% 0, calc(100% - 8px) 100%, 0 100%); }
+  .m-game-slot .game-upsell { display: flex; align-items: center; gap: 10px; padding: 0; border: 0; background: none; }
+  .m-game-slot .game-pop[data-state="open"] .game-upsell { display: flex; }
+  .m-game-slot .game-upsell > span { flex: 1; color: #9fb2a8; font-size: 12px; }
+  .m-game-slot .game-upsell .btn { flex: none; height: 44px; padding: 0 14px; border: 0; background: var(--green); color: #021108;
+    box-shadow: none; text-shadow: none; font: 700 11px/1 var(--display); letter-spacing: 1.2px; }
+  /* the speech tip: its question, three steppers, the send button */
+  .m-game-slot .tip-body { display: flex; flex-direction: column; gap: 10px; }
+  .m-game-slot .tip-q { margin: 0; color: #e9f2ed; font: 600 16px/1.35 var(--sans); }
+  .m-game-slot .tip-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .m-game-slot .tip-row { grid-template-columns: 44px minmax(16px, auto) 44px; justify-content: center; gap: 0; row-gap: 4px; }
+  .m-game-slot .tip-name { grid-column: 1 / -1; justify-self: center; font: 700 10.5px/1 var(--display); letter-spacing: .8px;
+    white-space: nowrap; }
+  .m-game-slot .tip-row:nth-child(1) .tip-name { color: var(--true); }
+  .m-game-slot .tip-row:nth-child(2) .tip-name { color: var(--false); }
+  .m-game-slot .tip-row:nth-child(3) .tip-name { color: var(--fallacy); }
+  .m-game-slot .tip-step { width: 44px; height: 44px; border: 0; background: #16231d; color: #e9f2ed; box-shadow: none; font: 400 18px/1 var(--sans); }
+  .m-game-slot .tip-val { min-width: 16px; color: #e9f2ed; text-shadow: none; font: 700 18px/1 var(--display); font-variant-numeric: tabular-nums; }
+  .m-game-slot .tip-send { height: 48px; border: 0; background: var(--green); color: #021108; box-shadow: none; text-shadow: none;
+    font: 700 13px/1 var(--display); letter-spacing: 1.4px; clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%); }
+  .m-game-slot .tip-sum { color: #c5d3cb; font-size: 12px; }
+  .m-game-slot .tip-sum b { font: 700 13px/1 var(--display); }
+  .m-game-slot .tip-points { color: var(--green); text-shadow: none; }
+  /* how the games work */
+  .m-game-how { margin: 4px 14px 20px; padding-top: 12px; border-top: 1px solid rgba(61, 240, 130, .12); display: flex;
+    flex-direction: column; gap: 6px; color: #9fb2a8; font: 400 12px/1.45 var(--sans); }
+  .m-game-how p { margin: 0; }
+  .m-game-how b { color: #e9f2ed; font-weight: 600; }
+  .m-game-how .m-game-how-h { color: #8a9e94; font: 600 10.5px/1.2 var(--display); letter-spacing: 1.4px; text-transform: uppercase; }
 
   /* the replay page: the same pinned player and strip, below the title (it pins once the title has scrolled away) */
   .m-watch .m-top { margin: 14px -16px 0; }
@@ -1298,7 +1377,7 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   .fact-time, .t-btn, .btn, .acct-btn, .hdr-support, .brand-beta, .online-badge, .menu-panel .nav a, .menu-title,
   .game-head, .game-tag, .chat-head h2, .crumbs { font-family: var(--display); }
   .fact-bullet { font-family: var(--sans); font-weight: 600; letter-spacing: 0; line-height: 1.35; color: #eef3f0; }
-  .fact-claim, .fact-expl, .speaker-role, .chat-list, .m-game-empty { font-family: var(--sans); }
+  .fact-claim, .fact-expl, .speaker-role, .chat-list { font-family: var(--sans); }
   /* verdict badges: solid, dark text, a cut corner */
   .verdict { padding: 4px 10px 4px 8px; color: #021108; font-size: 11px; letter-spacing: 1px;
     clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%); }
