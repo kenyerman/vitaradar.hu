@@ -1606,6 +1606,31 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   .cal-day { font-family: var(--display); }
 }
 
+/* ------------------------------------------------------------------ phones: the archive
+   Compact rows under each day: a small picture with the length, the time, the speakers and the bar of the verdicts,
+   four or so to a screen; the table of counts stays on wider screens (and the replay page has them all). */
+@media (max-width: 860px) {
+  .arch-day { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; gap: 0 12px; margin: 0 0 20px; }
+  .arch-slashes { display: none; }
+  .arch-day > .arch-date { margin: 0; font-size: 13px; }
+  .arch-day > .count-line { margin: 0; font-size: 11.5px; white-space: nowrap; }
+  .arch-grid { grid-column: 1 / -1; display: block; margin: 8px -16px 0; border-bottom: 1px solid rgba(61, 240, 130, .08); }
+  .arch-grid > li { border-top: 1px solid rgba(61, 240, 130, .08); }
+  .arch-card { display: grid; grid-template-columns: 96px minmax(0, 1fr); align-items: center; gap: 12px; padding: 10px 16px;
+    border: 0; background: none; }
+  .arch-card:active { background: rgba(61, 240, 130, .06); }
+  .arch-poster { width: 96px; }
+  .arch-poster::before { font-size: 14px; opacity: 1; }
+  .arch-len { right: 3px; bottom: 3px; padding: 1px 4px; font-size: 9.5px; }
+  .arch-wait { left: 3px; top: 3px; bottom: auto; padding: 1px 4px; font-size: 8.5px; }
+  .arch-body { display: flex; flex-direction: column; gap: 4px; min-width: 0; padding: 0; }
+  .arch-body h3 { margin: 0; font-size: 13px; }
+  .arch-who { margin: 0; font-size: 11.5px; }
+  .arch-body .bar { height: 3px; margin: 2px 0 0; }
+  .arch-body .mp-stats { display: none; }
+  .arch-body .empty { margin: 0; font-size: 11.5px; }
+}
+
 /* ------------------------------------------------------------------ phones: an MP's page
    Only what tells the story: the photo, name and party, the four counts with the bar and the summary line, then the
    speeches as rows that open the replay in the archive (js/mp.js). The search, the calendar, the days, the facts with
@@ -1676,6 +1701,7 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
     background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 360 84' preserveAspectRatio='none'%3E%3Cg fill='%2316231d'%3E%3Crect x='16' y='18' width='40' height='12'/%3E%3Crect x='76' y='16' width='64' height='18'/%3E%3Crect x='76' y='44' width='250' height='12'/%3E%3Crect x='76' y='62' width='170' height='12'/%3E%3C/g%3E%3Crect y='83' width='360' height='1' fill='%230f1a15'/%3E%3C/svg%3E") 0 0 / 100% 84px repeat-y content-box; padding-top: 34px; background-clip: content-box; }
   html:not([data-loaded]) :is(#days, #mps):empty { display: block; min-height: 620px;
     background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 360 300' preserveAspectRatio='none'%3E%3Cg fill='%2316231d'%3E%3Crect width='360' height='160'/%3E%3Crect x='16' y='180' width='120' height='18'/%3E%3Crect x='16' y='210' width='220' height='12'/%3E%3Crect x='16' y='236' width='328' height='8'/%3E%3Crect x='16' y='256' width='280' height='12'/%3E%3C/g%3E%3C/svg%3E") 0 0 / 100% 300px repeat-y content-box; padding-top: 40px; background-clip: content-box; }
+  html:not([data-loaded]) #days:empty { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='358' height='74'%3E%3Cg fill='%2316231d'%3E%3Crect y='10' width='96' height='54'/%3E%3Crect x='108' y='16' width='90' height='12'/%3E%3Crect x='108' y='36' width='200' height='10'/%3E%3Crect x='108' y='56' width='240' height='3'/%3E%3C/g%3E%3Crect y='73' width='358' height='1' fill='%230f1a15'/%3E%3C/svg%3E"); background-size: 358px 74px; }  /* the archive's rows */
 }
 
 /* ------------------------------------------------------------------ phones: motion
@@ -1790,7 +1816,8 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
 
   .replay-day[open] > .replay-list { animation: m-page .35s var(--m-out); }  /* a day's speeches come down into view */
   /* the lists on the other pages: the cards come in one after the other, with the hard shadow sliding away */
-  .m-site :is(.arch-grid, .mp-grid) > li { animation: m-fade .25s ease-out backwards, m-shove .6s var(--m-out) backwards; }
+  .m-site .mp-grid > li { animation: m-fade .25s ease-out backwards, m-shove .6s var(--m-out) backwards; }
+  .m-site .arch-grid > li { animation: m-from-left .45s var(--m-out) backwards; }  /* the archive's rows slide in */
   .m-site :is(.arch-grid, .mp-grid) > li:nth-child(2) { animation-delay: .08s; }
   .m-site :is(.arch-grid, .mp-grid) > li:nth-child(3) { animation-delay: .16s; }
   .m-site :is(.arch-grid, .mp-grid) > li:nth-child(4) { animation-delay: .24s; }

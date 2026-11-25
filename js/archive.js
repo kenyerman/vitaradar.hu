@@ -83,7 +83,9 @@ getDocs(collection(db, "archive")).then((snap) => {
   days.replaceChildren(...dates.map((d) => {
     const sec = el("section", "arch-day");
     const runs = byDay.get(d).sort((x, y) => (x.started_at || 0) - (y.started_at || 0));
-    sec.append(el("h2", "arch-date", `// ${huDate(d)}`),
+    const date = el("h2", "arch-date");
+    date.append(el("span", "arch-slashes", "// "), huDate(d));  // phones leave the slashes out (css)
+    sec.append(date,
       el("p", "count-line", `${runs.length} rész · összesen ${hms(runs.reduce((n, a) => n + (a.duration_s || 0), 0))}`));
     const grid = el("ol", "arch-grid");
     grid.append(...runs.map(card));
