@@ -414,6 +414,8 @@ details[open] > summary .lvl-title::before { content: "▾ "; }
 .imp-list b { color: var(--green-soft); }
 .imp-verdicts { display: grid; grid-template-columns: max-content 1fr; gap: 8px 14px; align-items: center; margin: 10px 0 0; }
 .imp-verdicts dd { margin: 0; color: var(--text); }
+.imp-verdicts .verdict::before { content: "[ "; }
+.imp-verdicts .verdict::after { content: " ]"; }
 .imp-links { display: flex; flex-wrap: wrap; gap: 6px 22px; list-style: none; margin: 12px 0 0; padding: 0; }
 .imp-links a { display: inline-block; padding: 3px 0; }
 .imp-note { color: var(--muted); font-size: 13px; }
@@ -1438,6 +1440,7 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   .verdict[data-v="pending"] { display: inline-flex; align-items: center; gap: 6px; }
   .verdict[data-v="pending"]::before { content: ""; flex: none; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
   .verdict[data-v="pending"]::after { content: none; animation: none; }
+  .imp-verdicts .verdict::before, .imp-verdicts .verdict::after { content: none; }  /* bare, as the facts' labels */
   /* iOS zooms the page in on a field whose text is under 16px, and stays zoomed */
   input, textarea, select { font-size: 16px !important; }
   .fact { border-left-width: 3px; }
