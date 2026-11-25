@@ -95,6 +95,7 @@ function render() {
   if (near) near.disconnect();  // the old cards go
   list.replaceChildren(...shown.map(card));
   empty.hidden = shown.length > 0;
+  empty.textContent = mps.length ? "nincs találat" : "még nincs adat";  // the search or the switch left no one
   const withData = mps.filter(hasData).length;
   count.textContent = `// ${shown.length} képviselő látszik · ${mps.length}-ből ${withData} felszólalásait ellenőriztük`;
 }
