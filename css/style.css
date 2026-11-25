@@ -1522,7 +1522,7 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
    Bold but smooth: things slide a good distance and settle fast (a strong ease-out, no bounce), blocks come in with a
    hard green offset shadow that slides away, the menu comes up from the bottom, the tab underline glides across, a
    verdict lands like a stamp, a new fact slides in on a green slab, the logo builds itself and then only its cursor
-   blinks; the menu goes back down when it closes, and the pages slide into each other. Readers who ask for less motion get none of it. */
+   blinks (the live tag beside it stays still); the menu goes back down when it closes, and the pages slide into each other. Readers who ask for less motion get none of it. */
 @media (max-width: 860px) and (prefers-reduced-motion: no-preference) {
   :root { --m-out: cubic-bezier(.22, 1, .36, 1); --m-in-out: cubic-bezier(.65, 0, .35, 1); }
   @keyframes m-cut { from { clip-path: inset(0 0 100% 0); } to { clip-path: inset(0 0 0 0); } }
@@ -1537,7 +1537,6 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   @keyframes m-frame { 0% { box-shadow: inset 0 0 0 3px var(--frame, var(--green)); } }
   @keyframes m-invert { 0%, 40% { background: var(--green); color: #021108; } }
   @keyframes m-page { from { opacity: 0; transform: translateY(32px); } }
-  @keyframes m-sq { 0% { box-shadow: 0 0 0 0 currentColor; } 100% { box-shadow: 0 0 0 7px transparent; } }
   @keyframes m-scan { from { background-position: 0 0, 0 0; } to { background-position: 100% 0, 0 0; } }
   @keyframes m-seat { from { opacity: 0; transform: scale(.15); } }
   @keyframes m-spk { 0% { transform: scale(0); } 70% { transform: scale(1.35); } }
@@ -1626,9 +1625,7 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   .m-strip .speaker.m-swap .speaker-photo { animation: m-shove .5s var(--m-out); }
   .m-strip .speaker.m-swap .speaker-name { animation: m-wipe .5s var(--m-in-out) .08s backwards; }
   .m-strip .speaker.m-swap :is(.speaker-party, .speaker-role) { animation: m-fade .35s ease-out .4s backwards; }
-  .m-onair:not([hidden]) { animation: m-wipe .4s var(--m-in-out); }
-  .m-onair::before { color: #fff; border-radius: 0; animation: m-sq 1.6s ease-out infinite; }
-  .m-viewers::before, .menu-panel .nav-live .live-dot { color: #ff4d5a; border-radius: 0; animation: m-sq 1.6s ease-out infinite; }
+  /* the "Élő" tag and the other live dots stay still: the red says it, and the logo beside it moves already */
   .m-new:not([hidden]) { animation: m-fade .2s ease-out, m-shove .5s var(--m-out); }
 
   /* the lists on the other pages: the cards come in one after the other, with the hard shadow sliding away */
