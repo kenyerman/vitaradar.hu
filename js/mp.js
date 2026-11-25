@@ -123,6 +123,30 @@ function dayItem(date, speeches, open) {
   return det;
 }
 
+// Phones (css): no days, facts or quotes, only the statistics and each speech as one row that opens its replay in
+// the archive, newest first.
+function replays(speeches) {
+  let list = document.getElementById("replays");
+  if (!list) {
+    list = el("ol", "replays");
+    list.id = "replays";
+    $("speeches").before(list);
+  }
+  list.replaceChildren(...speeches.map((s) => {
+    const t = { ...COUNTS(), ...(s.counts || {}) };
+    const li = el("li");
+    const a = el("a", "replay");
+    a.href = s.video_start_s != null ? watchHref(s.session, s.video_start_s) : watchHref(s.session);
+    const b = el("div", "bar");
+    bar(b, t);
+    a.append(el("span", "replay-date", s.date ? huDate(s.date) : "ismeretlen nap"),
+      el("span", "replay-meta", `${hms(s.duration_s)} perc · ${(s.claims || []).length} állítás`),
+      el("span", "replay-go", "Visszanézés"), b);
+    li.append(a);
+    return li;
+  }));
+}
+
 // ------------------------------------------------------------------ days: calendar filter, expand / collapse all
 let cal = null;
 
@@ -209,6 +233,7 @@ async function load() {
   for (const list of byDay.values()) list.sort((a, b) => a.start_s - b.start_s);  // in the order they were given
   const box = $("speeches");
   box.replaceChildren(...[...byDay.entries()].map(([date, list], i) => dayItem(date, list, i === 0)));
+  replays(speeches);
   $("speech-count").textContent = speeches.length ? `[${String(speeches.length).padStart(2, "0")}]` : "";
   $("speeches-empty").hidden = speeches.length > 0;
   $("days-tools").hidden = speeches.length === 0;
