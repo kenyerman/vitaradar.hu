@@ -41,13 +41,13 @@
   <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js">
   <link rel="modulepreload" href="js/firebase.js?v=202611241021">
   <link rel="modulepreload" href="js/config.js?v=202611241021">
-  <link rel="modulepreload" href="js/common.js?v=202611241206">
-  <link rel="modulepreload" href="js/account.js?v=202611241315">
+  <link rel="modulepreload" href="js/common.js?v=202611250130">
+  <link rel="modulepreload" href="js/account.js?v=202611250130">
   <link rel="modulepreload" href="js/cdn.js?v=202611241021">
   <link rel="modulepreload" href="js/consent.js?v=202611241021">
   <link rel="modulepreload" href="js/presence.js?v=202611241206">
   <link rel="modulepreload" href="js/menu.js?v=202611241206">
-  <link rel="stylesheet" href="css/style.css?v=202611241745">
+  <link rel="stylesheet" href="css/style.css?v=202611250130">
 </head>
 <body>
   <canvas id="rain" aria-hidden="true"></canvas>
@@ -115,7 +115,11 @@
         </div>
         <dl class="tally">
           <div><dt>Igaz</dt><dd id="n-true" class="c-true">0</dd></div>
+          <div><dt>Részben igaz</dt><dd id="n-partly_true" class="c-partly_true">0</dd></div>
+          <div><dt>Félrevezető</dt><dd id="n-misleading" class="c-misleading">0</dd></div>
           <div><dt>Hamis</dt><dd id="n-false" class="c-false">0</dd></div>
+          <div><dt>Vélemény</dt><dd id="n-opinion" class="c-opinion">0</dd></div>
+          <div><dt>Ígéret</dt><dd id="n-promise" class="c-promise">0</dd></div>
           <div><dt>Nem ellenőrizhető</dt><dd id="n-unverifiable" class="c-unverifiable">0</dd></div>
           <div><dt>Hibás érvelés</dt><dd id="n-fallacy" class="c-fallacy">0</dd></div>
         </dl>
@@ -164,6 +168,6 @@
     </div>
   </footer>
 
-  <script type="module" src="js/app.js?v=202611241408"></script>
+  <script type="module" src="js/app.js?v=202611250130"></script>
 </body>
 </html>

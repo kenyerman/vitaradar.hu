@@ -15,6 +15,10 @@
   --false: #ff3b3b;
   --unverifiable: #ffbe00;
   --fallacy: #c77dff;
+  --partly_true: #beeb28;  /* the extended verdicts: the stream's colours (pfc overlay/render.py VERDICT_STYLE) */
+  --misleading: #ff8028;
+  --opinion: #96afd2;
+  --promise: #b98cff;
   --pending: #00e5ff;
   --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --glow: 0 0 6px rgba(0, 255, 65, .55), 0 0 18px rgba(0, 255, 65, .18);
@@ -146,6 +150,11 @@ main.wrap { padding-top: 32px; padding-bottom: 56px; }  /* main.wrap: beats .wra
 .fact[data-verdict="false"] { border-left-color: var(--false); }
 .fact[data-verdict="unverifiable"] { border-left-color: var(--unverifiable); }
 .fact[data-verdict="fallacy"] { border-left-color: var(--fallacy); }
+.fact[data-verdict="partly_true"] { border-left-color: var(--partly_true); }
+.fact[data-verdict="misleading"] { border-left-color: var(--misleading); }
+.fact[data-verdict="opinion"] { border-left-color: var(--opinion); }
+.fact[data-verdict="promise"] { border-left-color: var(--promise); }
+.fact-fallacy { margin: 6px 0 0; color: var(--fallacy); font-size: 13px; }
 .fact.flash { animation: glitch .7s steps(2) 1, flash 1.2s ease-out; }
 @keyframes pop { from { opacity: 0; transform: translateX(-12px); } to { opacity: 1; transform: none; } }
 @keyframes flash { from { background: rgba(0, 255, 65, .12); } to { background: var(--panel); } }
@@ -160,6 +169,10 @@ main.wrap { padding-top: 32px; padding-bottom: 56px; }  /* main.wrap: beats .wra
 .verdict[data-v="false"] { background: var(--false); color: #fff; }
 .verdict[data-v="unverifiable"] { background: var(--unverifiable); }
 .verdict[data-v="fallacy"] { background: var(--fallacy); }
+.verdict[data-v="partly_true"] { background: var(--partly_true); }
+.verdict[data-v="misleading"] { background: var(--misleading); }
+.verdict[data-v="opinion"] { background: var(--opinion); }
+.verdict[data-v="promise"] { background: var(--promise); }
 .verdict[data-v="pending"]::after { content: " ░▒"; animation: blink .8s steps(1) infinite; }
 .fact-who { font-size: 12px; color: var(--muted); }
 .fact-who a { color: var(--muted); }
@@ -193,6 +206,8 @@ main.wrap { padding-top: 32px; padding-bottom: 56px; }  /* main.wrap: beats .wra
 .c-true { color: var(--true); text-shadow: 0 0 8px rgba(0, 255, 65, .5); }
 .c-false { color: var(--false); text-shadow: 0 0 8px rgba(255, 59, 59, .45); }
 .c-unverifiable { color: var(--unverifiable); text-shadow: 0 0 8px rgba(255, 190, 0, .4); }
+.c-partly_true { color: var(--partly_true); } .c-misleading { color: var(--misleading); }
+.c-opinion { color: var(--opinion); } .c-promise { color: var(--promise); }
 .c-fallacy { color: var(--fallacy); text-shadow: 0 0 8px rgba(199, 125, 255, .45); }
 
 /* a verdict bar: true | unverifiable | false | fallacy */
