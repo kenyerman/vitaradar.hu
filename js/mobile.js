@@ -35,6 +35,12 @@ function mover() {
   };
 }
 
+// Phones, live page: the page stays put under the pinned block and the open tab's panel scrolls (css); elsewhere the
+// window does. What scrolls the facts, then.
+function scroller(list) {
+  return (PHONE.matches && document.body.classList.contains("m-live") && list.closest(".below")) || window;
+}
+
 function measure(header, top, video) {
   const set = () => {
     const h = header ? header.offsetHeight : 0;
@@ -133,7 +139,7 @@ function compactFacts(list) {
     const until = performance.now() + 420;
     const hold = () => {
       const dy = li.getBoundingClientRect().top - top;
-      if (Math.abs(dy) >= 1) scrollBy(0, dy);
+      if (Math.abs(dy) >= 1) scroller(list).scrollBy(0, dy);
       if (performance.now() < until) requestAnimationFrame(hold);
     };
     hold();
@@ -208,18 +214,22 @@ function followFeed(list) {
     pill.hidden = !PHONE.matches || top || !unseen || list.offsetParent === null;
     pill.textContent = `↑ ${unseen} új állítás`;
   };
-  addEventListener("scroll", () => {
+  const onScroll = () => {
     if (!PHONE.matches) return;
     top = atTop();
     if (top) unseen = 0;
     remember();
     show();
-  }, { passive: true });
+  };
+  addEventListener("scroll", onScroll, { passive: true });
+  list.closest(".below")?.addEventListener("scroll", onScroll, { passive: true });
   pill.addEventListener("click", () => {
     unseen = 0;
     top = true;
     show();
-    scrollTo({ top: scrollY + list.getBoundingClientRect().top - edge() - 8, behavior: calm.matches ? "auto" : "smooth" });
+    const box = scroller(list), behavior = calm.matches ? "auto" : "smooth";
+    if (box === window) scrollTo({ top: scrollY + list.getBoundingClientRect().top - edge() - 8, behavior });
+    else box.scrollTo({ top: 0, behavior });
   });
   let settled = 0;  // the first facts (the backlog) come in without motion; only the ones that arrive later slide in
   new MutationObserver((records) => {
@@ -249,7 +259,7 @@ function followFeed(list) {
     if (!PHONE.matches) return;
     if (!top && anchor && anchor.isConnected) {  // keep the row being read where it was
       const dy = anchor.getBoundingClientRect().top - anchorY;
-      if (dy) scrollBy(0, dy);
+      if (dy) scroller(list).scrollBy(0, dy);
       unseen += fresh;
     }
     remember();
