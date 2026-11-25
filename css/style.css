@@ -676,6 +676,8 @@ body:has(.game-dock > :not([hidden])) .scroll-hint { display: none; }
 .prof-saved.is-error { color: var(--false); }
 /* a game in the history: what was asked, the player's answer, the right one, the points */
 .pg-tag { color: var(--green); font-size: 11px; letter-spacing: .8px; text-transform: uppercase; white-space: nowrap; }
+.pg-tag::before { content: "[ "; }
+.pg-tag::after { content: " ]"; }
 .pg[data-kind="fallacy"] .pg-tag { color: var(--fallacy); }
 .pg[data-kind="tip"] .pg-tag, .pg[data-kind="vote"] .pg-tag { color: var(--unverifiable); }
 .pg-ans { display: flex; flex-wrap: wrap; gap: 4px 22px; margin: 0; font-size: 13px; }
@@ -688,7 +690,7 @@ body:has(.game-dock > :not([hidden])) .scroll-hint { display: none; }
 @media (max-width: 760px) {
   .prof-head { grid-template-columns: 72px minmax(0, 1fr); gap: 14px; padding: 14px; }
   .prof-head > .avatar { --size: 72px !important; }
-  .prof-head > .prof-stats, .prof-head > .prof-side { grid-column: 1 / -1; }
+  .prof-head > .prof-numbers, .prof-head > .prof-side { grid-column: 1 / -1; }
   .prof-nick { font-size: 21px; }
   .pc-open { margin-left: 0; }
 }
@@ -1677,6 +1679,59 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   .mp-total { display: flex; flex-direction: column; align-items: flex-end; margin: 0; }
   .mp-total b { color: #e9f2ed; font: 700 16px/1 var(--display); font-variant-numeric: tabular-nums; }
   .mp-total span { color: var(--muted); font: 400 10px/1.4 var(--sans); }
+}
+
+/* ------------------------------------------------------------------ phones: a profile
+   A short head (the photo, the nick, the name and since when, ✎ for one's own editor), the counts as three tiles
+   (the points, the games won, the likes), then the games and the comments as two tabs (js/profile.js). */
+.prof-tiles, .prof-tabs, .prof-edit-btn { display: none; }
+@media (max-width: 860px) {
+  .prof-head { grid-template-columns: 56px minmax(0, 1fr) auto; align-items: center; gap: 0 12px; padding: 0; border: 0; background: none; }
+  .prof-head > .avatar { --size: 56px !important; box-shadow: none; }
+  .prof-who { gap: 3px; }
+  .prof-nick { color: #e9f2ed; font: 700 18px/1.15 var(--display); letter-spacing: .8px; text-transform: uppercase; }
+  .prof-you { display: none; }
+  .prof-who :is(.prof-name, .prof-since) { display: inline; color: var(--muted); font: 400 11.5px/1.4 var(--sans); }
+  .prof-who > p:is(.prof-name, .prof-since) { display: block; }
+  .prof-who .btn { margin-top: 6px; }
+  .prof-head > .avatar { border: 0; }
+  .prof-edit-btn { grid-column: 3; grid-row: 1; display: grid; place-items: center; width: 40px; height: 40px; padding: 0; border: 0;
+    background: #16231d; color: #9fb2a8; cursor: pointer; }
+  .prof-edit-btn::before { content: "\270E"; font-size: 16px; }
+  .prof-edit-btn:focus-visible { outline: 1px solid var(--green); }
+  .prof-head > :is(.prof-numbers, .prof-side) { grid-column: 1 / -1; margin-top: 14px; }
+  .prof-numbers .prof-stats { display: none; }
+  .prof-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .prof-tile { display: flex; flex-direction: column; gap: 5px; min-width: 0; padding: 10px; background: var(--panel); }
+  .prof-tile-label { color: var(--muted); font: 600 9.5px/1 var(--display); letter-spacing: 1.2px; text-transform: uppercase; }
+  .prof-tile b { color: #e9f2ed; font: 700 20px/1 var(--display); font-variant-numeric: tabular-nums; }
+  .prof-tile b.c-true { color: var(--green); }
+  .prof-tile-sub { color: var(--muted); font: 400 11.5px/1.2 var(--sans); }
+  .prof-tile-sub:empty { display: none; }
+  .prof-edit:not([open]) { display: none; }  /* ✎ opens it */
+  /* the two lists as tabs */
+  .prof-tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 18px -16px 0;
+    border-top: 1px solid rgba(61, 240, 130, .1); border-bottom: 1px solid rgba(61, 240, 130, .14); }
+  .prof-tabs[hidden] { display: none; }
+  .prof-tab { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 0 6px; border: 0;
+    background: none; color: var(--muted); font: 700 11px/1 var(--display); letter-spacing: 1.2px; text-transform: uppercase; cursor: pointer; }
+  .prof-tab[aria-selected="true"] { color: var(--green); background: rgba(61, 240, 130, .05); box-shadow: inset 0 -3px 0 var(--green); }
+  .prof-tab-n { color: var(--muted); font-weight: 600; letter-spacing: .4px; }
+  .prof-tab[aria-selected="true"] .prof-tab-n { color: var(--green); }
+  #prof { gap: 0; }  /* the page's box: the spacing is the parts' own */
+  #prof > div:has(> .prof-edit[open]) { margin-top: 14px; }
+  .prof[data-tab="games"] > [data-kind="comments"], .prof[data-tab="comments"] > [data-kind="games"] { display: none; }
+  .prof .prof-list > .section-head h2 { display: none; }  /* the tab names it; "csak te látod" stays */
+  .prof .prof-list > .section-head:not(:has(.prof-private:not([hidden]))) { display: none; }
+  /* the entries: plain rows, as the other lists (the tag without its [ ]) */
+  .prof .pc-list { gap: 0; margin: 0 -16px; border-bottom: 1px solid rgba(61, 240, 130, .08); }
+  .prof .pc { gap: 6px; padding: 12px 16px; border: 0; border-top: 1px solid rgba(61, 240, 130, .08); background: none; }
+  .prof .pc-fact { font-size: 13px; }
+  .prof .pc-bullet { flex-basis: 100%; color: #e9f2ed; font: 500 14px/1.35 var(--sans); }
+  .pg-tag::before, .pg-tag::after { content: none; }
+  .prof .pg-tag { font: 700 10px/1 var(--display); letter-spacing: 1.2px; }
+  .prof .pc-meta { font-size: 11.5px; }
+  .prof .pc-more { margin: 12px 0 0; }
 }
 
 /* ------------------------------------------------------------------ phones: an MP's page

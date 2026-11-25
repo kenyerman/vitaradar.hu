@@ -318,7 +318,7 @@ async function gameItem(g, own) {
   const kind = g.type === "challenge" ? g.kind : g.type;
   li.dataset.kind = kind;
   const what = el("div", "pc-fact");
-  const tag = el("span", "pg-tag", `[ ${TAG[kind] || "játék"} ]`);
+  const tag = el("span", "pg-tag", TAG[kind] || "játék");  // "[ … ]" around it on wider screens (css)
   let text = "", who = "";
   if (g.type === "challenge") {
     text = (g.kind === "truth" ? g.claim || g.summary : g.summary) || "";
@@ -383,14 +383,16 @@ function fromDoc(p, own) {
   };
 }
 
+// The counts: a table on wider screens, three tiles on phones (css): the points, the games won, the likes.
 function stats(p) {
   const games = Number(p.won || 0) + Number(p.lost || 0);
+  const rate = games ? `${Math.round((100 * Number(p.won || 0)) / games)}%` : "–";
   const dl = el("dl", "mp-stats prof-stats");
   for (const [label, value, cls] of [
     ["pont", num(p.points), "c-true"],
     ["megnyert játék", num(p.won), ""],
     ["elvesztett játék", num(p.lost), ""],
-    ["nyerési arány", games ? `${Math.round((100 * Number(p.won || 0)) / games)}%` : "–", ""],
+    ["nyerési arány", rate, ""],
     ["kapott like", num(p.likes), "c-true"],
     ["kapott dislike", num(p.dislikes), "c-false"],
     ["hozzászólás", num(p.comments), ""],
@@ -399,7 +401,48 @@ function stats(p) {
     row.append(el("dt", null, label), el("dd", cls, value));
     dl.append(row);
   }
-  return dl;
+  const tile = (label, value, sub, cls) => {
+    const t = el("div", "prof-tile");
+    t.append(el("span", "prof-tile-label", label), el("b", cls, value), el("span", "prof-tile-sub", sub));
+    return t;
+  };
+  const tiles = el("div", "prof-tiles");
+  tiles.append(tile("Pont", num(p.points), "", "c-true"),
+    tile("Nyerés", rate, games ? `${num(p.won)} / ${num(games)}` : "még nincs játék"),
+    tile("Like", num(p.likes), `${num(p.dislikes)} dislike`));
+  const box = el("div", "prof-numbers");
+  box.append(dl, tiles);
+  return box;
+}
+
+// Phones: the two lists as tabs (css shows the chosen one, .prof[data-tab]), each with how many there are; wider
+// screens show both lists and no tabs.
+function listTabs(sectionBox, own) {
+  const bar = el("div", "prof-tabs");
+  bar.setAttribute("role", "tablist");
+  bar.setAttribute("aria-label", "Listák");
+  const tabs = [["games", own ? "Játékaim" : "Játékok"], ["comments", own ? "Hozzászólásaim" : "Hozzászólások"]].map(([k, label]) => {
+    const b = el("button", "prof-tab");
+    b.type = "button";
+    b.setAttribute("role", "tab");
+    b.dataset.tab = k;
+    b.append(el("span", null, label), el("span", "prof-tab-n"));
+    b.addEventListener("click", () => select(k));
+    bar.append(b);
+    return b;
+  });
+  function select(k) {
+    sectionBox.dataset.tab = k;
+    for (const b of tabs) b.setAttribute("aria-selected", String(b.dataset.tab === k));
+  }
+  select("games");
+  return {
+    el: bar,
+    counts(p) {  // from the stats, when they are shown: the games with a result, the comments
+      const n = p ? { games: Number(p.won || 0) + Number(p.lost || 0), comments: Number(p.comments || 0) } : {};
+      for (const b of tabs) b.querySelector(".prof-tab-n").textContent = n[b.dataset.tab] == null ? "" : num(n[b.dataset.tab]);
+    },
+  };
 }
 
 let shown = null;  // {uid, own, stop, sections, editor, sig}
@@ -422,6 +465,8 @@ function drawSections(v) {
   if (own) {
     if (!shown.sections) {
       shown.sections = { games: gamesView(uid, true), comments: commentsView(uid, true) };
+      shown.sections.games.el.dataset.kind = "games";  // phones show one at a time (listTabs)
+      shown.sections.comments.el.dataset.kind = "comments";
       shown.sectionBox.replaceChildren(shown.sections.games.el, shown.sections.comments.el);
       shown.sections.games.next();
       shown.sections.comments.draw();
@@ -432,6 +477,8 @@ function drawSections(v) {
   const games = hidden("games") ? hiddenSection("Játékok", "A játékait nem teszi közzé.") : gamesView(uid, false);
   const comments = hidden("comments") ? hiddenSection("Hozzászólások", "A hozzászólásai listáját nem teszi közzé.")
     : commentsView(uid, false);
+  games.el.dataset.kind = "games";
+  comments.el.dataset.kind = "comments";
   shown.sections = { games, comments };
   shown.sectionBox.replaceChildren(games.el, comments.el);
   if (games.next) games.next();
@@ -474,14 +521,29 @@ function drawHead(v) {
   } else {
     side = el("p", "prof-side prof-side-note", "A pontjait és a statisztikáit nem teszi közzé.");
   }
-  headBox.replaceChildren(avatar(v.photo && v.photo["256"], v.nick, 96), who, side);
+  const parts = [avatar(v.photo && v.photo["256"], v.nick, 96), who, side];
+  if (own) {  // phones: the editor opens from the head (css hides its folded bar there)
+    const edit = el("button", "prof-edit-btn");
+    edit.type = "button";
+    edit.title = "Profil szerkesztése";
+    edit.setAttribute("aria-label", edit.title);
+    edit.addEventListener("click", () => {
+      const det = shown.editBox.querySelector(".prof-edit");
+      if (!det) return;
+      det.open = !det.open;
+      if (det.open) det.scrollIntoView({ block: "start", behavior: "smooth" });
+    });
+    parts.push(edit);
+  }
+  headBox.replaceChildren(...parts);
 }
 
 function draw(v) {
   if (!shown) return;
   drawHead(v);
   drawSections(v);
-  shown.editBox.hidden = shown.sectionBox.hidden = false;  // shown with the head, so nothing moves (CLS)
+  shown.tabs.counts(v.stats);
+  shown.editBox.hidden = shown.sectionBox.hidden = shown.tabs.el.hidden = false;  // shown with the head, so nothing moves (CLS)
 }
 
 function show(uid, own) {
@@ -493,9 +555,10 @@ function show(uid, own) {
   const headBox = el("section", "prof-head panel");
   const editBox = el("div");
   const sectionBox = el("div", "prof");
-  editBox.hidden = sectionBox.hidden = true;
-  box.replaceChildren(headBox, editBox, sectionBox);
-  shown = { uid, own, headBox, editBox, sectionBox, sections: null, sig: null, editor: null, last: null, stop: () => {} };
+  const tabs = listTabs(sectionBox, own);
+  editBox.hidden = sectionBox.hidden = tabs.el.hidden = true;
+  box.replaceChildren(headBox, editBox, tabs.el, sectionBox);
+  shown = { uid, own, headBox, editBox, sectionBox, tabs, sections: null, sig: null, editor: null, last: null, stop: () => {} };
 
   if (own) {  // the editor, folded until opened
     const det = el("details", "prof-edit panel");
