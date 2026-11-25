@@ -1290,3 +1290,33 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   .portrait.cutout > img { filter: none; }
   .initials { color: var(--muted); text-shadow: none; }
 }
+
+/* ------------------------------------------------------------------ phones: motion
+   Short and calm, and only where something changes: the menu and a tab's content come in, an opened fact unfolds, a new
+   fact slides in at the top, a new speaker's card fades in, the "live" dots breathe. Nothing at all for readers who
+   ask for less motion. */
+@media (max-width: 860px) and (prefers-reduced-motion: no-preference) {
+  @keyframes m-fade { from { opacity: 0; } }
+  @keyframes m-drop { from { opacity: 0; transform: translateY(-8px); } }
+  @keyframes m-unfold { from { opacity: 0; transform: translateY(-4px); } }
+  @keyframes m-arrive { from { opacity: 0; transform: translateY(-10px); background: rgba(61, 240, 130, .08); } }
+  @keyframes m-pill { from { opacity: 0; transform: translate(-50%, -10px); } }
+  @keyframes m-breathe { 50% { opacity: .35; } }
+  .m-site .menu-panel[data-open] { animation: m-drop .2s cubic-bezier(.2, .8, .2, 1); }
+  .m-site .menu-panel[data-open] > * { animation: m-fade .3s ease-out backwards; }
+  .m-site .menu-panel[data-open] > .nav { animation-delay: .04s; }
+  .m-site .menu-panel[data-open] > :not(.nav, .menu-head) { animation-delay: .1s; }
+  .m-live .below, .m-live .m-chat-slot, .m-live .m-game-slot { animation: m-fade .22s ease-out; }  /* a tab's content */
+  .m-tab { transition: color .2s, background-color .2s, box-shadow .2s; }
+  :is(.m-live, .m-watch) .fact[data-open="true"] > :is(.fact-claim, .fact-expl, .fact-sources, .social) {
+    animation: m-unfold .22s ease-out backwards; }
+  :is(.m-live, .m-watch) .fact[data-open="true"] > .fact-expl { animation-delay: .04s; }
+  :is(.m-live, .m-watch) .fact[data-open="true"] > :is(.fact-sources, .social) { animation-delay: .08s; }
+  :is(.m-live, .m-watch) .fact { transition: background-color .2s; }
+  .m-live .fact.m-in { animation: m-arrive .45s cubic-bezier(.2, .8, .2, 1); }
+  .m-strip .speaker.m-swap { animation: m-fade .4s ease-out; }
+  .m-new:not([hidden]) { animation: m-pill .25s cubic-bezier(.2, .8, .2, 1); }
+  .m-onair::before, .m-viewers::before, .menu-panel .nav-live .live-dot { animation: m-breathe 2.4s ease-in-out infinite; }
+  .menu-panel > a.nav-support, .menu-panel .nav a { transition: background-color .15s, color .15s; }
+  .menu-panel .nav a:active { background: rgba(61, 240, 130, .06); }
+}

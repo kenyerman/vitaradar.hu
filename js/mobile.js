@@ -172,11 +172,20 @@ function followFeed(list) {
     show();
     scrollTo({ top: scrollY + list.getBoundingClientRect().top - edge() - 8, behavior: calm.matches ? "auto" : "smooth" });
   });
+  let settled = 0;  // the first facts (the backlog) come in without motion; only the ones that arrive later slide in
   new MutationObserver((records) => {
-    let fresh = 0;
+    const added = [];
     for (const r of records) r.addedNodes.forEach((n) => {
-      if (n.classList && n.classList.contains("fact") && !known.has(n)) { known.add(n); fresh += 1; }
+      if (n.classList && n.classList.contains("fact") && !known.has(n)) { known.add(n); added.push(n); }
     });
+    const fresh = added.length;
+    if (fresh && !settled) settled = performance.now() + 2500;
+    else if (fresh && fresh <= 3 && performance.now() > settled) {
+      for (const n of added) {
+        n.classList.add("m-in");
+        n.addEventListener("animationend", () => n.classList.remove("m-in"), { once: true });
+      }
+    }
     if (!PHONE.matches) return;
     if (!top && anchor && anchor.isConnected) {  // keep the row being read where it was
       const dy = anchor.getBoundingClientRect().top - anchorY;
@@ -295,6 +304,24 @@ function viewers() {
   return out;
 }
 
+// A new speaker's card fades in (css .m-swap), so the change is seen without anything moving over the video.
+function speakerSwap(card) {
+  const name = card && card.querySelector("#speaker-name");
+  if (!name) return;
+  let last = name.textContent;
+  new MutationObserver(() => {
+    const now = name.textContent;
+    if (now === last) return;
+    const first = last === "–" || !last;  // the page's placeholder: the first speaker just appears
+    last = now;
+    if (first || !PHONE.matches) return;
+    card.classList.remove("m-swap");
+    void card.offsetWidth;  // restart the animation
+    card.classList.add("m-swap");
+  }).observe(name, { childList: true, characterData: true, subtree: true });
+  card.addEventListener("animationend", (e) => { if (e.target === card) card.classList.remove("m-swap"); });
+}
+
 // page: "live" (index.html) or "watch" (watch.html)
 export function mountPhone({ page }) {
   const main = document.querySelector("main");
@@ -333,6 +360,8 @@ export function mountPhone({ page }) {
   compactFacts(document.getElementById("facts"));
   if (page === "live") liveTabs(top, slots, followFeed(document.getElementById("facts")));
   if (page === "watch") followReplay(document.getElementById("facts"));
+
+  speakerSwap(document.getElementById("speaker"));
 
   const remeasure = measure(document.querySelector(".site-header"), top,
     page === "live" ? player.querySelector(".player") : player);
