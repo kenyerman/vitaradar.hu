@@ -19,11 +19,11 @@
 import {
   doc, getDoc, onSnapshot, collection, query, where, orderBy, limit, startAfter, getDocs,
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { db, el, badge, huDate, watchLiveNav, mpHref } from "./common.js?v=202611250130";
+import { db, el, badge, huDate, watchLiveNav, mpHref } from "./common.js?v=202611251640";
 import {
   account, onAccount, onBlocks, isBlocked, avatar, profileEditor, mountAccount, signIn, openRegister, blockUser, api, toast,
-} from "./account.js?v=202611251800";
-import { linkify } from "./social.js?v=202611251800";
+} from "./account.js?v=202611251640";
+import { linkify } from "./social.js?v=202611251640";
 import { watchHref, profileHref, withComment } from "./links.js?v=202611241021";
 
 watchLiveNav();
