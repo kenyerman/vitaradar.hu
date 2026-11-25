@@ -1423,11 +1423,7 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   .m-live .fact.m-intro { animation: m-from-left .55s var(--m-out) calc(var(--i, 0) * 60ms) backwards; }
   .m-live .facts > .m-sep { animation: m-shove .5s var(--m-out); }
   :is(.m-live, .m-watch) .fact { position: relative; transition: background-color .25s; }
-  :is(.m-live, .m-watch) .fact[data-open="true"] > :is(.fact-claim, .fact-expl, .fact-sources, .social) {
-    animation: m-page .45s var(--m-out) backwards; }
-  :is(.m-live, .m-watch) .fact[data-open="true"] > .fact-expl { animation-delay: .06s; }
-  :is(.m-live, .m-watch) .fact[data-open="true"] > .fact-sources { animation-delay: .12s; }
-  :is(.m-live, .m-watch) .fact[data-open="true"] > .social { animation-delay: .18s; }
+  /* opening and closing a fact: js/mobile.js grows or folds the row and fades its details in place */
   .m-live .fact.m-in { animation: m-in-left .5s var(--m-out), m-slab 1.6s ease-out; }
   .m-live .fact.flash .verdict { animation: m-stamp .45s var(--m-out); }
   .m-live .fact.flash { animation: m-frame 1.2s ease-out; }

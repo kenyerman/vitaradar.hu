@@ -85,42 +85,58 @@ function compactFacts(list) {
     li.setAttribute("aria-expanded", String(li.dataset.open === "true"));
   };
   const calm = matchMedia("(prefers-reduced-motion: reduce)");
-  const folds = new WeakMap();  // li -> its closing animation
-  // Closing folds the row down to its closed height while the details fade, and only then closes it (so the text
-  // does not vanish first and leave an empty box shrinking). A tap meanwhile opens it again.
-  const fold = (li) => {
+  const motion = () => PHONE.matches && !calm.matches;
+  const ease = "cubic-bezier(.22, 1, .36, 1)";
+  const runs = new WeakMap();  // li -> its running open or close: { kind, a, fades }
+  const stop = (li) => {
+    const r = runs.get(li);
+    if (!r) return;
+    runs.delete(li);
+    r.a.cancel();
+    r.fades.forEach((f) => f.cancel());
+    li.style.overflow = "";
+  };
+  const details = (li) => [...li.querySelectorAll(":scope > :is(.fact-claim, .fact-expl, .fact-sources, .social)")];
+  // the row's height goes from what it is now to its height open or closed; the text stays where it is (no sliding)
+  const resize = (li, open) => {
     const from = li.offsetHeight;
-    delete li.dataset.open;
+    stop(li);
+    if (open) li.dataset.open = "true"; else delete li.dataset.open;
+    li.setAttribute("aria-expanded", String(open));
+    if (!motion()) return;
     const to = li.offsetHeight;
-    li.dataset.open = "true";
-    const details = li.querySelectorAll(":scope > :is(.fact-claim, .fact-expl, .fact-sources, .social)");
-    const ease = "cubic-bezier(.22, 1, .36, 1)";
+    if (!open) li.dataset.open = "true";  // closing: the details stay while they fade and the row folds
     li.style.overflow = "hidden";
     const a = li.animate([{ height: `${from}px` }, { height: `${to}px` }], { duration: 340, easing: ease });
-    const fades = [...details].map((d) => d.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 180, easing: "ease-out", fill: "forwards" }));
-    folds.set(li, { a, fades });
+    const fades = details(li).map((d, i) => d.animate([{ opacity: open ? 0 : 1 }, { opacity: open ? 1 : 0 }],
+      open ? { duration: 260, delay: 60 + i * 50, easing: "ease-out", fill: "backwards" }
+        : { duration: 180, easing: "ease-out", fill: "forwards" }));
+    runs.set(li, { kind: open ? "open" : "close", a, fades });
     a.finished.then(() => {
-      folds.delete(li);
+      if (runs.get(li)?.a !== a) return;
+      runs.delete(li);
       fades.forEach((f) => f.cancel());
       li.style.overflow = "";
-      delete li.dataset.open;
+      if (!open) delete li.dataset.open;
     }, () => {});
   };
+  const isOpen = (li) => li.dataset.open === "true" && runs.get(li)?.kind !== "close";
+  // Opening a row closes the one open before; the row tapped stays where it is on screen while the one above it folds.
   const toggle = (li) => {
-    const running = folds.get(li);
-    if (running) {  // closing: open again
-      folds.delete(li);
-      running.a.cancel();
-      running.fades.forEach((f) => f.cancel());
-      li.style.overflow = "";
-      li.setAttribute("aria-expanded", "true");
-      return;
-    }
-    const open = li.dataset.open !== "true";
-    if (open) li.dataset.open = "true";
-    else if (calm.matches) delete li.dataset.open;
-    else fold(li);
-    li.setAttribute("aria-expanded", String(open));
+    if (isOpen(li)) { resize(li, false); return; }
+    const top = li.getBoundingClientRect().top;
+    const others = [...list.querySelectorAll("li.fact")].filter((o) => o !== li && isOpen(o));
+    for (const o of others) resize(o, false);
+    resize(li, true);
+    const above = others.some((o) => o.compareDocumentPosition(li) & Node.DOCUMENT_POSITION_FOLLOWING);
+    if (!above) return;
+    const until = performance.now() + 420;
+    const hold = () => {
+      const dy = li.getBoundingClientRect().top - top;
+      if (Math.abs(dy) >= 1) scrollBy(0, dy);
+      if (performance.now() < until) requestAnimationFrame(hold);
+    };
+    hold();
   };
   list.addEventListener("click", (e) => {
     if (!PHONE.matches) return;
