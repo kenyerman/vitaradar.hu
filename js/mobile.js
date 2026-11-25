@@ -542,7 +542,7 @@ function replayParts(top, moves) {
   const count = document.getElementById("fact-count"), list = document.getElementById("speakers");
   const title = document.getElementById("w-title");
   const sync = () => {
-    facts.n.textContent = (count?.textContent || "").replace(/[[\]]/g, "");
+    facts.n.textContent = (count?.textContent || "").replace(/[[\]]/g, "").replace(/\b0+(\d)/g, "$1");  // "[05/30]": "5/30"
     speakers.n.textContent = list && list.children.length ? String(list.children.length) : "";
     if (!title) return;
     const t = title.textContent;
