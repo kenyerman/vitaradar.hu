@@ -1090,24 +1090,25 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   .m-strip .tally dd { margin: 0; font: 700 11px/1.2 var(--display); }
   .m-live .speaker-col { display: none; }  /* its speaker card and tally are in the strip */
 
-  /* the menu: a full-width sheet right below the video (never over it), as in the design: the pages with an arrow each
+  /* the menu: a full-width sheet right below the video (never over it), or the header on pages without one: the pages with an arrow each
      ("Élő adás" with a small red dot while live), the account, BETA and the online count, the support button with a red
-     heart, the contact links (js/mobile.js moves them in from the header) */
-  :is(.m-live, .m-watch) .menu-panel, :is(.m-live, .m-watch) .menu-backdrop { top: var(--m-menu, var(--m-top, 0px)); }
-  :is(.m-live, .m-watch) .menu-panel { left: 0; right: 0; width: auto; padding: 4px 0 18px; border: 0;
+     heart, the contact links (js/shell.js moves them in from the header) */
+  .m-site .menu-panel, .m-site .menu-backdrop { top: var(--m-menu, var(--m-hdr, 0px)); }  /* below the video, or the header */
+  .m-site .menu-panel { left: 0; right: 0; width: auto; padding: 4px 0 18px; border: 0;
     border-top: 2px solid var(--green); box-shadow: 0 18px 40px rgba(0, 0, 0, .6); transform: none; transition: visibility 0s .2s; }
-  :is(.m-live, .m-watch) .menu-panel[data-open] { transform: none; transition: none; }
-  :is(.m-live, .m-watch) .menu-panel:not([data-open]) { display: none; }  /* closed: not drawn at all (the nav's
+  .m-site .menu-panel[data-open] { transform: none; transition: none; }
+  .m-site .menu-panel:not([data-open]) { display: none; }  /* closed: not drawn at all (the nav's
      "nincs adás" label sets its own visibility, so a hidden panel would still show it) */
-  :is(.m-live, .m-watch) .menu-head { display: none; }
-  :is(.m-live, .m-watch) .menu-panel .nav { flex: none; padding: 0; }
-  :is(.m-live, .m-watch) .menu-panel .nav a { display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 0 16px;
+  .m-site .menu-head { display: none; }
+  .m-site .menu-panel .nav { flex: none; padding: 0; }
+  .m-site .menu-panel .nav a { display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 0 16px;
     border: 0; border-bottom: 1px solid rgba(61, 240, 130, .08); background: none; color: #e9f2ed; text-shadow: none;
     font: 700 15px/1 var(--display); letter-spacing: 1.6px; text-transform: uppercase; }
-  :is(.m-live, .m-watch) .menu-panel .nav a::before { content: none; }
-  :is(.m-live, .m-watch) .menu-panel .nav a::after { content: "\203A"; margin-left: auto; color: var(--muted); font-size: 18px; }
-  :is(.m-live, .m-watch) .menu-panel .nav a[aria-current="page"],
-  :is(.m-live, .m-watch) .menu-panel .nav a.nav-live[data-live="on"] { color: #e9f2ed; background: none; border-left: 0; box-shadow: none; }
+  .m-site .menu-panel .nav a::before { content: none; }
+  .m-site .menu-panel .nav a::after { content: "\203A"; margin-left: auto; color: var(--muted); font-size: 18px; }
+  .m-site .menu-panel .nav a[aria-current="page"],
+  .m-site .menu-panel .nav a.nav-live[data-live="on"] { color: #e9f2ed; background: none; border-left: 0; box-shadow: none; }
+  .m-site .menu-panel .nav a[aria-current="page"] { color: var(--green); }  /* where the reader is */
   .menu-panel .nav-live .live-dot { width: 8px; height: 8px; background: #ff4d5a; box-shadow: none; }
   .menu-panel .nav-live:not([data-live="on"]) .live-dot { display: none; }
   .menu-panel .nav a.nav-imp { display: flex; }
@@ -1116,8 +1117,8 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   .menu-panel > .brand-sub { order: 3; }
   .menu-panel > a.nav-support { order: 4; }
   .m-menu-foot { order: 5; }
-  :is(.m-live, .m-watch) .menu-panel .nav a.nav-profile { display: none; }
-  html[data-acct="in"] :is(.m-live, .m-watch) .menu-panel .nav a.nav-profile { display: flex; }
+  .m-site .menu-panel .nav a.nav-profile { display: none; }
+  html[data-acct="in"] .m-site .menu-panel .nav a.nav-profile { display: flex; }
   .menu-panel > .acct .btn, .menu-panel > .acct .acct-btn { min-height: 44px; justify-content: center; font: 700 12px/1 var(--display);
     letter-spacing: 1.4px; }
   .menu-panel > .acct .acct-me { grid-column: 1 / -1; margin: 0; }
@@ -1259,9 +1260,9 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
     clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%); }
   .m-onair::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: #fff; }
   .m-onair[hidden] { display: none; }
-  :is(.m-live, .m-watch) .brand-box { margin-right: 0; }
-  :is(.m-live, .m-watch) .hdr-support { display: inline-flex !important; margin-left: auto; }
-  :is(.m-live, .m-watch) .menu-btn[data-live="on"]::after { display: none; }  /* the "Élő" tag says it */
+  .m-site .brand-box { margin-right: 0; }
+  .m-site .hdr-support { display: inline-flex !important; margin-left: auto; }
+  .m-site .menu-btn[data-live="on"]::after { display: none; }  /* the "Élő" tag says it */
   .brand img, .menu-bars span { filter: none; box-shadow: none; }
   .page-title, .section-head h2, .speaker-name, .m-sep-name, .m-tab, .m-new, .m-ai, .tally, .verdict,
   .fact-time, .t-btn, .btn, .acct-btn, .hdr-support, .brand-beta, .online-badge, .menu-panel .nav a, .menu-title,

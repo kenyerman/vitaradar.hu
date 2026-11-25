@@ -4,7 +4,7 @@
 //
 // The parts are moved, not copied, so the scripts that fill them (app.js, chat.js, watch.js) keep working wherever
 // they are. --m-hdr is the header's height (where the pinned block starts) and --m-top where it ends (menus and panels
-// open below it, never over the video).
+// open below it, never over the video). The header and the menu are js/shell.js's, on every page.
 
 export const PHONE = matchMedia("(max-width: 860px)");
 
@@ -272,48 +272,6 @@ function liveTabs(top, slots, feed) {
   select("feed");
 }
 
-// Phones: a red "Élő" tag beside the logo while the stream is live (the nav's "Élő adás" link knows, js/common.js).
-function onAir() {
-  const live = document.querySelector(".nav-live");
-  const box = document.querySelector(".site-header .brand-box");
-  if (!live || !box) return;
-  const tag = el("span", "m-onair");
-  tag.textContent = "Élő";
-  tag.setAttribute("aria-hidden", "true");  // the menu button's label says it too
-  box.after(tag);
-  const sync = () => { tag.hidden = live.dataset.live !== "on"; };
-  new MutationObserver(sync).observe(live, { attributes: true, attributeFilter: ["data-live"] });
-  sync();
-}
-
-// Phones: the menu (js/menu.js) holds what the header gives up: under the pages (with the impresszum added), the
-// account, BETA and the online count, the support button and the contact links. On wider screens they go back.
-function menuParts(moves) {
-  const panel = document.getElementById("menu");
-  const nav = panel && (panel.querySelector(".nav") || document.querySelector(".site-header .nav"));
-  if (!panel || !nav) return;
-  if (!nav.querySelector(".nav-imp")) {
-    const imp = el("a", "nav-imp");
-    imp.href = "impresszum.html";
-    imp.textContent = "Impresszum";
-    nav.insertBefore(imp, nav.querySelector(".nav-support"));
-  }
-  moves.add(document.getElementById("acct"), panel);
-  moves.add(document.querySelector(".site-header .brand-sub"), panel);
-  moves.add(nav.querySelector(".nav-support"), panel);
-  const foot = el("p", "m-menu-foot");
-  const link = (href, text, ext) => {
-    const a = el("a");
-    a.href = href;
-    a.textContent = text;
-    if (ext) { a.target = "_blank"; a.rel = "noopener"; }
-    return a;
-  };
-  foot.append(link("impresszum.html#tamogatas", "Mire megy a pénz?"), " · ", link("mailto:help@vitaradar.hu", "help@vitaradar.hu"),
-    " · ", link("https://github.com/kenyerman/vitaradar.hu/issues", "hibakövető (GitHub)", true));
-  panel.append(foot);
-}
-
 // page: "live" (index.html) or "watch" (watch.html)
 export function mountPhone({ page }) {
   const main = document.querySelector("main");
@@ -352,10 +310,6 @@ export function mountPhone({ page }) {
   compactFacts(document.getElementById("facts"));
   if (page === "live") liveTabs(top, slots, followFeed(document.getElementById("facts")));
   if (page === "watch") followReplay(document.getElementById("facts"));
-
-  onAir();
-
-  menuParts(moves);
 
   const remeasure = measure(document.querySelector(".site-header"), top,
     page === "live" ? player.querySelector(".player") : player);
