@@ -129,8 +129,28 @@ function dayItem(date, speeches, open) {
   return det;
 }
 
-// Phones (css): no days, facts or quotes, only the statistics and each speech as one row that opens its replay in
-// the archive, newest first.
+// Phones (css): no facts or quotes, only the statistics and the sitting days, newest first, one card each: the day's
+// counts, and when opened, its speeches in the order they were given, each opening its replay in the archive.
+const COUNT_NAMES = [["true", "Igaz"], ["false", "Hamis"], ["unverifiable", "N. e."], ["fallacy", "H. é."]];
+
+function countLine(t) {
+  const line = el("span", "replay-counts");
+  for (const [k, name] of COUNT_NAMES) {
+    const c = el("span", null, name);
+    c.append(el("b", `c-${k}`, String(t[k])));
+    line.append(c);
+  }
+  return line;
+}
+
+function clockOf(ms) {
+  return new Date(ms).toLocaleTimeString("hu-HU", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Budapest" });
+}
+
+// When a speech began, by the clock: its recording's start (archive/{session}.started_at) plus where it is in it.
+// Recordings without a start time (replays of a file) fall back to their order on the day.
+const starts = new Map();  // session -> started_at (ms) or null
+
 function replays(speeches) {
   let list = document.getElementById("replays");
   if (!list) {
@@ -138,25 +158,60 @@ function replays(speeches) {
     list.id = "replays";
     $("speeches").before(list);
   }
-  list.replaceChildren(...speeches.map((s) => {
-    const t = { ...COUNTS(), ...(s.counts || {}) };
+  // started_at is where the recording begins: the speech's place in the video (start_s counts from the run's start)
+  const at = (s) => (starts.get(s.session) != null ? starts.get(s.session) + (s.video_start_s ?? s.start_s) * 1000 : null);
+  const days = new Map();  // speeches come newest first: so do the days
+  for (const s of speeches) {
+    if (!days.has(s.date)) days.set(s.date, []);
+    days.get(s.date).push(s);
+  }
+  const open = new Set([...list.querySelectorAll(".replay-day")].filter((d) => d.open).map((d) => d.dataset.date));
+  list.replaceChildren(...[...days.entries()].map(([date, day], i) => {
+    day = day.slice().sort((x, y) => (at(x) ?? Infinity) - (at(y) ?? Infinity)
+      || x.session.localeCompare(y.session) || x.start_s - y.start_s);
+    const t = COUNTS();
+    let claims = 0, secs = 0;
+    for (const s of day) {
+      for (const k of Object.keys(t)) t[k] += (s.counts || {})[k] || 0;
+      claims += (s.claims || []).length;
+      secs += s.duration_s || 0;
+    }
     const li = el("li");
-    const a = el("a", "replay");
-    a.href = watchHref(s.session, replayAt(s));
+    const det = el("details", "replay-day");
+    det.dataset.date = date || "";
+    det.open = open.size ? open.has(det.dataset.date) : i === 0;  // the newest day open, then as the reader left it
+    const sum = el("summary", "replay-sum");
     const b = el("div", "bar");
     bar(b, t);
-    const counts = el("span", "replay-counts");
-    for (const [k, name] of [["true", "Igaz"], ["false", "Hamis"], ["unverifiable", "N. e."], ["fallacy", "H. é."]]) {
-      const c = el("span", null, name);
-      c.append(el("b", `c-${k}`, String(t[k])));
-      counts.append(c);
-    }
-    a.append(el("span", "replay-date", s.date ? huDate(s.date) : "ismeretlen nap"),
+    sum.append(el("span", "replay-date", date ? huDate(date) : "ismeretlen nap"),
+      el("span", "replay-meta", `${day.length} felszólalás · ${claims} állítás · ${hms(secs)} perc`),
+      el("span", "replay-chev"), countLine(t), b);
+    const rows = el("ol", "replay-list");
+    day.forEach((s, n) => {
+      const st = { ...COUNTS(), ...(s.counts || {}) };
+      const from = at(s);
+      const row = el("li");
+      const a = el("a", "replay");
+      a.href = watchHref(s.session, replayAt(s));
+      a.append(el("span", "replay-title", from != null
+        ? `${clockOf(from)}–${clockOf(from + (s.duration_s || 0) * 1000)}` : `${n + 1}. felszólalás`),
       el("span", "replay-meta", `${hms(s.duration_s)} perc · ${(s.claims || []).length} állítás`),
-      el("span", "replay-go", "Visszanézés"), counts, b);
-    li.append(a);
+      el("span", "replay-go", "Visszanézés"), countLine(st));
+      row.append(a);
+      rows.append(row);
+    });
+    det.append(sum, rows);
+    li.append(det);
     return li;
   }));
+  // the recordings' start times, once: then the rows again, in the order they were given, with their times
+  const missing = [...new Set(speeches.map((s) => s.session))].filter((x) => !starts.has(x));
+  if (!missing.length) return;
+  missing.forEach((x) => starts.set(x, null));
+  Promise.all(missing.map((x) => getDoc(doc(db, "archive", x)).then((snap) => {
+    const a = snap.data() || {};
+    starts.set(x, a.replay || !a.started_at ? null : a.started_at);
+  }).catch(() => {}))).then(() => replays(speeches));
 }
 
 // ------------------------------------------------------------------ days: calendar filter, expand / collapse all
