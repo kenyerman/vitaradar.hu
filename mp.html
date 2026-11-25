@@ -30,6 +30,8 @@
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Chakra+Petch:wght@600;700&family=Inter+Tight:wght@400;500;600;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Chakra+Petch:wght@600;700&family=Inter+Tight:wght@400;500;600;700&display=swap"></noscript>
   <!-- the header's account slot keeps the size of the last known state (js/account.js stores it) -->
+  <!-- the opening animation plays in full on the first page of a visit, shorter after (css: phones, motion) -->
+  <script>try{if(sessionStorage.getItem("vr-intro"))document.documentElement.dataset.intro="seen";else sessionStorage.setItem("vr-intro","1")}catch(e){}</script>
   <script>try{document.documentElement.dataset.acct=localStorage.getItem("vr-acct")||"out"}catch(e){}</script>
   <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js">
   <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check.js">
@@ -44,7 +46,7 @@
   <link rel="modulepreload" href="js/presence.js?v=202611241206">
   <link rel="modulepreload" href="js/menu.js?v=202611241206">
   <link rel="modulepreload" href="js/meta.js?v=202611241124">
-  <link rel="stylesheet" href="css/style.css?v=202611250210">
+  <link rel="stylesheet" href="css/style.css?v=202611250300">
 </head>
 <body>
   <canvas id="rain" aria-hidden="true"></canvas>
@@ -53,6 +55,7 @@
       <div class="brand-box">
         <a class="brand" href="./" aria-label="vitaradar.hu kezdőlap">
           <img src="img/logo.svg" alt="" width="32" height="32">
+          <svg class="m-logo" viewBox="0 0 240 138" aria-hidden="true" focusable="false"><path class="seat s1" d="M4 16 A116 118 0 0 0 50 109.8 L68 81.5 A84 84 0 0 1 36 16 Z"/><path class="seat s2" d="M62 117.6 A116 118 0 0 0 178 117.6 L161 88.8 A84 84 0 0 1 79 88.8 Z"/><path class="seat s3" d="M236 16 A116 118 0 0 1 190 109.8 L172 81.5 A84 84 0 0 0 204 16 Z"/><path class="seat s4" d="M46 16 A74 74 0 0 0 73.4 72.8 L88.6 49.5 A45.8 45.8 0 0 1 74.2 16 Z"/><path class="seat s5" d="M84 80 A74 74 0 0 0 156 80 L142 56 A45.8 45.8 0 0 1 98 56 Z"/><path class="seat s6" d="M194 16 A74 74 0 0 1 166.6 72.8 L151.4 49.5 A45.8 45.8 0 0 0 165.8 16 Z"/><circle class="spk-ring" cx="120" cy="18.5" r="15.2"/><circle class="spk" cx="120" cy="18.5" r="15.2"/></svg>
           <span class="brand-name">vitaradar<span class="brand-tld">.hu</span></span>
         </a>
         <span class="brand-sub"><span class="brand-beta" aria-hidden="true">BETA</span><span id="online" class="online-badge" data-state="loading" role="status"><span class="dot" aria-hidden="true"></span><span class="online-n">– online</span></span></span>

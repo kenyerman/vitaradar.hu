@@ -1035,7 +1035,7 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
 /* ------------------------------------------------------------------ phones (js/mobile.js)
    The player stays pinned under the header with a compact strip under it (the speaker, the sitting's tally, the chat
    button), so the video never scrolls away and nothing covers it. Everything here is for phones only. */
-.m-top, .m-chat-slot, .m-game-slot, .m-new, .m-onair { display: none; }
+.m-top, .m-chat-slot, .m-game-slot, .m-new, .m-onair, .m-logo { display: none; }
 .nav a.nav-imp { display: none; }  /* the impresszum is in the footer there; the phone menu shows it */
 .m-sep { display: none; }
 @media (max-width: 860px) {
@@ -1250,9 +1250,12 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   /* the header: the chamber icon before the name, a red "Élő" tag while live, the heart and the menu as icons */
   .header-row { min-height: 56px; padding-top: 6px; padding-bottom: 6px; gap: 8px; }
   .brand { position: relative; gap: 8px; }
-  .brand::before { content: ""; flex: none; width: 38px; height: 22px;
-    background: url("../img/chamber-icon.svg?v=202611250130") center / contain no-repeat; }  /* the chamber icon */
   .brand img { display: none; }
+  /* the chamber icon (inline in the pages, so its parts can move): the seats, the speaker's red dot, a ring around it */
+  .m-logo { display: block; flex: none; width: 38px; height: 22px; overflow: visible; }
+  .m-logo .seat { fill: var(--green); }
+  .m-logo .spk { fill: var(--false); }
+  .m-logo .spk-ring { fill: none; stroke: var(--false); stroke-width: 5; opacity: 0; }
   .brand-box { --logo: 38px; --brand-gap: 8px; }
   .hdr-support { width: 44px; height: 44px; justify-content: center; padding: 0; border: 0; background: none; }
   .hdr-support .nav-label { display: none; }
@@ -1292,31 +1295,118 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
 }
 
 /* ------------------------------------------------------------------ phones: motion
-   Short and calm, and only where something changes: the menu and a tab's content come in, an opened fact unfolds, a new
-   fact slides in at the top, a new speaker's card fades in, the "live" dots breathe. Nothing at all for readers who
-   ask for less motion. */
+   Where something changes, it moves: the menu drops and its links slide in one by one, the tab's underline slides to
+   the chosen tab and its content rises in, an opened fact unfolds step by step, a new fact slides in with a green
+   sweep, a verdict lands like a stamp, the tally ticks, a new speaker's name wipes in, the live dot sends out rings,
+   the cards of the lists rise in. Nothing blinks or loops fast, and readers who ask for less motion get none. */
 @media (max-width: 860px) and (prefers-reduced-motion: no-preference) {
   @keyframes m-fade { from { opacity: 0; } }
-  @keyframes m-drop { from { opacity: 0; transform: translateY(-8px); } }
-  @keyframes m-unfold { from { opacity: 0; transform: translateY(-4px); } }
-  @keyframes m-arrive { from { opacity: 0; transform: translateY(-10px); background: rgba(61, 240, 130, .08); } }
-  @keyframes m-pill { from { opacity: 0; transform: translate(-50%, -10px); } }
-  @keyframes m-breathe { 50% { opacity: .35; } }
-  .m-site .menu-panel[data-open] { animation: m-drop .2s cubic-bezier(.2, .8, .2, 1); }
-  .m-site .menu-panel[data-open] > * { animation: m-fade .3s ease-out backwards; }
-  .m-site .menu-panel[data-open] > .nav { animation-delay: .04s; }
-  .m-site .menu-panel[data-open] > :not(.nav, .menu-head) { animation-delay: .1s; }
-  .m-live .below, .m-live .m-chat-slot, .m-live .m-game-slot { animation: m-fade .22s ease-out; }  /* a tab's content */
-  .m-tab { transition: color .2s, background-color .2s, box-shadow .2s; }
+  @keyframes m-drop { from { opacity: 0; transform: translateY(-18px); } }
+  @keyframes m-slide-in { from { opacity: 0; transform: translateX(-28px); } }
+  @keyframes m-rise { from { opacity: 0; transform: translateY(18px); } }
+  @keyframes m-unfold { from { opacity: 0; transform: translateY(-10px); } }
+  @keyframes m-arrive {
+    0% { opacity: 0; transform: translateX(-40px); background: rgba(61, 240, 130, .22); }
+    35% { opacity: 1; transform: none; background: rgba(61, 240, 130, .18); }
+    100% { background: transparent; } }
+  @keyframes m-sweep { from { transform: scaleY(0); } }
+  @keyframes m-stamp {
+    0% { opacity: 0; transform: scale(2.2) rotate(-8deg); }
+    60% { opacity: 1; transform: scale(.92) rotate(1deg); }
+    100% { transform: none; } }
+  @keyframes m-glow { 0% { box-shadow: inset 0 0 0 1px var(--glow-c, var(--green)), 0 0 24px -4px var(--glow-c, var(--green)); } }
+  @keyframes m-bump { 35% { transform: scale(1.6); } }
+  @keyframes m-wipe { from { clip-path: inset(0 100% 0 0); } }
+  @keyframes m-pop { from { opacity: 0; transform: scale(.7); } }
+  @keyframes m-pill { 0% { opacity: 0; transform: translate(-50%, -24px); } 70% { transform: translate(-50%, 4px); } }
+  @keyframes m-ring { 0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, .85); } 100% { box-shadow: 0 0 0 7px rgba(255, 255, 255, 0); } }
+  @keyframes m-ring-red { 0% { box-shadow: 0 0 0 0 rgba(255, 77, 90, .8); } 100% { box-shadow: 0 0 0 8px rgba(255, 77, 90, 0); } }
+
+  /* the menu */
+  .m-site .menu-panel[data-open] { animation: m-drop .32s cubic-bezier(.2, .9, .25, 1.1); }
+  .m-site .menu-panel[data-open] .nav a { animation: m-slide-in .36s cubic-bezier(.2, .8, .2, 1) backwards; }
+  .m-site .menu-panel[data-open] .nav a:nth-child(2) { animation-delay: .05s; }
+  .m-site .menu-panel[data-open] .nav a:nth-child(3) { animation-delay: .1s; }
+  .m-site .menu-panel[data-open] .nav a:nth-child(4) { animation-delay: .15s; }
+  .m-site .menu-panel[data-open] .nav a:nth-child(n+5) { animation-delay: .2s; }
+  .m-site .menu-panel[data-open] > :not(.nav, .menu-head) { animation: m-rise .4s cubic-bezier(.2, .8, .2, 1) .22s backwards; }
+  .m-site .menu-panel[data-open] > a.nav-support { animation-delay: .28s; }
+  .m-site .menu-panel[data-open] > .m-menu-foot { animation-delay: .34s; }
+  html.menu-open .menu-btn::before { display: inline-block; animation: m-pop .25s cubic-bezier(.2, .9, .3, 1.4); }
+
+  /* the tabs: a sliding underline, the content rising in */
+  .m-tabs { position: relative; }
+  .m-tabs::after { content: ""; position: absolute; left: 0; bottom: 0; width: calc(100% / 3); height: 3px; background: var(--green);
+    transition: transform .35s cubic-bezier(.2, .9, .25, 1.1); }
+  body[data-m-tab="chat"] .m-tabs::after { transform: translateX(100%); }
+  body[data-m-tab="game"] .m-tabs::after { transform: translateX(200%); }
+  .m-tab[aria-selected="true"] { box-shadow: none; }
+  .m-tab { transition: color .25s, background-color .25s; }
+  .m-live .below, .m-live .m-chat-slot, .m-live .m-game-slot { animation: m-rise .35s cubic-bezier(.2, .8, .2, 1); }
+
+  /* the facts */
+  .m-live .fact.m-intro { animation: m-rise .45s cubic-bezier(.2, .8, .2, 1) calc(var(--i, 0) * 60ms) backwards; }
+  .m-live .facts > .m-sep { animation: m-wipe .5s cubic-bezier(.6, 0, .2, 1); }
+  :is(.m-live, .m-watch) .fact { position: relative; transition: background-color .25s; }
   :is(.m-live, .m-watch) .fact[data-open="true"] > :is(.fact-claim, .fact-expl, .fact-sources, .social) {
-    animation: m-unfold .22s ease-out backwards; }
-  :is(.m-live, .m-watch) .fact[data-open="true"] > .fact-expl { animation-delay: .04s; }
-  :is(.m-live, .m-watch) .fact[data-open="true"] > :is(.fact-sources, .social) { animation-delay: .08s; }
-  :is(.m-live, .m-watch) .fact { transition: background-color .2s; }
-  .m-live .fact.m-in { animation: m-arrive .45s cubic-bezier(.2, .8, .2, 1); }
-  .m-strip .speaker.m-swap { animation: m-fade .4s ease-out; }
-  .m-new:not([hidden]) { animation: m-pill .25s cubic-bezier(.2, .8, .2, 1); }
-  .m-onair::before, .m-viewers::before, .menu-panel .nav-live .live-dot { animation: m-breathe 2.4s ease-in-out infinite; }
-  .menu-panel > a.nav-support, .menu-panel .nav a { transition: background-color .15s, color .15s; }
-  .menu-panel .nav a:active { background: rgba(61, 240, 130, .06); }
+    animation: m-unfold .35s cubic-bezier(.2, .8, .2, 1) backwards; }
+  :is(.m-live, .m-watch) .fact[data-open="true"] > .fact-expl { animation-delay: .07s; }
+  :is(.m-live, .m-watch) .fact[data-open="true"] > .fact-sources { animation-delay: .14s; }
+  :is(.m-live, .m-watch) .fact[data-open="true"] > .social { animation-delay: .2s; }
+  .m-live .fact.m-in { animation: m-arrive 1.4s cubic-bezier(.2, .8, .2, 1); }
+  .m-live .fact.m-in::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--green);
+    transform-origin: top; animation: m-sweep .5s cubic-bezier(.6, 0, .2, 1), m-fade 1s ease-in .9s reverse forwards; }
+  .m-live .fact.flash .verdict { animation: m-stamp .5s cubic-bezier(.2, .8, .3, 1.2); }
+  .m-live .fact.flash { animation: m-glow 1.2s ease-out; }
+  .m-live .fact.flash:has(.verdict[data-v="false"]) { --glow-c: var(--false); }
+  .m-live .fact.flash:has(.verdict[data-v="unverifiable"]) { --glow-c: var(--unverifiable); }
+  .m-live .fact.flash:has(.verdict[data-v="fallacy"]) { --glow-c: var(--fallacy); }
+  .m-strip .tally dd { display: inline-block; }
+  .m-strip .tally dd.m-bump { animation: m-bump .5s cubic-bezier(.2, .8, .3, 1.4); }
+
+  /* the speaker, the live tag, the new-facts button */
+  .m-strip .speaker.m-swap .speaker-photo { animation: m-pop .4s cubic-bezier(.2, .9, .3, 1.3); }
+  .m-strip .speaker.m-swap .speaker-name { animation: m-wipe .45s cubic-bezier(.6, 0, .2, 1) .1s backwards; }
+  .m-strip .speaker.m-swap :is(.speaker-party, .speaker-role) { animation: m-fade .4s ease-out .35s backwards; }
+  .m-onair:not([hidden]) { animation: m-pop .35s cubic-bezier(.2, .9, .3, 1.4); }
+  .m-onair::before { animation: m-ring 1.8s ease-out infinite; }
+  .m-viewers::before, .menu-panel .nav-live .live-dot { animation: m-ring-red 1.8s ease-out infinite; }
+  .m-new:not([hidden]) { animation: m-pill .45s cubic-bezier(.2, .8, .3, 1.2); }
+
+  /* the lists on the other pages: the cards rise in, one after the other */
+  .m-site :is(.arch-grid, .mp-grid) > li { animation: m-rise .5s cubic-bezier(.2, .8, .2, 1) backwards; }
+  .m-site :is(.arch-grid, .mp-grid) > li:nth-child(2) { animation-delay: .08s; }
+  .m-site :is(.arch-grid, .mp-grid) > li:nth-child(3) { animation-delay: .16s; }
+  .m-site :is(.arch-grid, .mp-grid) > li:nth-child(4) { animation-delay: .24s; }
+  .m-site .page-title { animation: m-wipe .6s cubic-bezier(.6, 0, .2, 1); }
+  .menu-panel .nav a:active, .arch-card:active, .mp-grid a:active { background: rgba(61, 240, 130, .08); }
+
+  /* the page opening: on a visit's first page the icon builds itself (the speaker's dot first, then the seats fanning
+     out from it, a ring), the name wipes in with its cursor, the header drops and the page rises; on the next pages
+     only the dot and its ring, and the page rises */
+  @keyframes m-seat { from { opacity: 0; transform: scale(.15); } }
+  @keyframes m-spk { 0% { transform: scale(0); } 70% { transform: scale(1.35); } }
+  @keyframes m-logo-ring { 0% { opacity: .9; transform: scale(1); } 100% { opacity: 0; transform: scale(3.2); } }
+  @keyframes m-cursor { 50% { opacity: 0; } }
+  @keyframes m-page { from { opacity: 0; transform: translateY(14px); } }
+  .m-logo .seat { transform-box: view-box; transform-origin: 120px 18.5px; }
+  .m-logo .spk, .m-logo .spk-ring { transform-box: fill-box; transform-origin: center; }
+  .m-logo .spk { animation: m-spk .45s cubic-bezier(.2, .9, .3, 1.3) backwards; }
+  .m-logo .spk-ring { animation: m-logo-ring .9s ease-out .3s; }
+  main { animation: m-page .45s cubic-bezier(.2, .8, .2, 1) .1s backwards; }
+  html:not([data-intro="seen"]) .site-header { animation: m-drop .45s cubic-bezier(.2, .8, .2, 1); }
+  html:not([data-intro="seen"]) .m-logo .spk { animation-delay: .15s; }
+  html:not([data-intro="seen"]) .m-logo .seat { animation: m-seat .5s cubic-bezier(.2, .9, .3, 1.15) backwards; }
+  html:not([data-intro="seen"]) .m-logo .s5 { animation-delay: .35s; }
+  html:not([data-intro="seen"]) .m-logo :is(.s4, .s6) { animation-delay: .42s; }
+  html:not([data-intro="seen"]) .m-logo .s2 { animation-delay: .5s; }
+  html:not([data-intro="seen"]) .m-logo :is(.s1, .s3) { animation-delay: .57s; }
+  html:not([data-intro="seen"]) .m-logo .spk-ring { animation-delay: .75s; }
+  html:not([data-intro="seen"]) .brand-name { animation: m-wipe .55s cubic-bezier(.6, 0, .2, 1) .6s backwards; }
+  html:not([data-intro="seen"]) .brand-name::after { animation: m-cursor .5s steps(1) 1.15s 3; }
+  html:not([data-intro="seen"]) main { animation-delay: .55s; animation-duration: .6s; }
+  html:not([data-intro="seen"]) :is(.hdr-support, .menu-btn) { animation: m-fade .4s ease-out .9s backwards; }
+  /* while the stream is live the speaker's dot keeps sending rings; a tap on the logo sends one too */
+  body:has(.nav-live[data-live="on"]) .m-logo .spk-ring { animation: m-logo-ring 2.2s ease-out 1.4s infinite; }
+  .brand:active .m-logo .spk { animation: m-spk .35s cubic-bezier(.2, .9, .3, 1.3); }
 }

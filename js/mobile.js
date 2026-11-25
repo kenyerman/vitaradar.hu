@@ -179,8 +179,14 @@ function followFeed(list) {
       if (n.classList && n.classList.contains("fact") && !known.has(n)) { known.add(n); added.push(n); }
     });
     const fresh = added.length;
-    if (fresh && !settled) settled = performance.now() + 2500;
-    else if (fresh && fresh <= 3 && performance.now() > settled) {
+    if (fresh && !settled) {
+      settled = performance.now() + 2500;
+      added.slice(0, 10).forEach((n, i) => {  // the first screenful rises in, one after the other
+        n.style.setProperty("--i", String(i));
+        n.classList.add("m-intro");
+        n.addEventListener("animationend", () => n.classList.remove("m-intro"), { once: true });
+      });
+    } else if (fresh && fresh <= 3 && performance.now() > settled) {
       for (const n of added) {
         n.classList.add("m-in");
         n.addEventListener("animationend", () => n.classList.remove("m-in"), { once: true });
@@ -322,6 +328,25 @@ function speakerSwap(card) {
   card.addEventListener("animationend", (e) => { if (e.target === card) card.classList.remove("m-swap"); });
 }
 
+// The tally's figures tick (css .m-bump) when they grow, once the sitting's first count is in.
+function tallyBump(tally) {
+  if (!tally) return;
+  const start = performance.now();
+  for (const dd of tally.querySelectorAll("dd")) {
+    let last = dd.textContent;
+    new MutationObserver(() => {
+      const now = dd.textContent;
+      const grew = Number(now) > Number(last);
+      last = now;
+      if (!grew || performance.now() - start < 4000 || !PHONE.matches) return;
+      dd.classList.remove("m-bump");
+      void dd.offsetWidth;
+      dd.classList.add("m-bump");
+    }).observe(dd, { childList: true, characterData: true, subtree: true });
+    dd.addEventListener("animationend", () => dd.classList.remove("m-bump"));
+  }
+}
+
 // page: "live" (index.html) or "watch" (watch.html)
 export function mountPhone({ page }) {
   const main = document.querySelector("main");
@@ -362,6 +387,12 @@ export function mountPhone({ page }) {
   if (page === "watch") followReplay(document.getElementById("facts"));
 
   speakerSwap(document.getElementById("speaker"));
+  tallyBump(document.querySelector(".speaker-col .tally"));
+  // a verdict lands (js/app.js marks the fact .flash): once the stamp is over the mark goes, so moving the row
+  // around later does not replay it
+  document.getElementById("facts")?.addEventListener("animationend", (e) => {
+    if (e.animationName === "m-glow") e.target.classList.remove("flash");
+  });
 
   const remeasure = measure(document.querySelector(".site-header"), top,
     page === "live" ? player.querySelector(".player") : player);
