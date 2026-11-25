@@ -1235,7 +1235,7 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   .header-row { min-height: 56px; padding-top: 6px; padding-bottom: 6px; gap: 8px; }
   .brand { position: relative; gap: 8px; }
   .brand::before { content: ""; flex: none; width: 38px; height: 22px;
-    background: url("../img/chamber-icon.svg?v=202611250120") center / contain no-repeat; }  /* the chamber icon */
+    background: url("../img/chamber-icon.svg?v=202611250130") center / contain no-repeat; }  /* the chamber icon */
   .brand img { display: none; }
   .brand-box { --logo: 38px; --brand-gap: 8px; }
   .hdr-support { width: 44px; height: 44px; justify-content: center; padding: 0; border: 0; background: none; }

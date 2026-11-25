@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="240" height="138" viewBox="0 0 240 138" role="img" aria-labelledby="title">
   <title id="title">VitaRadar chamber radar icon</title>
-  <g id="seating" fill="#01FC43">
+  <g id="seating" fill="#3DF082">
     <g id="outer-row">
       <path id="outer-left" d="M4 16 A116 118 0 0 0 50 109.8 L68 81.5 A84 84 0 0 1 36 16 Z"/>
       <path id="outer-centre" d="M62 117.6 A116 118 0 0 0 178 117.6 L161 88.8 A84 84 0 0 1 79 88.8 Z"/>
@@ -12,5 +12,5 @@
       <path id="inner-right" d="M194 16 A74 74 0 0 1 166.6 72.8 L151.4 49.5 A45.8 45.8 0 0 0 165.8 16 Z"/>
     </g>
   </g>
-  <circle id="speaker" cx="120" cy="18.5" r="15.2" fill="#FD5959"/>
+  <circle id="speaker" cx="120" cy="18.5" r="15.2" fill="#FF5D52"/>
 </svg>
