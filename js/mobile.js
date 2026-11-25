@@ -38,7 +38,8 @@ function mover() {
 // Phones, live page: the page stays put under the pinned block and the open tab's panel scrolls (css); elsewhere the
 // window does. What scrolls the facts, then.
 function scroller(list) {
-  return (PHONE.matches && document.body.classList.contains("m-live") && list.closest(".below")) || window;
+  const app = document.body.classList.contains("m-live") || document.body.classList.contains("m-watch");
+  return (PHONE.matches && app && list.closest(".below")) || window;
 }
 
 function measure(header, top, video) {
@@ -430,6 +431,81 @@ function gameTags(box) {
   later();
 }
 
+// Phones, replay page (as the live page): a compact row on top of the pinned block (back to the archive, the date
+// and the time, the link to this moment as an icon), the video and the speaker strip, two tabs (the facts, the
+// speakers) and the AI notice with the "all facts" switch. The tab names show how many there are.
+function replayParts(top, moves) {
+  const head = el("div", "m-whead");
+  const text = el("div", "m-whead-text");
+  head.append(text);
+  top.prepend(head);
+  const back = document.querySelector("main .crumbs a");
+  if (back) back.setAttribute("aria-label", "Vissza az archívumba");
+  moves.add(back, head, text);
+  moves.add(document.getElementById("w-title"), text);
+  moves.add(document.getElementById("w-sub"), text);
+  moves.add(document.getElementById("copy-link"), head);
+  moves.add(document.getElementById("copied"), head);
+  const copy = document.getElementById("copy-link");
+  if (copy) { copy.setAttribute("aria-label", "Link ehhez a pillanathoz"); copy.title = "Link ehhez a pillanathoz"; }
+
+  const bar = el("div", "m-tabs m-tabs-2");
+  bar.setAttribute("role", "tablist");
+  bar.setAttribute("aria-label", "A visszanézés részei");
+  const tab = (id, label) => {
+    const b = el("button", "m-tab");
+    b.type = "button";
+    b.id = `m-tab-${id}`;
+    b.setAttribute("role", "tab");
+    b.dataset.tab = id;
+    const name = el("span");
+    name.textContent = label;
+    const n = el("span", "m-tab-count");
+    b.append(name, n);
+    bar.append(b);
+    return { b, n };
+  };
+  const facts = tab("feed", "Állítások"), speakers = tab("speakers", "Felszólalók");
+  facts.b.setAttribute("aria-controls", "facts");
+  speakers.b.setAttribute("aria-controls", "speakers");
+  const ai = el("p", "m-ai");
+  const note = el("span");
+  note.textContent = "// automatikus (AI) ellenőrzés — tévedhet";
+  ai.append(note);
+  top.append(bar, ai);
+  moves.add(document.getElementById("show-all"), ai);
+
+  const select = (id) => {
+    document.body.dataset.mTab = id;
+    for (const t of [facts, speakers]) t.b.setAttribute("aria-selected", String(t.b.dataset.tab === id));
+    const box = document.querySelector(".m-watch .below");
+    if (box && PHONE.matches) box.scrollTop = 0;
+  };
+  for (const t of [facts, speakers]) t.b.addEventListener("click", () => select(t.b.dataset.tab));
+  bar.addEventListener("keydown", (e) => {
+    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+    const next = document.body.dataset.mTab === "feed" ? speakers : facts;
+    select(next.b.dataset.tab);
+    next.b.focus();
+  });
+  select("feed");
+
+  // the counts: "[118/272]" (js/watch.js) as "118/272", the speeches' number; the date without its "// "
+  const count = document.getElementById("fact-count"), list = document.getElementById("speakers");
+  const title = document.getElementById("w-title");
+  const sync = () => {
+    facts.n.textContent = (count?.textContent || "").replace(/[[\]]/g, "");
+    speakers.n.textContent = list && list.children.length ? String(list.children.length) : "";
+    if (!title) return;
+    const t = title.textContent;
+    if (PHONE.matches && t.startsWith("// ")) { title.dataset.full = t; title.textContent = t.slice(3); }
+    else if (!PHONE.matches && title.dataset.full) { title.textContent = title.dataset.full; delete title.dataset.full; }
+  };
+  for (const node of [count, list, title]) if (node) new MutationObserver(sync).observe(node, { childList: true, characterData: true, subtree: true });
+  PHONE.addEventListener("change", sync);
+  sync();
+}
+
 // page: "live" (index.html) or "watch" (watch.html)
 export function mountPhone({ page }) {
   const main = document.querySelector("main");
@@ -477,7 +553,7 @@ export function mountPhone({ page }) {
 
   compactFacts(document.getElementById("facts"));
   if (page === "live") liveTabs(top, slots, followFeed(document.getElementById("facts")));
-  if (page === "watch") followReplay(document.getElementById("facts"));
+  if (page === "watch") { replayParts(top, moves); followReplay(document.getElementById("facts")); }
 
   speakerSwap(document.getElementById("speaker"));
   tallyBump(document.querySelector(".speaker-col .tally"));
