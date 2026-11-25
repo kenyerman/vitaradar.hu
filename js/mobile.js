@@ -84,9 +84,42 @@ function compactFacts(list) {
     li.tabIndex = PHONE.matches ? 0 : -1;
     li.setAttribute("aria-expanded", String(li.dataset.open === "true"));
   };
+  const calm = matchMedia("(prefers-reduced-motion: reduce)");
+  const folds = new WeakMap();  // li -> its closing animation
+  // Closing folds the row down to its closed height while the details fade, and only then closes it (so the text
+  // does not vanish first and leave an empty box shrinking). A tap meanwhile opens it again.
+  const fold = (li) => {
+    const from = li.offsetHeight;
+    delete li.dataset.open;
+    const to = li.offsetHeight;
+    li.dataset.open = "true";
+    const details = li.querySelectorAll(":scope > :is(.fact-claim, .fact-expl, .fact-sources, .social)");
+    const ease = "cubic-bezier(.22, 1, .36, 1)";
+    li.style.overflow = "hidden";
+    const a = li.animate([{ height: `${from}px` }, { height: `${to}px` }], { duration: 340, easing: ease });
+    const fades = [...details].map((d) => d.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 180, easing: "ease-out", fill: "forwards" }));
+    folds.set(li, { a, fades });
+    a.finished.then(() => {
+      folds.delete(li);
+      fades.forEach((f) => f.cancel());
+      li.style.overflow = "";
+      delete li.dataset.open;
+    }, () => {});
+  };
   const toggle = (li) => {
+    const running = folds.get(li);
+    if (running) {  // closing: open again
+      folds.delete(li);
+      running.a.cancel();
+      running.fades.forEach((f) => f.cancel());
+      li.style.overflow = "";
+      li.setAttribute("aria-expanded", "true");
+      return;
+    }
     const open = li.dataset.open !== "true";
-    if (open) li.dataset.open = "true"; else delete li.dataset.open;
+    if (open) li.dataset.open = "true";
+    else if (calm.matches) delete li.dataset.open;
+    else fold(li);
     li.setAttribute("aria-expanded", String(open));
   };
   list.addEventListener("click", (e) => {
