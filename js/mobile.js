@@ -79,9 +79,12 @@ function followReplay(list) {
     for (const r of records) {
       const li = r.target;
       if (li.classList.contains("now") && !(r.oldValue || "").split(" ").includes("now")) {
-        const b = li.getBoundingClientRect();
-        const top = parseFloat(getComputedStyle(root).getPropertyValue("--m-top")) || 0;
-        if (b.top < top || b.bottom > innerHeight) li.scrollIntoView({ block: "nearest" });
+        // into view in its panel (not scrollIntoView: on iOS that also scrolls the page, and the header goes off the top)
+        const box = scroller(list);
+        if (box === window || !li.getClientRects().length) continue;  // not on screen (the Felszólalók tab is open)
+        const b = li.getBoundingClientRect(), view = box.getBoundingClientRect();
+        if (b.top < view.top) box.scrollTop += b.top - view.top;
+        else if (b.bottom > view.bottom) box.scrollTop += Math.min(b.bottom - view.bottom, b.top - view.top);
       }
     }
   }).observe(list, { subtree: true, attributes: true, attributeFilter: ["class"], attributeOldValue: true });

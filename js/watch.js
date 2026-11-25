@@ -92,7 +92,9 @@ function showSpeechAt(t) {
   if (!li) return;
   document.getElementById("m-tab-speakers")?.click();
   li.click();
-  if (li.classList.contains("open")) li.scrollIntoView({ block: "start" });  // in its panel (phones)
+  // to the top of its panel; not scrollIntoView, which on iOS also scrolls the page and takes the header off the top
+  const box = li.classList.contains("open") && li.closest(".below");
+  if (box) box.scrollTop += li.getBoundingClientRect().top - box.getBoundingClientRect().top;
 }
 
 function speakerAt(t) {
