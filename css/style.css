@@ -508,7 +508,8 @@ details[open] > summary .lvl-title::before { content: "▾ "; }
 input[type="date"].field { color-scheme: dark; }
 input[type="file"].field { padding: 7px; font-size: 12px; }
 .profile-pic { display: flex; justify-content: center; align-items: center; min-height: 96px; }
-.toasts { position: fixed; z-index: 50; left: 50%; bottom: 20px; translate: -50% 0; display: grid; gap: 8px;
+/* above the menu (70) and the user card (60): a note can come from a button in either */
+.toasts { position: fixed; z-index: 80; left: 50%; bottom: 20px; translate: -50% 0; display: grid; gap: 8px;
   width: min(420px, calc(100vw - 32px)); pointer-events: none; }
 .toast { background: var(--panel-solid); border: 1px solid var(--green); color: var(--text); padding: 10px 14px; font-size: 13px;
   box-shadow: var(--glow); animation: pop .3s ease-out; }
