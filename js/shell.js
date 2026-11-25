@@ -72,6 +72,26 @@ function menuParts(moves) {
   panel.append(foot);
 }
 
+// Closing the menu: js/menu.js drops [data-open] at once; .m-closing keeps the sheet drawn while it goes back down
+// (css, phones, motion only), then it is gone.
+function menuClosing() {
+  const panel = document.getElementById("menu");
+  if (!panel) return;
+  const calm = matchMedia("(prefers-reduced-motion: reduce)");
+  let wasOpen = panel.hasAttribute("data-open"), timer = 0;
+  const end = () => { clearTimeout(timer); panel.classList.remove("m-closing"); };
+  new MutationObserver(() => {
+    const open = panel.hasAttribute("data-open");
+    if (open) end();
+    else if (wasOpen && PHONE.matches && !calm.matches) {
+      panel.classList.add("m-closing");
+      timer = setTimeout(end, 400);  // in case the animation never runs
+    }
+    wasOpen = open;
+  }).observe(panel, { attributes: true, attributeFilter: ["data-open"] });
+  panel.addEventListener("animationend", (e) => { if (e.target === panel && e.animationName === "m-down") end(); });
+}
+
 function headerHeight() {
   const header = document.querySelector(".site-header");
   if (!header) return;
@@ -109,6 +129,7 @@ function mountShell() {
   const moves = mover();
   onAir();
   menuParts(moves);
+  menuClosing();
   headerHeight();
   loading();
   PHONE.addEventListener("change", () => moves.place());

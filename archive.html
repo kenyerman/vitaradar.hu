@@ -34,6 +34,8 @@
   <!-- the header's account slot keeps the size of the last known state (js/account.js stores it) -->
   <!-- the opening animation plays in full on the first page of a visit, shorter after (css: phones, motion) -->
   <script>try{if(sessionStorage.getItem("vr-intro"))document.documentElement.dataset.intro="seen";else sessionStorage.setItem("vr-intro","1")}catch(e){}</script>
+  <!-- arriving from another page with a page transition (css: phones, motion): the page does not also play its own opening; back slides the other way -->
+  <script>addEventListener("pagereveal",function(e){if(!e.viewTransition)return;var r=document.documentElement;r.classList.add("m-vt");try{if(navigation.activation.navigationType==="traverse")r.classList.add("m-vt-back")}catch(x){}})</script>
   <script>try{document.documentElement.dataset.acct=localStorage.getItem("vr-acct")||"out"}catch(e){}</script>
   <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js">
   <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check.js">
@@ -47,7 +49,7 @@
   <link rel="modulepreload" href="js/consent.js?v=202611241021">
   <link rel="modulepreload" href="js/presence.js?v=202611241206">
   <link rel="modulepreload" href="js/menu.js?v=202611241206">
-  <link rel="stylesheet" href="css/style.css?v=202611250420">
+  <link rel="stylesheet" href="css/style.css?v=202611250520">
 </head>
 <body>
   <canvas id="rain" aria-hidden="true"></canvas>
@@ -121,6 +123,6 @@
     </div>
   </footer>
   <script type="module" src="js/archive.js?v=202611241745"></script>
-  <script type="module" src="js/shell.js?v=202611250331"></script>
+  <script type="module" src="js/shell.js?v=202611250500"></script>
 </body>
 </html>
