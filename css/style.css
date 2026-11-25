@@ -1437,6 +1437,8 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   .verdict[data-v="pending"] { display: inline-flex; align-items: center; gap: 6px; }
   .verdict[data-v="pending"]::before { content: ""; flex: none; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
   .verdict[data-v="pending"]::after { content: none; animation: none; }
+  /* iOS zooms the page in on a field whose text is under 16px, and stays zoomed */
+  input, textarea, select { font-size: 16px !important; }
   .fact { border-left-width: 3px; }
   .m-new { font-family: var(--display); font-size: 13px; letter-spacing: 1.2px;
     clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px)); }
