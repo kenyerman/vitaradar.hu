@@ -1176,6 +1176,8 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
     text-overflow: ellipsis; text-transform: uppercase; }
   .m-sep-meta { flex: none; color: var(--muted); font: 600 10px/1 var(--display); letter-spacing: 1.2px; text-transform: uppercase; }
   .m-live .facts { overflow-anchor: none; }  /* js/mobile.js keeps the reader's place itself */
+  .m-live .below { margin-top: 0; }
+  .m-live .facts > .m-sep:first-child { margin-top: 10px; }  /* the first divider sits right under the tabs */
   .m-new { text-transform: uppercase; }
   .m-new { display: block; position: fixed; z-index: 30; left: 50%; top: calc(var(--m-top, 0px) + 10px); transform: translateX(-50%);
     min-height: 44px; padding: 0 18px; background: var(--green); border: 0; color: #000; font: 700 13px/1 var(--mono);
