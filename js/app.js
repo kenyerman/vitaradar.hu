@@ -7,12 +7,12 @@
 
 import { doc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { defaultStream } from "./config.js?v=202611241021";
-import { db, el, badge, sourceList, setPhoto, mpHref, setLiveNav } from "./common.js?v=202611241206";
-import { mountAccount } from "./account.js?v=202611251530";
-import { factSocial } from "./social.js?v=202611251530";
-import { mountChat } from "./chat.js?v=202611251530";
+import { db, el, factBadge, FACT_VERDICTS, LABEL, sourceList, setPhoto, mpHref, setLiveNav } from "./common.js?v=202611250130";
+import { mountAccount } from "./account.js?v=202611251800";
+import { factSocial } from "./social.js?v=202611251800";
+import { mountChat } from "./chat.js?v=202611251800";
 import { scrollHint } from "./scrollhint.js?v=202611241021";
-import { mountGame } from "./game.js?v=202611251530";
+import { mountGame } from "./game.js?v=202611251800";
 import { cdnReady, cdnUrl, cdnXhr } from "./cdn.js?v=202611241021";
 import { useTwitch, mountTwitch, twitchNow } from "./twitch.js?v=202611241408";
 
@@ -179,19 +179,30 @@ function buildFact(c) {
   top.append(el("span", "verdict"), who, el("time", "fact-time", clock(c.show_at)));
   li.append(top, el("p", "fact-bullet", c.bullet || c.claim));
   if (c.claim && c.claim !== c.bullet) li.append(el("p", "fact-claim", c.claim));
-  li.append(el("p", "fact-expl"), el("ul", "fact-sources"));
+  const fal = el("p", "fact-fallacy");  // the fallacy said in the same sentence, once it shows
+  fal.hidden = true;
+  li.append(el("p", "fact-expl"), fal, el("ul", "fact-sources"));
   const social = factSocial(live.session, c.id);  // votes and comments, once the verdict is in
   social.hidden = true;
   li.append(social);
   return li;
 }
 
-function fillVerdict(li, c, v) {
-  li.dataset.verdict = v;
-  li.querySelector(".verdict").replaceWith(badge(v === "fallacy" ? "fallacy" : v, c.kind === "fallacy" ? "fallacy" : c.kind));
+// The fallacy said in the same sentence shows on this card from its own moment on the stream clock.
+function fallacyShown(c, now) {
+  return Boolean(c.fallacy && (now == null || c.fallacy.at == null || c.fallacy.at <= now));
+}
+
+function fillVerdict(li, c, v, now) {
+  const withFallacy = v !== "pending" && fallacyShown(c, now);
+  li.dataset.verdict = withFallacy && !FACT_VERDICTS.has(v) ? "fallacy" : v;
+  li.querySelector(".verdict").replaceWith(factBadge(c, v, withFallacy));
   const expl = li.querySelector(".fact-expl");
   expl.textContent = v === "pending" ? "" : (c.explanation || "");
   expl.hidden = !expl.textContent;
+  const fal = li.querySelector(".fact-fallacy");
+  fal.textContent = withFallacy ? `» ${LABEL.fallacy.toLowerCase()} (${c.fallacy.name}): ${c.fallacy.explanation || ""}` : "";
+  fal.hidden = !withFallacy;
   li.querySelector(".fact-sources").replaceWith(sourceList(v === "pending" ? [] : c.sources));
   li.querySelector(".social").hidden = v === "pending";
 }
@@ -199,6 +210,7 @@ function fillVerdict(li, c, v) {
 function render() {
   const now = streamNow();
   const visible = [...claims.values()]
+    .filter((c) => !c.merged_into)  // a fallacy shown on the card of the claim said in the same sentence
     .filter((c) => now == null || c.show_at <= now)
     .map((c) => game.mask(c, now))  // a challenge's fact stays "being checked" until the game is over
     .sort((a, b) => b.show_at - a.show_at)
@@ -216,7 +228,7 @@ function render() {
   };
   const usedSeps = new Set();
   let turnKey = null;
-  const tally = { true: 0, false: 0, unverifiable: 0, fallacy: 0 };
+  const tally = { true: 0, partly_true: 0, misleading: 0, false: 0, opinion: 0, promise: 0, unverifiable: 0, fallacy: 0 };
   for (const c of visible) {
     if (phone) {  // phones: a divider above each speaker's facts (newest first, as everywhere)
       const t = turnAt(c.show_at);
@@ -226,17 +238,19 @@ function render() {
     }
     const v = verdictOf(c, now);
     if (v in tally) tally[v] += 1;
+    if (v !== "pending" && fallacyShown(c, now)) tally.fallacy += 1;
     let s = shown.get(c.id);
     if (!s) {
       s = { li: buildFact(c), verdict: null };
       shown.set(c.id, s);
     }
     const text = c.bullet || c.claim;
-    if (s.verdict !== v || s.text !== text) {
+    const key = `${v}|${v !== "pending" && fallacyShown(c, now)}`;  // the card changes in place when its fallacy shows
+    if (s.verdict !== key || s.text !== text) {
       if (s.verdict) { s.li.classList.remove("flash"); void s.li.offsetWidth; s.li.classList.add("flash"); }
       if (s.text != null && s.text !== text) s.li.querySelector(".fact-bullet").textContent = text;  // a fallacy named
-      fillVerdict(s.li, c, v);
-      s.verdict = v;
+      fillVerdict(s.li, c, v, now);
+      s.verdict = key;
       s.text = text;
     }
     place(s.li);

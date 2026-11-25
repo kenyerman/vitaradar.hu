@@ -10,8 +10,12 @@ import { CDN, cdnReady, cdnUrl } from "./cdn.js?v=202611241021";
 export { db };  // set up once, with App Check, in firebase.js
 
 export const LABEL = {
-  true: "IGAZ", false: "HAMIS", unverifiable: "NEM ELLENŐRIZHETŐ", pending: "ELLENŐRZÉS", fallacy: "HIBÁS ÉRVELÉS",
+  true: "IGAZ", partly_true: "RÉSZBEN IGAZ", misleading: "FÉLREVEZETŐ", false: "HAMIS", opinion: "VÉLEMÉNY",
+  promise: "ÍGÉRET", unverifiable: "NEM ELLENŐRIZHETŐ", pending: "ELLENŐRZÉS", fallacy: "HIBÁS ÉRVELÉS",
 };
+
+// Verdicts that decide a stated fact (the others label an opinion, a promise, or what no evidence settles).
+export const FACT_VERDICTS = new Set(["true", "partly_true", "misleading", "false"]);
 
 export function el(tag, cls, text) {
   const e = document.createElement(tag);
@@ -47,6 +51,19 @@ export function badge(verdict, kind) {
   const b = el("span", "verdict");
   b.dataset.v = v;
   b.textContent = `[ ${kind === "conclusion" && v !== "pending" ? "KÖVETKEZTETÉS: " : ""}${LABEL[v] || v} ]`;
+  return b;
+}
+
+// A fact's badge once the fallacy said in the same sentence shows on its card (pfc publish.link_docs): a decided
+// fact keeps its verdict and names the fallacy, "[ IGAZ · SZEMÉLYESKEDÉS ]"; an opinion or an unverifiable
+// statement shows the fallacy, "[ HIBÁS ÉRVELÉS: SZEMÉLYESKEDÉS ]". Without one it is the plain badge.
+export function factBadge(c, v, fallacyShown) {
+  if (!fallacyShown || !c.fallacy || v === "pending" || (c.kind && c.kind !== "claim")) return badge(v, c.kind);
+  const name = (c.fallacy.name || "").toUpperCase();
+  const b = el("span", "verdict");
+  const fact = FACT_VERDICTS.has(v);
+  b.dataset.v = fact ? v : "fallacy";
+  b.textContent = fact ? `[ ${LABEL[v]} · ${name} ]` : `[ ${LABEL.fallacy}: ${name} ]`;
   return b;
 }
 
