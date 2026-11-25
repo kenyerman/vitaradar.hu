@@ -35,10 +35,12 @@ export async function appCheckHeaders() {
 }
 
 // ------------------------------------------------------------------ sign-in (Google only)
-// getAuth() would also load the sign-in helper (an iframe from auth.vitaradar.hu, about 95 KB) on every page view;
-// set up like this, with getAuth's own storage order, it loads only when someone signs in.
+// getAuth()'s own setup. With the sign-in helper (an iframe from auth.vitaradar.hu, about 95 KB) given here, Firebase
+// loads it at page start on phones and in Safari: those open the Google window only straight from a tap, and loaded
+// on the tap the helper came too late, so the first tap on "Belépés" opened nothing. Other browsers load it on the tap.
 export const auth = initializeAuth(app, {
   persistence: [indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence],
+  popupRedirectResolver: browserPopupRedirectResolver,
 });
 auth.languageCode = "hu";
 
