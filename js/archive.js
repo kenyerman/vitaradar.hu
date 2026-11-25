@@ -55,7 +55,13 @@ function card(a, i) {  // i: its place in the list (runs.map)
   body.append(el("p", "arch-who", names.length ? names.slice(0, 4).join(", ") + (names.length > 4 ? ` +${names.length - 4}` : "")
     : "–"));
   if (a.has_facts) {
-    body.append(bar(t));
+    const counts = el("p", "arch-counts");  // phones: the counts in one line (the table below is for wider screens)
+    for (const [k, name] of [["true", "Igaz"], ["false", "Hamis"], ["unverifiable", "N. e."], ["fallacy", "H. é."]]) {
+      const c = el("span", null, name);
+      c.append(el("b", `c-${k}`, String(t[k])));
+      counts.append(c);
+    }
+    body.append(bar(t), counts);
     const stats = el("dl", "mp-stats");
     for (const [label, value, cls] of [["igaz", t.true, "c-true"], ["nem ellenőrizhető", t.unverifiable, "c-unverifiable"],
       ["hamis", t.false, "c-false"], ["hibás érvelés", t.fallacy, "c-fallacy"], ["állítás összesen", a.claims || 0, ""]]) {
