@@ -229,16 +229,23 @@ function render() {
   const usedSeps = new Set();
   let turnKey = null;
   const tally = { true: 0, partly_true: 0, misleading: 0, false: 0, opinion: 0, promise: 0, unverifiable: 0, fallacy: 0 };
+  // the speech under way, the one the speaker panel shows (renderSpeaker): its own balance, under the speaker on phones
+  const speech = Object.fromEntries(Object.keys(tally).map((k) => [k, 0]));
+  const cur = turnAt(now ?? Infinity);
   for (const c of visible) {
+    const turn = turnAt(c.show_at);
     if (phone) {  // phones: a divider above each speaker's facts (newest first, as everywhere)
-      const t = turnAt(c.show_at);
-      const key = t ? `${t.speaker_id}|${t.start_at}` : null;
-      if (key && key !== turnKey) { place(separator(key, t)); usedSeps.add(key); }
+      const key = turn ? `${turn.speaker_id}|${turn.start_at}` : null;
+      if (key && key !== turnKey) { place(separator(key, turn)); usedSeps.add(key); }
       turnKey = key;
     }
     const v = verdictOf(c, now);
-    if (v !== "pending" && fallacyShown(c, now)) tally.fallacy += 1;  // a claim with its sentence's fallacy: one fallacy
-    else if (v in tally) tally[v] += 1;
+    const count = (into) => {
+      if (v !== "pending" && fallacyShown(c, now)) into.fallacy += 1;  // a claim with its sentence's fallacy: one fallacy
+      else if (v in into) into[v] += 1;
+    };
+    count(tally);
+    if (cur && turn === cur) count(speech);
     let s = shown.get(c.id);
     if (!s) {
       s = { li: buildFact(c), verdict: null };
@@ -259,6 +266,7 @@ function render() {
   els.empty.hidden = visible.length > 0;
   els.count.textContent = visible.length ? `[${String(visible.length).padStart(2, "0")}]` : "";
   for (const k of Object.keys(tally)) $(`n-${k}`).textContent = String(tally[k]);
+  for (const k of Object.keys(speech)) $(`s-${k}`).textContent = String(speech[k]);
 
   renderSpeaker(now);
 }

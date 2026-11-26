@@ -1094,9 +1094,9 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
 .support-line a::after { content: " →"; }
 
 /* ------------------------------------------------------------------ phones (js/mobile.js)
-   The player stays pinned under the header with a compact strip under it (the speaker, the sitting's tally, the chat
+   The player stays pinned under the header with a compact strip under it (the speaker, their speech's counts, the chat
    button), so the video never scrolls away and nothing covers it. Everything here is for phones only. */
-.m-top, .m-chat-slot, .m-game-slot, .m-new, .m-onair, .m-logo { display: none; }
+.m-top, .m-chat-slot, .m-game-slot, .m-new, .m-onair, .m-logo, .m-speech-tally { display: none; }
 .nav a.nav-imp { display: none; }  /* the impresszum is in the footer there; the phone menu shows it */
 .m-sep { display: none; }
 @media (max-width: 860px) {
@@ -1110,7 +1110,7 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   .scroll-hint { display: none !important; }  /* the player no longer hides the facts */
 
   /* the speaker strip: a plain initials square with the party's colour, the name in a green block, party and role in
-     small capitals, an arrow to their page; the sitting's tally on a line of its own */
+     small capitals, an arrow to their page; the counts of the speech under way on a line of its own */
   .m-strip { position: relative; display: flex; flex-wrap: wrap; align-items: center; background: var(--panel-solid); }
   .m-strip .speaker { flex: 1 1 100%; min-width: 0; min-height: 52px; display: flex; align-items: center; gap: 10px;
     padding: 7px 52px 7px 14px; background: none; border: 0; }
@@ -1150,7 +1150,7 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   .m-strip .tally div { display: flex; align-items: baseline; gap: 4px; padding: 0; background: none; border: 0; }
   .m-strip .tally dt { color: var(--muted); font: 600 10px/1.2 var(--display); letter-spacing: .5px; }
   .m-strip .tally dd { margin: 0; font: 700 11px/1.2 var(--display); }
-  .m-live .speaker-col { display: none; }  /* its speaker card and tally are in the strip */
+  .m-live .speaker-col { display: none; }  /* its speaker card is in the strip, with the speech's counts */
 
   /* the menu: a full-width sheet right below the video (never over it), or the header on pages without one: the pages with an arrow each
      ("Élő adás" with a small red dot while live), the account, BETA and the online count, the support button with a red

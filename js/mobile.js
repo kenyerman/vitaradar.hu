@@ -1,6 +1,6 @@
 // vitaradar.hu on phones (up to 860px, as js/menu.js). The player stays pinned under the header, so the video never
 // scrolls away (Twitch pauses an embed that is off-screen or covered) and nothing is ever drawn over it; under it a
-// compact strip shows the speaker and the sitting's tally. On wider screens every part goes back where the page has it.
+// compact strip shows the speaker and their speech's counts. On wider screens every part goes back where the page has it.
 //
 // The parts are moved, not copied, so the scripts that fill them (app.js, chat.js, game.js, watch.js) keep working
 // wherever they are: they find them by id. --m-hdr is the header's height (where the pinned block starts) and --m-top
@@ -410,7 +410,7 @@ function speakerSwap(card) {
   card.addEventListener("animationend", (e) => { if (e.target === card) card.classList.remove("m-swap"); });
 }
 
-// The tally's figures tick (css .m-bump) when they grow, once the sitting's first count is in.
+// The counts' figures tick (css .m-bump) when they grow, once the first counts are in (a new speech starts at 0: no tick).
 function tallyBump(tally) {
   if (!tally) return;
   const start = performance.now();
@@ -849,7 +849,7 @@ function mountPhone(page) {
   let slots = null;
   moves.add(player, top, strip);
   moves.add(document.getElementById("speaker"), strip);
-  moves.add(document.querySelector(".speaker-col .tally"), strip);
+  moves.add(document.querySelector(".speaker-col .m-speech-tally"), strip);  // the speech under way (the sitting's stays)
   if (page === "live") {
     // the chat: its closed state's button moves off the video into the strip, the open chat under the pinned block
     const slot = el("div", "m-chat-slot");
@@ -911,7 +911,7 @@ function mountPhone(page) {
   keyboardFit();
   composerInView();
   speakerSwap(document.getElementById("speaker"));
-  tallyBump(document.querySelector(".speaker-col .tally"));
+  tallyBump(document.querySelector(".speaker-col .m-speech-tally"));
   // a verdict lands (js/app.js marks the fact .flash): once the stamp is over the mark goes, so moving the row
   // around later does not replay it
   document.getElementById("facts")?.addEventListener("animationend", (e) => {
