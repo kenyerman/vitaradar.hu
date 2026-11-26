@@ -19,10 +19,19 @@ function pct(n, total) {
   return total ? `${Math.round((100 * n) / total)}%` : "";
 }
 
+// The verdicts, in the live page's tally order: the bars and every count list beside them. The first four always show;
+// the extended ones only when there are any (older sittings have none).
+const BAR = ["true", "partly_true", "misleading", "false", "opinion", "promise", "unverifiable", "fallacy"];
+const BASE = new Set(["true", "false", "unverifiable", "fallacy"]);
+const NAMES = { true: "Igaz", partly_true: "Részben igaz", misleading: "Félrevezető", false: "Hamis", opinion: "Vélemény",
+  promise: "Ígéret", unverifiable: "Nem ellenőrizhető", fallacy: "Hibás érvelés" };
+const SHORT = { ...NAMES, unverifiable: "N. e.", fallacy: "H. é." };  // the count lines
+const listed = (t) => BAR.filter((k) => BASE.has(k) || t[k] > 0);
+
 function bar(target, t) {
   target.replaceChildren();
-  const total = t.true + t.unverifiable + t.false + t.fallacy;
-  for (const k of ["true", "unverifiable", "false", "fallacy"]) {
+  const total = BAR.reduce((n, k) => n + (t[k] || 0), 0);
+  for (const k of BAR) {
     if (!t[k]) continue;
     const s = el("span", `b-${k}`);
     s.style.width = `${(100 * t[k]) / total}%`;
@@ -30,13 +39,12 @@ function bar(target, t) {
   }
 }
 
-const COUNTS = () => ({ true: 0, false: 0, unverifiable: 0, fallacy: 0 });
+const COUNTS = () => Object.fromEntries(BAR.map((k) => [k, 0]));  // a day sums its speeches' counts over these keys
 const weekday = (iso) => new Date(`${iso}T12:00:00`).toLocaleDateString("hu-HU", { weekday: "long" });
 
 function nums(t) {
   const n = el("span", "nums");
-  n.append(el("span", "c-true", `${t.true} igaz`), el("span", "c-false", `${t.false} hamis`),
-    el("span", "c-unverifiable", `${t.unverifiable} n.e.`), el("span", "c-fallacy", `${t.fallacy} h.é.`));
+  n.append(...listed(t).map((k) => el("span", `c-${k}`, `${t[k]} ${SHORT[k].toLowerCase().replace(". ", ".")}`)));
   return n;
 }
 
@@ -131,12 +139,10 @@ function dayItem(date, speeches, open) {
 
 // Phones (css): no facts or quotes, only the statistics and the sitting days, newest first, one card each: the day's
 // counts, and when opened, its speeches in the order they were given, each opening its replay in the archive.
-const COUNT_NAMES = [["true", "Igaz"], ["false", "Hamis"], ["unverifiable", "N. e."], ["fallacy", "H. é."]];
-
 function countLine(t) {
   const line = el("span", "replay-counts");
-  for (const [k, name] of COUNT_NAMES) {
-    const c = el("span", null, name);
+  for (const k of listed(t)) {
+    const c = el("span", null, SHORT[k]);
     c.append(el("b", `c-${k}`, String(t[k])));
     line.append(c);
   }
@@ -273,7 +279,7 @@ async function load() {
   $("mp-name").textContent = m.name;
   $("mp-meta").textContent = [m.party, m.role].filter(Boolean).join(" · ");
   setPhoto($("mp-img"), $("mp-initials"), m.photo, m.name, { id: m.id, color: m.color });
-  const t = { true: 0, false: 0, unverifiable: 0, fallacy: 0, ...(m.totals || {}) };
+  const t = { ...COUNTS(), ...(m.totals || {}) };
   setPageMeta({
     title: `${m.name} ellenőrzött állításai – Vitaradar`,
     description: `${m.name}${m.party ? ` (${m.party})` : ""} ${m.claims || 0} ellenőrzött állítása ` +

@@ -20,10 +20,18 @@ function timeRange(a) {
   return `${clock(a.started_at)}–${clock(a.started_at + a.duration_s * 1000)}`;
 }
 
+// The verdicts, in the live page's tally order: the bar and the count list beside it. The first four always show;
+// the extended ones only when there are any (older sittings have none).
+const BAR = ["true", "partly_true", "misleading", "false", "opinion", "promise", "unverifiable", "fallacy"];
+const BASE = new Set(["true", "false", "unverifiable", "fallacy"]);
+const NAMES = { true: "igaz", partly_true: "részben igaz", misleading: "félrevezető", false: "hamis", opinion: "vélemény",
+  promise: "ígéret", unverifiable: "nem ellenőrizhető", fallacy: "hibás érvelés" };
+const listed = (t) => BAR.filter((k) => BASE.has(k) || t[k] > 0);
+
 function bar(t) {
   const b = el("div", "bar");
-  const total = t.true + t.unverifiable + t.false + t.fallacy;
-  for (const k of ["true", "unverifiable", "false", "fallacy"]) {
+  const total = BAR.reduce((n, k) => n + (t[k] || 0), 0);
+  for (const k of BAR) {
     if (!t[k]) continue;
     const s = el("span", `b-${k}`);
     s.style.width = `${(100 * t[k]) / total}%`;
@@ -57,8 +65,8 @@ function card(a, i) {  // i: its place in the list (runs.map)
   if (a.has_facts) {
     body.append(bar(t));
     const stats = el("dl", "mp-stats");
-    for (const [label, value, cls] of [["igaz", t.true, "c-true"], ["nem ellenőrizhető", t.unverifiable, "c-unverifiable"],
-      ["hamis", t.false, "c-false"], ["hibás érvelés", t.fallacy, "c-fallacy"], ["állítás összesen", a.claims || 0, ""]]) {
+    for (const [label, value, cls] of [...listed(t).map((k) => [NAMES[k], t[k] || 0, `c-${k}`]),
+      ["állítás összesen", a.claims || 0, ""]]) {
       const row = el("div");
       row.append(el("dt", null, label), el("dd", cls, String(value)));
       stats.append(row);

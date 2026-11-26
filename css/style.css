@@ -211,11 +211,14 @@ main.wrap { padding-top: 32px; padding-bottom: 56px; }  /* main.wrap: beats .wra
 .c-opinion { color: var(--opinion); } .c-promise { color: var(--promise); }
 .c-fallacy { color: var(--fallacy); text-shadow: 0 0 8px rgba(199, 125, 255, .45); }
 
-/* a verdict bar: true | unverifiable | false | fallacy */
+/* a verdict bar: true | partly true | misleading | false | opinion | promise | unverifiable | fallacy (js/archive.js,
+   js/mps.js, js/mp.js) */
 .bar { display: flex; height: 8px; background: rgba(0, 255, 65, .06); border: 1px solid var(--line-dim); }
 .bar span { display: block; height: 100%; }
 .bar .b-true { background: var(--true); } .bar .b-unverifiable { background: var(--unverifiable); }
 .bar .b-false { background: var(--false); } .bar .b-fallacy { background: var(--fallacy); }
+.bar .b-partly_true { background: var(--partly_true); } .bar .b-misleading { background: var(--misleading); }
+.bar .b-opinion { background: var(--opinion); } .bar .b-promise { background: var(--promise); }
 
 /* MP list */
 .page-title { margin: 0 0 6px; font-size: 26px; color: var(--green); text-shadow: var(--glow); letter-spacing: .5px; }
@@ -256,6 +259,8 @@ input.field { flex: 1; min-width: 200px; }
 .mp-stats dd.c-true, .mp-stats dd.c-false, .mp-stats dd.c-unverifiable, .mp-stats dd.c-fallacy { text-shadow: none; }
 .mp-stats dd.c-true { color: var(--true); } .mp-stats dd.c-false { color: var(--false); }
 .mp-stats dd.c-unverifiable { color: var(--unverifiable); } .mp-stats dd.c-fallacy { color: var(--fallacy); }
+.mp-stats dd.c-partly_true { color: var(--partly_true); } .mp-stats dd.c-misleading { color: var(--misleading); }
+.mp-stats dd.c-opinion { color: var(--opinion); } .mp-stats dd.c-promise { color: var(--promise); }
 
 /* portraits (setPhoto in js/common.js): the cut-out in front of an animated background drawn here, per person.
    Layers: the box's own background (glow, radar rings, faint grid, all around the centre) < .pt-sweep (a radar sweep
@@ -1393,7 +1398,8 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   :root {
     --bg: #040706; --panel: #0a110e; --panel-solid: #0a110e; --line: rgba(61, 240, 130, .2); --line-dim: rgba(61, 240, 130, .1);
     --green: #3df082; --green-soft: #8af5b4; --text: #d5e0da; --muted: #8a9e94; --cyan: #6fd3e6;
-    --true: #3df082; --false: #ff5d52; --unverifiable: #ffc23d; --fallacy: #b8a0ff; --pending: #6fd3e6;
+    --true: #3df082; --false: #ff5d52; --unverifiable: #ffc23d; --pending: #6fd3e6;
+    --fallacy: #f47ad4;  /* pink: ÍGÉRET (--promise) has the violet; the extended verdicts keep the stream's colours */
     --glow: none;
     --sans: "Inter Tight", system-ui, -apple-system, "Segoe UI", sans-serif;
     --display: "Chakra Petch", system-ui, -apple-system, "Segoe UI", sans-serif;  /* while it loads: a sans like it */
