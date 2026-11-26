@@ -9,7 +9,7 @@ import { initializeAppCheck, ReCaptchaEnterpriseProvider, getToken } from "https
 import { getFirestore, onSnapshot, disableNetwork, enableNetwork } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import {
   initializeAuth, indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence,
-  browserPopupRedirectResolver, GoogleAuthProvider, signInWithPopup, signOut as fbSignOut,
+  browserPopupRedirectResolver, GoogleAuthProvider, signInWithPopup, reauthenticateWithPopup, signOut as fbSignOut,
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import { firebaseConfig, recaptchaSiteKey } from "./config.js?v=202611241021";
 
@@ -83,11 +83,15 @@ export const auth = initializeAuth(app, {
 });
 auth.languageCode = "hu";
 
+// The helper, now, where it is needed before the tap (phones and Safari): for a visitor who is signed out, and for a
+// user who will have to sign in again (deleting the account, js/account.js).
+export function readySignIn() {
+  const r = auth._popupRedirectResolver;
+  if (r?._early) r._initialize(auth).catch(() => {});  // failed: the tap loads it again
+}
+
 function warmSignIn() {
-  auth.authStateReady().then(() => {
-    const r = auth._popupRedirectResolver;
-    if (!auth.currentUser && r?._early) r._initialize(auth).catch(() => {});  // failed: the tap loads it again
-  });
+  auth.authStateReady().then(() => { if (!auth.currentUser) readySignIn(); });
 }
 if (document.readyState === "complete") setTimeout(warmSignIn, 1000);
 else addEventListener("load", () => setTimeout(warmSignIn, 1000), { once: true });
@@ -96,6 +100,14 @@ export function signInWithGoogle() {
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: "select_account" });
   return signInWithPopup(auth, provider, Resolver);  // the same helper as auth's (one per class)
+}
+
+// Google's sign-in window again, for the signed-in user (deleting the account wants a recent sign-in): through the
+// same helper, not a second one that would load only on the tap.
+export function signInAgain(user) {
+  const provider = new GoogleAuthProvider();
+  if (user.email) provider.setCustomParameters({ login_hint: user.email });
+  return reauthenticateWithPopup(user, provider, Resolver);
 }
 
 export function signOut() {

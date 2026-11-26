@@ -5,10 +5,12 @@
 // asks. Everything a user typed is put on the page with textContent, never as HTML.
 
 import {
-  onAuthStateChanged, getIdToken, getIdTokenResult, reauthenticateWithPopup, GoogleAuthProvider, browserPopupRedirectResolver,
+  onAuthStateChanged, getIdToken, getIdTokenResult,
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { auth, db, appCheckHeaders, signInWithGoogle, signOut } from "./firebase.js?v=202611260345";
+import {
+  auth, db, appCheckHeaders, signInWithGoogle, signInAgain, readySignIn, signOut,
+} from "./firebase.js?v=202611260345";
 import { apiUrl, avatarUrl, photoPrefix } from "./config.js?v=202611241021";
 import { el, initials, huDate } from "./common.js?v=202611260345";
 import { cdnReady, cdnUrl } from "./cdn.js?v=202611260345";
@@ -450,6 +452,7 @@ export async function deleteAccount() {
   const user = account.user;
   if (!user) return;
   let fresh = await signedInLately(user);
+  if (!fresh) readySignIn();  // the sign-in helper in while the word is typed: Google's window opens on the tap
   const word = input("text", { name: "confirm", autocomplete: "off", autocapitalize: "characters", spellcheck: "false" });
   const list = el("ul", "dlg-list");
   for (const t of DELETED) list.append(el("li", null, t));
@@ -476,9 +479,7 @@ export async function deleteAccount() {
     dlg.error("");
     try {
       if (!fresh) {  // first, straight from the click: browsers open the sign-in window only then
-        const provider = new GoogleAuthProvider();
-        if (user.email) provider.setCustomParameters({ login_hint: user.email });
-        await reauthenticateWithPopup(user, provider, browserPopupRedirectResolver);
+        await signInAgain(user);
         fresh = true;
         again.hidden = true;
       }
@@ -492,7 +493,7 @@ export async function deleteAccount() {
       try { await signOut(); } catch { /* the account is gone already */ }
       toast("A fiókodat és minden adatodat töröltük.");
     } catch (err) {
-      if (err.code === "recent_signin") { fresh = false; again.hidden = false; }
+      if (err.code === "recent_signin") { fresh = false; again.hidden = false; readySignIn(); }
       const code = String(err.code || "");
       dlg.error(REAUTH_ERRORS[code] || (code.startsWith("auth/") ? `Nem sikerült belépni (${code}).` : err.message));
       dlg.busy(false);
