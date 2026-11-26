@@ -84,11 +84,11 @@
       <div>
         <h1 id="mp-name">…</h1>
         <p id="mp-meta" class="meta"></p>
-        <dl class="scores">
-          <div><dt>Igaz</dt><dd id="s-true" class="c-true">–<small>&nbsp;</small></dd></div>
-          <div><dt>Hamis</dt><dd id="s-false" class="c-false">–<small>&nbsp;</small></dd></div>
-          <div><dt>Nem ellenőrizhető</dt><dd id="s-unverifiable" class="c-unverifiable">–<small>&nbsp;</small></dd></div>
-          <div><dt>Hibás érvelés</dt><dd id="s-fallacy" class="c-fallacy">–</dd></div>
+        <dl id="scores" class="scores">
+          <div data-v="true"><dt>Igaz</dt><dd id="s-true" class="c-true"><span class="bar score-bar" aria-hidden="true"></span><span>–</span><small>&nbsp;</small></dd></div>
+          <div data-v="false"><dt>Hamis</dt><dd id="s-false" class="c-false"><span class="bar score-bar" aria-hidden="true"></span><span>–</span><small>&nbsp;</small></dd></div>
+          <div data-v="unverifiable"><dt>Nem ellenőrizhető</dt><dd id="s-unverifiable" class="c-unverifiable"><span class="bar score-bar" aria-hidden="true"></span><span>–</span><small>&nbsp;</small></dd></div>
+          <div data-v="fallacy"><dt>Hibás érvelés</dt><dd id="s-fallacy" class="c-fallacy"><span class="bar score-bar" aria-hidden="true"></span><span>–</span></dd></div>
         </dl>
         <div id="mp-bar" class="bar" aria-hidden="true"></div>
         <p id="mp-line" class="facts-line"></p>

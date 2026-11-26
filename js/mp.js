@@ -287,13 +287,26 @@ async function load() {
       `${t.unverifiable} nem ellenőrizhető, ${t.fallacy} hibás érvelés.`,
     path: `mp.html?id=${encodeURIComponent(id)}`,
   });
-  const checked = t.true + t.false + t.unverifiable;
-  for (const k of ["true", "false", "unverifiable"]) {
-    const dd = $(`s-${k}`);
-    dd.textContent = String(t[k]);
-    dd.append(el("small", null, pct(t[k], checked)));
-  }
-  $("s-fallacy").textContent = String(t.fallacy);
+  // a tile per verdict, as the bar has them; the share is of the statements (a fallacy is about the reasoning).
+  // Phones show them as rows, each with its own bar (css): as long as its share, the fallacies' on the same scale.
+  const said = BAR.filter((k) => k !== "fallacy").reduce((n, k) => n + (t[k] || 0), 0);
+  $("scores").replaceChildren(...listed(t).map((k) => {
+    const n = t[k] || 0;
+    const tile = el("div");
+    tile.dataset.v = k;
+    const track = el("span", "bar score-bar");
+    track.setAttribute("aria-hidden", "true");
+    if (n && said) {
+      const fill = el("span", `b-${k}`);
+      fill.style.width = `${Math.min(100, (100 * n) / said)}%`;
+      track.append(fill);
+    }
+    const dd = el("dd", `c-${k}`);
+    dd.append(track, el("span", null, String(n)));
+    if (k !== "fallacy") dd.append(el("small", null, pct(n, said)));
+    tile.append(el("dt", null, NAMES[k]), dd);
+    return tile;
+  }));
   bar($("mp-bar"), t);
   $("mp-line").textContent = `// ${m.claims || 0} állítás ${m.speeches || 0} felszólalásban, összesen ${hms(m.seconds)} perc` +
     (m.last_date ? ` · utoljára: ${huDate(m.last_date)}` : "");

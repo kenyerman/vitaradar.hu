@@ -323,6 +323,7 @@ input.field { flex: 1; min-width: 200px; }
 .scores dt { font-size: 10px; letter-spacing: .8px; text-transform: uppercase; color: var(--muted); }
 .scores dd { margin: 4px 0 0; font: 700 26px/1 var(--mono); }
 .scores small { display: block; margin-top: 4px; font-size: 11px; color: var(--muted); font-weight: 400; }
+.scores .score-bar { display: none; }  /* phones: a bar per row */
 .facts-line { margin: 10px 0 0; color: var(--muted); font-size: 13px; }
 /* the MP page's head keeps its height while js/mp.js fills it in (name, party and role, the totals line) */
 .mp-head .meta, #mp-line { min-height: 1.55em; }
@@ -1884,7 +1885,7 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
 }
 
 /* ------------------------------------------------------------------ phones: an MP's page
-   Only what tells the story: the photo, name and party, the four counts with the bar and the summary line, then the
+   Only what tells the story: the photo, name and party, the counts (a row per verdict) and the summary line, then the
    speeches as rows that open the replay in the archive (js/mp.js). The search, the calendar, the days, the facts with
    their quotes and the transcripts stay on wider screens. */
 .replays { display: none; }
@@ -1896,16 +1897,26 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   .mp-head .speaker-photo { width: 96px; grid-row: 1 / span 2; align-self: start; }
   .mp-head h1 { font-size: 20px; line-height: 1.15; }
   .mp-head .meta { margin: 4px 0 12px; }
-  .mp-head .scores { grid-column: 1 / -1; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 16px 0 12px; }
-  .mp-head .scores div { padding: 10px 12px; }
-  .mp-head .scores dd { font-size: 26px; }
+  /* the counts: a row per verdict with its own bar, as long as its share of the statements, then the count and the
+     share; the fallacies (about the reasoning, no share) under a thin line. The rows share their columns (subgrid; the
+     fixed widths before it are for browsers without it). The stacked bar would say the same again: not here. */
+  .mp-head .scores { grid-column: 1 / -1; grid-template-columns: max-content minmax(0, 1fr) auto auto; gap: 8px 10px;
+    margin: 16px 0 14px; }
+  .mp-head .scores > div { display: grid; grid-column: 1 / -1; grid-template-columns: 112px minmax(0, 1fr) 34px 34px;
+    grid-template-columns: subgrid; align-items: center; padding: 0; border: 0; background: none; }
+  .mp-head .scores > [data-v="fallacy"] { margin-top: 2px; padding-top: 10px; border-top: 1px solid rgba(61, 240, 130, .1); }
+  .mp-head .scores dt { color: #c5d3cb; font: 400 13px/1.3 var(--sans); letter-spacing: 0; text-transform: none; white-space: nowrap; }
+  .mp-head .scores dd { display: grid; grid-column: 2 / -1; grid-template-columns: minmax(0, 1fr) 34px 34px;
+    grid-template-columns: subgrid; column-gap: 10px; align-items: center; justify-items: end; margin: 0;
+    font: 700 13px/1.3 var(--display); font-variant-numeric: tabular-nums; text-shadow: none; }
+  .mp-head .scores .score-bar { display: flex; justify-self: stretch; height: 6px; border: 0; background: #16231d; overflow: hidden; }
+  .mp-head .scores .score-bar > span { min-width: 2px; }
+  .mp-head .scores small { margin: 0; color: var(--muted); font: 400 11.5px/1.3 var(--sans); }
+  .mp-head #mp-bar { display: none; }
   .mp-head > div:not(.speaker-photo) { display: contents; }
   .mp-head > div > :is(h1, .meta) { grid-column: 2; }
-  .mp-head #mp-bar, .mp-head #mp-line { grid-column: 1 / -1; }
-  .mp-head #mp-line { min-height: 0; margin: 0; color: var(--muted); font: 400 12.5px/1.5 var(--sans); }
+  .mp-head #mp-line { grid-column: 1 / -1; min-height: 0; margin: 0; color: var(--muted); font: 400 12.5px/1.5 var(--sans); }
   /* spacing: 16px from the edges, 8px between boxes, 14px inside them, 28px between sections */
-  .mp-head .scores div { padding: 12px 14px; }
-  .mp-head #mp-bar { margin: 2px 0 10px; }
   .mp-section { margin-top: 28px; }
   .mp-section .section-head { margin: 0 0 10px; }
   .replays { display: grid; gap: 8px; list-style: none; margin: 0; padding: 0; }
