@@ -18,6 +18,11 @@ export const LABEL = {
 // Verdicts that decide a stated fact (the others label an opinion, a promise, or what no evidence settles).
 export const FACT_VERDICTS = new Set(["true", "partly_true", "misleading", "false"]);
 
+// A conclusion check judges only the step from the speaker's stated facts to their conclusion, not a fact, so it has
+// the stream's words for its verdict: "[ KÖVETKEZTETÉS: MEGALAPOZATLAN ]", in orange (css), because unfounded is not
+// false. The pages don't count conclusions with the facts (js/app.js).
+export const CONCLUSION_LABEL = { true: "MEGALAPOZOTT", false: "MEGALAPOZATLAN", unverifiable: "NEM ELDÖNTHETŐ" };
+
 export function el(tag, cls, text) {
   const e = document.createElement(tag);
   if (cls) e.className = cls;
@@ -48,18 +53,21 @@ export function huDate(iso) {
 
 // A verdict badge like the stream's: [ IGAZ ]. While the check runs, the stream's loading sign sits inside the
 // brackets, "[ ELLENŐRZÉS ▒ ]" (the sign is CSS on an empty span, .v-sign), and a conclusion check keeps its title,
-// "[ KÖVETKEZTETÉS ▒ ]". js/mobile.js drops the [ ] on phones from the text at either end.
+// "[ KÖVETKEZTETÉS ▒ ]", then "[ KÖVETKEZTETÉS: MEGALAPOZOTT ]" (CONCLUSION_LABEL; data-kind gives it its colour).
+// js/mobile.js drops the [ ] on phones from the text at either end.
 export function badge(verdict, kind) {
   const v = kind === "fallacy" ? "fallacy" : verdict || "pending";
+  const conclusion = kind === "conclusion";
   const b = el("span", "verdict");
   b.dataset.v = v;
+  if (conclusion) b.dataset.kind = "conclusion";
   if (v === "pending") {
     const sign = el("span", "v-sign");
     sign.setAttribute("aria-hidden", "true");
-    b.append(`[ ${kind === "conclusion" ? "KÖVETKEZTETÉS" : LABEL.pending} `, sign, " ]");
+    b.append(`[ ${conclusion ? "KÖVETKEZTETÉS" : LABEL.pending} `, sign, " ]");
     return b;
   }
-  b.textContent = `[ ${kind === "conclusion" ? "KÖVETKEZTETÉS: " : ""}${LABEL[v] || v} ]`;
+  b.textContent = conclusion ? `[ KÖVETKEZTETÉS: ${CONCLUSION_LABEL[v] || LABEL[v] || v} ]` : `[ ${LABEL[v] || v} ]`;
   return b;
 }
 

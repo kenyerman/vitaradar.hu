@@ -157,6 +157,8 @@ main.wrap { padding-top: 32px; padding-bottom: 56px; }  /* main.wrap: beats .wra
 .fact[data-verdict="misleading"] { border-left-color: var(--misleading); }
 .fact[data-verdict="opinion"] { border-left-color: var(--opinion); }
 .fact[data-verdict="promise"] { border-left-color: var(--promise); }
+/* a MEGALAPOZATLAN conclusion: orange, as its badge (.verdict[data-kind="conclusion"]) */
+.fact[data-verdict="false"]:has(.verdict[data-kind="conclusion"]) { border-left-color: var(--misleading); }
 .fact-fallacy { margin: 6px 0 0; color: var(--fallacy); font-size: 13px; }
 .fact.flash { animation: glitch .7s steps(2) 1, flash 1.2s ease-out; }
 @keyframes pop { from { opacity: 0; transform: translateX(-12px); } to { opacity: 1; transform: none; } }
@@ -1712,6 +1714,9 @@ html.menu-open .menu-btn::before { content: "\2715"; font: 700 18px/1 var(--disp
 .verdict { padding: 4px 10px 4px 8px; color: #021108; font-size: 11px; letter-spacing: 1px;
   clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%); }
 .verdict[data-v="false"] { color: #1a0402; }
+/* a conclusion's verdict (js/common.js badge): MEGALAPOZATLAN is the stream's orange, because unfounded is not false;
+   MEGALAPOZOTT and NEM ELDÖNTHETŐ keep the green and the amber */
+.verdict[data-kind="conclusion"][data-v="false"] { background: var(--misleading); color: #021108; }
 /* a fact still being checked: a small dot before ELLENŐRZÉS (it sends out radar rings, like the logo's dot) */
 .verdict[data-v="pending"] { display: inline-flex; align-items: center; gap: 6px; }
 .verdict[data-v="pending"]::before { content: ""; flex: none; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
@@ -2243,6 +2248,7 @@ html:not([data-loaded]) #mps:empty { background-image: url("data:image/svg+xml,%
   .m-live .fact.flash:has(.verdict[data-v="false"]) { --frame: var(--false); }
   .m-live .fact.flash:has(.verdict[data-v="unverifiable"]) { --frame: var(--unverifiable); }
   .m-live .fact.flash:has(.verdict[data-v="fallacy"]) { --frame: var(--fallacy); }
+  .m-live .fact.flash:has(.verdict[data-kind="conclusion"][data-v="false"]) { --frame: var(--misleading); }
   :is(.m-strip, .d-side) .tally dd { display: inline-block; padding: 0 2px; }
   :is(.m-strip, .d-side) .tally dd.m-bump { animation: m-invert 1s ease-out; }
 
