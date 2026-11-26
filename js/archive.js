@@ -2,8 +2,8 @@
 //
 // Phones: the list of days, each run a compact row. Wider screens (css): the same rows in columns (the picture, the
 // time and length, the speakers' photos and names, the claims, the verdicts) and beside them a sidebar: the month's
-// calendar (the sitting days, shaded by their claims; a click goes to the day), a filter by MP name and by party, and
-// the totals. The parts only the wider screens show are in the cards from the start, hidden on phones (css).
+// calendar (each sitting day with the bar of its verdicts; a click goes to the day and shows its numbers under the
+// calendar), a filter by MP name and by party, and the totals. The parts only the wider screens show are in the cards from the start, hidden on phones (css).
 
 import { collection } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { db, getDocs, el, hms, huDate, initials, watchLiveNav } from "./common.js?v=202611270330";
@@ -171,11 +171,12 @@ const todayIso = () => new Date().toLocaleDateString("sv-SE", { timeZone: "Europ
 
 function sidebar(dayList, sections) {
   const byDate = new Map(dayList.map((d) => [d.date, d]));
-  const top = Math.max(1, ...dayList.map((d) => d.claims));
   const months = [...new Set(dayList.map((d) => d.date.slice(0, 7)))].sort();  // the months with sittings
-  let month = months[months.length - 1], selected = null, matching = null;  // matching: the dates the filter leaves
+  // selected: the day shown under the calendar (the newest at first); matching: the dates the filter leaves
+  let month = months[months.length - 1], selected = dayList[0].date, matching = null;
 
-  // the calendar: the month's days, Monday first; a sitting day a button, darker the more claims it had
+  // the calendar: the month's days, Monday first; a sitting day a button with the bar of its verdicts; under it the
+  // day picked: its parts, length, claims and bar
   const cal = el("section", "arch-box arch-cal");
   const head = el("div", "arch-cal-head");
   const prev = el("button", "cal-nav", "‹"), next = el("button", "cal-nav", "›");
@@ -185,13 +186,17 @@ function sidebar(dayList, sections) {
   const title = el("h2", "arch-cal-title");
   head.append(prev, title, next);
   const grid = el("div", "arch-cal-grid");
-  const scale = el("p", "arch-cal-scale");
-  scale.append("kevesebb", ...[0.3, 0.55, 0.8, 1].map((a) => {
-    const i = el("i");
-    i.style.setProperty("--a", a);
-    return i;
-  }), "több állítás");
-  cal.append(head, grid, scale);
+  const pick = el("div", "arch-cal-pick");
+  pick.setAttribute("aria-live", "polite");
+  cal.append(head, grid, pick);
+
+  function drawPick() {
+    const day = byDate.get(selected);
+    const h = el("p", "arch-cal-pick-h",
+      `${new Date(`${selected}T12:00:00`).toLocaleDateString("hu-HU", { month: "short", day: "numeric" })} · ${weekday(selected)}`);
+    pick.replaceChildren(h, el("p", "arch-cal-pick-meta",
+      `${day.runs.length} rész · ${hms(day.dur)} · ${num(day.claims)} állítás`), bar(day.counts));
+  }
 
   function drawMonth() {
     const [y, m] = month.split("-").map(Number);
@@ -210,17 +215,18 @@ function sidebar(dayList, sections) {
         cells.push(el("span", `arch-cal-day${iso === today ? " today" : ""}`, String(d)));
         continue;
       }
-      const b = el("button", "arch-cal-day has", String(d));
+      const b = el("button", "arch-cal-day has");
       b.type = "button";
-      const a = 0.25 + 0.75 * Math.sqrt(day.claims / top);
-      b.style.setProperty("--a", a.toFixed(2));
-      if (a < 0.55) b.classList.add("light");
-      if (iso === selected) b.setAttribute("aria-pressed", "true");
+      b.append(el("span", null, String(d)), bar(day.counts));
+      b.setAttribute("aria-pressed", String(iso === selected));
       if (matching && !matching.has(iso)) b.classList.add("off");
       b.setAttribute("aria-label", `${huDate(iso)}: ${day.runs.length} rész, ${num(day.claims)} állítás`);
+      b.dataset.iso = iso;
       b.addEventListener("click", () => {
         selected = iso;
         drawMonth();
+        drawPick();
+        grid.querySelector(`[data-iso="${iso}"]`)?.focus({ preventScroll: true });  // the day redrawn: the focus stays on it
         sections.get(iso)?.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
       });
       cells.push(b);
@@ -294,7 +300,7 @@ function sidebar(dayList, sections) {
     drawMonth();
   }
 
-  drawMonth();
+  drawPick();
   apply();
   side.replaceChildren(cal, filter, totals);
   side.hidden = false;
@@ -314,16 +320,18 @@ getDocs(collection(db, "archive")).then((snap) => {
     const sec = el("section", "arch-day");
     const runs = byDay.get(d).sort((x, y) => (x.started_at || 0) - (y.started_at || 0));
     const claims = runs.reduce((n, a) => n + (a.claims || 0), 0);
+    const dur = runs.reduce((n, a) => n + (a.duration_s || 0), 0);
+    const counts = Object.fromEntries(BAR.map((k) => [k, runs.reduce((n, a) => n + ((a.counts || {})[k] || 0), 0)]));
     const date = el("h2", "arch-date");
     date.append(el("span", "arch-slashes", "// "), huDate(d), el("span", "arch-wd", weekday(d)));  // phones leave the slashes and the weekday out (css)
-    const line = el("p", "count-line", `${runs.length} rész · összesen ${hms(runs.reduce((n, a) => n + (a.duration_s || 0), 0))}`);
+    const line = el("p", "count-line", `${runs.length} rész · összesen ${hms(dur)}`);
     line.append(el("span", "arch-claims", ` · ${num(claims)} állítás`));  // wider screens
     sec.append(date, line);
     const grid = el("ol", "arch-grid");
     const items = runs.map(card);
     grid.append(...items);
     sec.append(grid);
-    dayList.push({ date: d, runs, items, claims });
+    dayList.push({ date: d, runs, items, claims, dur, counts });
     sections.set(d, sec);
     return sec;
   }));
