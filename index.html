@@ -36,7 +36,7 @@
   <script>try{if(sessionStorage.getItem("vr-intro"))document.documentElement.dataset.intro="seen";else sessionStorage.setItem("vr-intro","1")}catch(e){}</script>
   <!-- arriving from another page with a page transition (css: phones, motion): the page does not also play its own opening; back slides the other way -->
   <script>addEventListener("pagereveal",function(e){if(!e.viewTransition)return;var r=document.documentElement;r.classList.add("m-vt");try{if(navigation.activation.navigationType==="traverse")r.classList.add("m-vt-back")}catch(x){}})</script>
-  <script>try{document.documentElement.dataset.acct=localStorage.getItem("vr-acct")||"out"}catch(e){}</script>
+  <script>try{document.documentElement.dataset.acct=localStorage.getItem("vr-acct")||"out";document.documentElement.dataset.live=localStorage.getItem("vr-live")||"off"}catch(e){}</script>
   <!-- the chat starts closed, unless the reader opened it before (js/chat.js stores the choice), from the first paint -->
   <script>try{if(localStorage.getItem("vr-chat")!=="open")document.documentElement.dataset.chat="closed"}catch(e){document.documentElement.dataset.chat="closed"}</script>
   <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js">
@@ -45,14 +45,14 @@
   <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js">
   <link rel="modulepreload" href="js/firebase.js?v=202611260345">
   <link rel="modulepreload" href="js/config.js?v=202611241021">
-  <link rel="modulepreload" href="js/common.js?v=202611262215">
-  <link rel="modulepreload" href="js/account.js?v=202611262215">
+  <link rel="modulepreload" href="js/common.js?v=202611262350">
+  <link rel="modulepreload" href="js/account.js?v=202611262350">
   <link rel="modulepreload" href="js/cdn.js?v=202611260345">
   <link rel="modulepreload" href="js/consent.js?v=202611241021">
   <link rel="modulepreload" href="js/presence.js?v=202611260345">
   <link rel="modulepreload" href="js/menu.js?v=202611241206">
-  <link rel="modulepreload" href="js/mobile.js?v=202611262142">
-  <link rel="stylesheet" href="css/style.css?v=202611262305">
+  <link rel="modulepreload" href="js/mobile.js?v=202611262302">
+  <link rel="stylesheet" href="css/style.css?v=202611262359">
 </head>
 <body class="m-site m-live">  <!-- the page's kind, for the phone layout from the first paint (css, js/mobile.js) -->
   <canvas id="rain" aria-hidden="true"></canvas>
@@ -129,6 +129,27 @@
           <div><dt>Nem ellenőrizhető</dt><dd id="n-unverifiable" class="c-unverifiable">0</dd></div>
           <div><dt>Hibás érvelés</dt><dd id="n-fallacy" class="c-fallacy">0</dd></div>
         </dl>
+        <!-- phones, in the strip under the speaker (js/mobile.js): the same counts for the speech under way only -->
+        <dl class="tally m-speech-tally" aria-label="A felszólalás mérlege">
+          <div><dt>Igaz</dt><dd id="s-true" class="c-true">0</dd></div>
+          <div><dt>Részben igaz</dt><dd id="s-partly_true" class="c-partly_true">0</dd></div>
+          <div><dt>Félrevezető</dt><dd id="s-misleading" class="c-misleading">0</dd></div>
+          <div><dt>Hamis</dt><dd id="s-false" class="c-false">0</dd></div>
+          <div><dt>Vélemény</dt><dd id="s-opinion" class="c-opinion">0</dd></div>
+          <div><dt>Ígéret</dt><dd id="s-promise" class="c-promise">0</dd></div>
+          <div><dt>Nem ellenőrizhető</dt><dd id="s-unverifiable" class="c-unverifiable">0</dd></div>
+          <div><dt>Hibás érvelés</dt><dd id="s-fallacy" class="c-fallacy">0</dd></div>
+        </dl>
+        <!-- wider screens, in the strip under the player (js/mobile.js): this speech's balance, and the latest false
+             claim and fallacy, a click away in the facts (js/app.js fills them) -->
+        <div id="speech-sum" class="speech-sum" hidden>
+          <p class="d-label">Felszólalás mérlege</p>
+          <dl id="speech-tally" class="speech-tally"></dl>
+        </div>
+        <div id="latest" class="latest" hidden>
+          <p class="d-label">Legutóbb</p>
+          <div id="latest-rows" class="latest-rows"></div>
+        </div>
       </aside>
     </section>
   </main>
@@ -168,8 +189,8 @@
       </div>
     </div>
     <div class="wrap footer-row">
-      <p>© <span id="year">2026</span> vitaradar.hu. Minden jog fenntartva.</p>
-      <p class="muted">Felvétel: Országgyűlés. A minősítéseket mesterséges intelligencia készíti automatikusan, ezért tévedhet.</p>
+      <p>© <span id="year">2026</span> vitaradar.hu.<span class="foot-more"> Minden jog fenntartva.</span></p>
+      <p class="muted">Felvétel: Országgyűlés.<span class="foot-more"> A minősítéseket mesterséges intelligencia készíti automatikusan, ezért tévedhet.</span></p>
       <p class="muted"><a href="https://github.com/kenyerman/vitaradar.hu">&gt; forráskód a GitHubon</a></p>
     </div>
   </footer>
@@ -177,8 +198,8 @@
   <!-- the games (js/game.js): here from the start, so the phone layout takes it into its Játék tab -->
   <div class="game-dock"></div>
 
-  <script type="module" src="js/mobile.js?v=202611262142"></script>  <!-- the phone layout, before the data scripts -->
-  <script type="module" src="js/app.js?v=202611262305"></script>
+  <script type="module" src="js/mobile.js?v=202611262302"></script>  <!-- the phone layout, before the data scripts -->
+  <script type="module" src="js/app.js?v=202611262350"></script>
   <script type="module" src="js/shell.js?v=202611260345"></script>
 </body>
 </html>

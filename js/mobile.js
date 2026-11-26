@@ -1,6 +1,8 @@
-// vitaradar.hu on phones (up to 860px, as js/menu.js). The player stays pinned under the header, so the video never
-// scrolls away (Twitch pauses an embed that is off-screen or covered) and nothing is ever drawn over it; under it a
-// compact strip shows the speaker and the sitting's tally. On wider screens every part goes back where the page has it.
+// vitaradar.hu's live and replay pages as an app, on phones (up to 860px, as js/menu.js) and on wider screens. The
+// video never scrolls away (Twitch pauses an embed that is off-screen or covered) and nothing is ever drawn over it.
+// Phones: the player pinned under the header, a compact strip under it (the speaker, their speech's counts), the tabs and
+// the open tab's panel. Wider screens, all on one screen: the player and the strip on the left, a sidebar on the right
+// with the sitting's tally, the tabs and the panels.
 //
 // The parts are moved, not copied, so the scripts that fill them (app.js, chat.js, game.js, watch.js) keep working
 // wherever they are: they find them by id. --m-hdr is the header's height (where the pinned block starts) and --m-top
@@ -11,7 +13,7 @@
 // as the page is parsed; then .m-ready shows the page (css: until then a phone sees the header only, never the wide
 // layout squeezed in).
 
-const PHONE = matchMedia("(max-width: 860px)");
+const PHONE = matchMedia("(max-width: 860px)");  // which of the two layouts
 
 const root = document.documentElement;
 
@@ -21,30 +23,32 @@ function el(tag, cls) {
   return e;
 }
 
-// Moves nodes into the phone layout and back. Each node leaves a mark where it was; on a wide screen it returns there.
+// Moves nodes into the app layout: each has its place on phones and on wider screens ([parent, the node it goes
+// before]); without one it stays where the page has it (a mark is left there).
 function mover() {
   const moves = [];
   return {
-    add(node, into, before = null) {
-      if (!node || !into) return;
-      const mark = document.createComment(" phone ");
+    add(node, phone, desk = phone) {
+      if (!node) return;
+      const mark = document.createComment(" app ");
       node.before(mark);
-      moves.push({ node, into, before, mark });
+      moves.push({ node, phone, desk, mark });
     },
     place() {
       for (const m of moves) {
-        if (PHONE.matches) m.into.insertBefore(m.node, m.before);
+        const to = PHONE.matches ? m.phone : m.desk;
+        if (to && to[0]) to[0].insertBefore(m.node, to[1] || null);
         else m.mark.after(m.node);
       }
     },
   };
 }
 
-// Phones, live page: the page stays put under the pinned block and the open tab's panel scrolls (css); elsewhere the
-// window does. What scrolls the facts, then.
+// The live and replay pages stay put and the open tab's panel scrolls (css); elsewhere the window does. What scrolls
+// the facts, then.
 function scroller(list) {
   const app = document.body.classList.contains("m-live") || document.body.classList.contains("m-watch");
-  return (PHONE.matches && app && list.closest(".below")) || window;
+  return (app && list.closest(".below")) || window;
 }
 
 // A row's height from `from` to `to` px (whole numbers), frame by frame in whole pixels, with the rows' own easing
@@ -107,13 +111,13 @@ function measure(header, top, video) {
   return set;
 }
 
-// Phones, replay page: the fact playing now stays in view as the video goes on, unless the reader has just scrolled.
+// The replay page: the fact playing now stays in view as the video goes on, unless the reader has just scrolled.
 function followReplay(list) {
   if (!list) return;
   let touched = 0;
   for (const ev of ["wheel", "touchmove", "keydown"]) addEventListener(ev, () => { touched = Date.now(); }, { passive: true });
   new MutationObserver((records) => {
-    if (!PHONE.matches || Date.now() - touched < 4000) return;
+    if (Date.now() - touched < 4000) return;
     for (const r of records) {
       const li = r.target;
       if (li.classList.contains("now") && !(r.oldValue || "").split(" ").includes("now")) {
@@ -134,11 +138,11 @@ function compactFacts(list) {
   if (!list) return;
   const mark = (li) => {
     if (!li.classList || !li.classList.contains("fact")) return;
-    li.tabIndex = PHONE.matches ? 0 : -1;
+    li.tabIndex = 0;
     li.setAttribute("aria-expanded", String(li.dataset.open === "true"));
   };
   const calm = matchMedia("(prefers-reduced-motion: reduce)");
-  const motion = () => PHONE.matches && !calm.matches;
+  const motion = () => !calm.matches;
   const ease = "cubic-bezier(.22, 1, .36, 1)", DURATION = 340;
   const runs = new WeakMap();  // li -> its running open or close: { kind, cancel }
   const stop = (li) => {
@@ -181,35 +185,37 @@ function compactFacts(list) {
     runs.set(li, run);
   };
   const isOpen = (li) => li.dataset.open === "true" && runs.get(li)?.kind !== "close";
-  // Opening a row closes the one open before; the row tapped stays where it is on screen while one above it folds (in
-  // whole pixels, and the panel scrolls by as much in the same frame): only while it folds, and not once the reader
-  // touches the screen.
+  // Opening a row closes the one open before; the row tapped stays where it is in its panel while one above it folds
+  // (in whole pixels, and the panel scrolls by as much in the same frame): only while it folds, and not once the reader
+  // touches the screen. In the panel's own terms: the panel itself slides in when a fact is opened from another tab
+  // (the strip's latest rows, js/app.js), and held on screen the row ended that much lower.
   const toggle = (li) => {
     if (isOpen(li)) { resize(li, false); return; }
-    const top = li.getBoundingClientRect().top;
+    const box = scroller(list);
+    const at = () => li.getBoundingClientRect().top - (box === window ? 0 : box.getBoundingClientRect().top);
+    const top = at();
     const others = [...list.querySelectorAll("li.fact")].filter((o) => o !== li && isOpen(o));
     const above = (o) => Boolean(o.compareDocumentPosition(li) & Node.DOCUMENT_POSITION_FOLLOWING);
     for (const o of others) resize(o, false, above(o));
     resize(li, true);
     const folding = others.filter(above);
     if (!folding.length) return;
-    const box = scroller(list), hands = touchWatch();
+    const hands = touchWatch();
     const hold = () => {
       if (hands.on) { hands.done(); return; }
-      nudge(box, Math.round(li.getBoundingClientRect().top - top));
+      nudge(box, Math.round(at() - top));
       if (folding.some((o) => runs.get(o)?.kind === "close")) requestAnimationFrame(hold);
       else hands.done();
     };
     hold();
   };
   list.addEventListener("click", (e) => {
-    if (!PHONE.matches) return;
     if (e.target.closest("a, button, input, textarea, select, label, form, .social")) return;
     const li = e.target.closest("li.fact");
     if (li && list.contains(li)) toggle(li);
   });
   list.addEventListener("keydown", (e) => {
-    if (!PHONE.matches || (e.key !== "Enter" && e.key !== " ")) return;
+    if (e.key !== "Enter" && e.key !== " ") return;
     const li = e.target;
     if (!li.matches || !li.matches("li.fact")) return;
     e.preventDefault();
@@ -219,8 +225,8 @@ function compactFacts(list) {
     for (const r of records) r.addedNodes.forEach(mark);
   }).observe(list, { childList: true, subtree: true });  // subtree: a speech's facts, inside the speakers list
 
-  // a row shows how many comments it has (js/social.js writes "N hozzászólás" into the fact's .talk label), and on
-  // phones the verdict badges drop their [ ] (js/common.js writes "[ IGAZ ]"; wider screens keep them)
+  // a row shows how many comments it has (js/social.js writes "N hozzászólás" into the fact's .talk label), and the
+  // verdict badges drop their [ ] (js/common.js writes "[ IGAZ ]")
   let queued = false;
   const tidy = () => {
     queued = false;
@@ -233,23 +239,22 @@ function compactFacts(list) {
         talk.setAttribute("aria-label", `${m[1]} hozzászólás`);
       } else if (talk) talk.remove();
       const v = li.querySelector(".verdict");
-      // the [ ] are at the ends of the badge's first and last text (a pending badge has its loading sign between)
+      // the [ ] are at the ends of the badge's first and last text (a pending badge has its loading sign between); the
+      // phones' design has none at any width
       const a = v && v.firstChild, z = v && v.lastChild;
       if (!a || a.nodeType !== Node.TEXT_NODE || z.nodeType !== Node.TEXT_NODE) continue;
-      if (PHONE.matches && a.data.startsWith("[ ") && z.data.endsWith(" ]")) { a.data = a.data.slice(2); z.data = z.data.slice(0, -2); }
-      else if (!PHONE.matches && !a.data.startsWith("[")) { a.data = `[ ${a.data}`; z.data += " ]"; }
+      if (a.data.startsWith("[ ") && z.data.endsWith(" ]")) { a.data = a.data.slice(2); z.data = z.data.slice(0, -2); }
     }
   };
   const later = () => { if (!queued) { queued = true; requestAnimationFrame(tidy); } };
   new MutationObserver(later).observe(list, { childList: true, subtree: true, characterData: true });
-  PHONE.addEventListener("change", later);
   list.querySelectorAll("li.fact").forEach(mark);
-  PHONE.addEventListener("change", () => list.querySelectorAll("li.fact").forEach(mark));
 }
 
-// Phones, live page: the newest fact comes in at the top of the feed. Further down, the page keeps the reader's place
-// (a fact coming in above doesn't push the text they are reading; the browser's own scroll anchoring is off, as Safari
-// has none), and a button counts the new facts; a tap on it, or scrolling back up, brings them back to the newest.
+// The live page's feed, on phones and in the sidebar alike: the newest fact comes in at the top. Further down, the
+// panel keeps the reader's place (a fact coming in above doesn't push the text they are reading; the browser's own
+// scroll anchoring is off, as Safari has none), and a button counts the new facts; a tap on it, or scrolling back up,
+// brings them back to the newest.
 function followFeed(list) {
   if (!list) return;
   const calm = matchMedia("(prefers-reduced-motion: reduce)");
@@ -257,7 +262,12 @@ function followFeed(list) {
   pill.type = "button";
   pill.hidden = true;
   document.body.append(pill);
-  const edge = () => parseFloat(getComputedStyle(root).getPropertyValue("--m-top")) || 0;
+  // where the panel's visible part begins: under the pinned block (phones), or at the top of the sidebar's panel
+  const edge = () => {
+    if (PHONE.matches) return parseFloat(getComputedStyle(root).getPropertyValue("--m-top")) || 0;
+    const box = scroller(list);
+    return box === window ? 0 : box.getBoundingClientRect().top;
+  };
   const atTop = () => list.getBoundingClientRect().top >= edge() - 60;
   let top = true, unseen = 0, anchor = null, anchorY = 0;
   const known = new WeakSet();
@@ -270,11 +280,11 @@ function followFeed(list) {
     }
   };
   const show = () => {
-    pill.hidden = !PHONE.matches || top || !unseen || list.offsetParent === null;
+    pill.hidden = top || !unseen || list.offsetParent === null;
     pill.textContent = `↑ ${unseen} új állítás`;
+    pill.style.top = PHONE.matches || pill.hidden ? "" : `${Math.round(edge() + 10)}px`;  // wider screens: the sidebar's top
   };
   const onScroll = () => {
-    if (!PHONE.matches) return;
     top = atTop();
     if (top) unseen = 0;
     remember();
@@ -315,7 +325,6 @@ function followFeed(list) {
         n.addEventListener("animationend", end);
       }
     }
-    if (!PHONE.matches) return;
     if (!top && anchor && anchor.isConnected) {  // keep the row being read where it was
       const dy = anchor.getBoundingClientRect().top - anchorY;
       if (dy) scroller(list).scrollBy(0, dy);
@@ -356,7 +365,7 @@ function liveTabs(top, slots, feed) {
   const note = el("span");
   note.textContent = "// automatikus (AI) ellenőrzés — tévedhet";
   ai.append(note, viewers());
-  top.append(bar, ai);
+  top.append(bar, ai);  // phones: in the pinned block; wider screens: the sidebar (mountApp)
 
   const chatCol = document.getElementById("chat");
   const chatOpen = document.getElementById("chat-open");
@@ -368,11 +377,9 @@ function liveTabs(top, slots, feed) {
       t.b.tabIndex = on ? 0 : -1;
       if (on && focus) t.b.focus();
     }
-    if (PHONE.matches) {  // on phones the Chat tab is the chat; wider screens keep the reader's own choice
-      const closed = root.dataset.chat === "closed";
-      if (id === "chat" && closed && chatOpen) chatOpen.click();
-      if (id !== "chat" && !closed && chatCol) chatCol.querySelector(".chat-close")?.click();
-    }
+    const closed = root.dataset.chat === "closed";  // the Chat tab is the chat: open while its tab is on
+    if (id === "chat" && closed && chatOpen) chatOpen.click();
+    if (id !== "chat" && !closed && chatCol) chatCol.querySelector(".chat-close")?.click();
     if (id === "feed") feed.resume();
     else { feed.show(); scrollTo({ top: 0 }); }
     if (id === "chat") chatToEnd();  // it was hidden while its messages came: open on the newest
@@ -412,10 +419,11 @@ function liveTabs(top, slots, feed) {
   }
 
   for (const t of tabs) t.b.setAttribute("aria-controls", t.b.dataset.tab === "feed" ? "facts" : t.b.dataset.tab === "chat" ? "chat" : "m-game");
-  // phones start on the facts, so the chat starts closed (js/chat.js, mounting later, reads it; the reader's stored
+  // the page starts on the facts, so the chat starts closed (js/chat.js, mounting later, reads it; the reader's stored
   // choice stays as it is)
-  if (PHONE.matches) root.dataset.chat = "closed";
+  root.dataset.chat = "closed";
   select("feed");
+  return { bar, ai };
 }
 
 // How many watch the stream, while it is on: js/presence.js puts the figure in the online badge's label ("… N nézi
@@ -449,7 +457,7 @@ function speakerSwap(card) {
     if (now === last) return;
     const first = last === "–" || !last;  // the page's placeholder: the first speaker just appears
     last = now;
-    if (first || !PHONE.matches) return;
+    if (first) return;
     card.classList.remove("m-swap");
     void card.offsetWidth;  // restart the animation
     card.classList.add("m-swap");
@@ -457,7 +465,7 @@ function speakerSwap(card) {
   card.addEventListener("animationend", (e) => { if (e.target === card) card.classList.remove("m-swap"); });
 }
 
-// The tally's figures tick (css .m-bump) when they grow, once the sitting's first count is in.
+// The counts' figures tick (css .m-bump) when they grow, once the first counts are in (a new speech starts at 0: no tick).
 function tallyBump(tally) {
   if (!tally) return;
   const start = performance.now();
@@ -467,7 +475,7 @@ function tallyBump(tally) {
       const now = dd.textContent;
       const grew = Number(now) > Number(last);
       last = now;
-      if (!grew || performance.now() - start < 4000 || !PHONE.matches) return;
+      if (!grew || performance.now() - start < 4000) return;
       dd.classList.remove("m-bump");
       void dd.offsetWidth;
       dd.classList.add("m-bump");
@@ -476,7 +484,7 @@ function tallyBump(tally) {
   }
 }
 
-// The game cards' tags ("[ KIHÍVÁS ]", js/game.js) drop their [ ] on phones, as the verdicts do; wider screens keep them.
+// The game cards' tags ("[ KIHÍVÁS ]", js/game.js) drop their [ ], as the verdicts do.
 function gameTags(box) {
   let queued = false;
   const tidy = () => {
@@ -484,14 +492,12 @@ function gameTags(box) {
     for (const t of document.querySelectorAll(".game-dock .game-tag")) {
       const text = t.textContent;
       const bare = text.replace(/^\[[\s\u00a0]*/, "").replace(/[\s\u00a0]*\]$/, "");
-      if (PHONE.matches && bare !== text) { t.dataset.full = text; t.textContent = bare; }
-      else if (!PHONE.matches && t.dataset.full) { t.textContent = t.dataset.full; delete t.dataset.full; }
+      if (bare !== text) { t.dataset.full = text; t.textContent = bare; }
     }
   };
   const later = () => { if (!queued) { queued = true; requestAnimationFrame(tidy); } };
   const dock = document.querySelector(".game-dock") || box;
   new MutationObserver(later).observe(dock, { childList: true, subtree: true });
-  PHONE.addEventListener("change", later);
   later();
 }
 
@@ -503,13 +509,12 @@ function gameTags(box) {
 function openingSpeeches(list) {
   if (!list) return;
   const calm = matchMedia("(prefers-reduced-motion: reduce)");
-  const motion = () => PHONE.matches && !calm.matches;
+  const motion = () => !calm.matches;
   const ease = "cubic-bezier(.22, 1, .36, 1)", DURATION = 380;
   const runs = new WeakMap();  // li -> its running open or close: { kind, cancel }
   const mark = (li) => {
-    li.tabIndex = PHONE.matches ? 0 : -1;
-    if (PHONE.matches) li.setAttribute("aria-expanded", String(li.classList.contains("open") && runs.get(li)?.kind !== "close"));
-    else li.removeAttribute("aria-expanded");
+    li.tabIndex = 0;
+    li.setAttribute("aria-expanded", String(li.classList.contains("open") && runs.get(li)?.kind !== "close"));
   };
   const stop = (li) => {
     const r = runs.get(li);
@@ -593,12 +598,12 @@ function openingSpeeches(list) {
     follow(li, top, height);
   };
   list.addEventListener("click", (e) => {
-    if (!PHONE.matches || e.target.closest(".speech-facts")) return;
+    if (e.target.closest(".speech-facts")) return;
     const li = e.target.closest("#speakers > li");
     if (li) toggle(li, !!e.target.closest(".t-btn"));  // the time button plays it (js/watch.js) and leaves it open
   });
   list.addEventListener("keydown", (e) => {
-    if (!PHONE.matches || (e.key !== "Enter" && e.key !== " ") || !e.target.matches("#speakers > li")) return;
+    if ((e.key !== "Enter" && e.key !== " ") || !e.target.matches("#speakers > li")) return;
     e.preventDefault();
     toggle(e.target);
   });
@@ -610,18 +615,19 @@ function openingSpeeches(list) {
 // Phones, replay page (as the live page): a compact row on top of the pinned block (back to the archive, the date
 // and the time, the link to this moment as an icon), the video and the speaker strip, two tabs (the speakers, open
 // first, and the facts) and the AI notice with the "all facts" switch. The tab names show how many there are.
-function replayParts(top, moves) {
+function replayParts(top, moves, side) {
   const head = el("div", "m-whead");
   const text = el("div", "m-whead-text");
   head.append(text);
   top.prepend(head);
+  moves.add(head, null, [side]);  // wider screens: the sidebar's first row
   const back = document.querySelector("main .crumbs a");
   if (back) back.setAttribute("aria-label", "Vissza az archívumba");
-  moves.add(back, head, text);
-  moves.add(document.getElementById("w-title"), text);
-  moves.add(document.getElementById("w-sub"), text);
-  moves.add(document.getElementById("copy-link"), head);
-  moves.add(document.getElementById("copied"), head);
+  moves.add(back, [head, text]);
+  moves.add(document.getElementById("w-title"), [text]);
+  moves.add(document.getElementById("w-sub"), [text]);
+  moves.add(document.getElementById("copy-link"), [head]);
+  moves.add(document.getElementById("copied"), [head]);
   const copy = document.getElementById("copy-link");
   if (copy) { copy.setAttribute("aria-label", "Link ehhez a pillanathoz"); copy.title = "Link ehhez a pillanathoz"; }
 
@@ -650,13 +656,15 @@ function replayParts(top, moves) {
   note.textContent = "// automatikus (AI) ellenőrzés — tévedhet";
   ai.append(note);
   top.append(bar, ai);
-  moves.add(document.getElementById("show-all"), ai);
+  moves.add(bar, null, [side]);
+  moves.add(ai, null, [side]);
+  moves.add(document.getElementById("show-all"), [ai]);
 
   const select = (id) => {
     document.body.dataset.mTab = id;
     for (const t of [facts, speakers]) t.b.setAttribute("aria-selected", String(t.b.dataset.tab === id));
     const box = document.querySelector(".m-watch .below");
-    if (box && PHONE.matches) box.scrollTop = 0;
+    if (box) box.scrollTop = 0;
   };
   for (const t of [facts, speakers]) t.b.addEventListener("click", () => select(t.b.dataset.tab));
   bar.addEventListener("keydown", (e) => {
@@ -675,8 +683,7 @@ function replayParts(top, moves) {
     speakers.n.textContent = list && list.children.length ? String(list.children.length) : "";
     if (!title) return;
     const t = title.textContent;
-    if (PHONE.matches && t.startsWith("// ")) { title.dataset.full = t; title.textContent = t.slice(3); }
-    else if (!PHONE.matches && title.dataset.full) { title.textContent = title.dataset.full; delete title.dataset.full; }
+    if (t.startsWith("// ")) { title.dataset.full = t; title.textContent = t.slice(3); }
   };
   for (const node of [count, list, title]) if (node) new MutationObserver(sync).observe(node, { childList: true, characterData: true, subtree: true });
   PHONE.addEventListener("change", sync);
@@ -790,11 +797,10 @@ function keyboardFit() {
 // and +, a vote's question, what is voted on and the optional band of yes votes. At the foot the game's label and the
 // seconds, the points and the ✕ (a tip's fold toggle), then the answers, Tippelek, or the vote's two buttons (css),
 // kept in view while the game is open. Only moved and relabelled here, each time js/game.js builds a card: it finds
-// its parts by class (or keeps them) wherever they are. Wide screens keep the cards as they were.
+// its parts by class (or keeps them) wherever they are.
 function gameCards(dock) {
   if (!dock) return;
-  // each part moved and where it came from (a comment left in its place), so a card goes back to the wide layout, and
-  // comes again, when the window crosses the phone width (a tablet turned during a tip)
+  // each part moved and where it came from (a comment left in its place)
   const moves = new WeakMap();  // box -> [[node, mark]]
   const take = (box, ...nodes) => nodes.filter(Boolean).map((node) => {
     const mark = document.createComment(" m ");
@@ -812,7 +818,7 @@ function gameCards(dock) {
     worth.textContent = t.replace(/\s*pont$/, "");
   };
   const dress = (box) => {
-    if (!PHONE.matches || box.querySelector(":scope > .m-ch-card")) return;
+    if (box.querySelector(":scope > .m-ch-card")) return;
     const part = (cls, from = box) => from.querySelector(`:scope > ${cls}`);
     const head = part(".game-head");
     if (!head) return;  // not built yet
@@ -856,19 +862,6 @@ function gameCards(dock) {
       }
     }
   };
-  const undress = (box) => {
-    const list = moves.get(box);
-    if (!list) return;
-    moves.delete(box);
-    for (const [node, mark] of list) if (mark.parentNode) mark.replaceWith(node);
-    for (const x of box.querySelectorAll(":scope > :is(.m-ch-card, .m-ch-act)")) x.remove();
-    const worth = box.querySelector(".game-worth");
-    if (worth?.dataset.full) {
-      worth.textContent = worth.dataset.full;
-      delete worth.dataset.full;
-      worth.removeAttribute("aria-label");
-    }
-  };
   const boxes = () => dock.querySelectorAll(":scope > :is(.game-pop, .tip-box)");
   const watched = new WeakSet();
   const watch = () => {
@@ -880,7 +873,6 @@ function gameCards(dock) {
     }
   };
   new MutationObserver(watch).observe(dock, { childList: true });
-  PHONE.addEventListener("change", () => { for (const box of boxes()) if (PHONE.matches) dress(box); else undress(box); });
   watch();
 }
 
@@ -900,7 +892,7 @@ function composerInView() {
 }
 
 // page: "live" (index.html) or "watch" (watch.html)
-function mountPhone(page) {
+function mountApp(page) {
   const main = document.querySelector("main");
   const player = document.querySelector(page === "live" ? "#stage" : "main > .player");
   if (!main || !player) return;
@@ -909,18 +901,26 @@ function mountPhone(page) {
   const strip = el("div", "m-strip");
   top.append(strip);
   player.before(top);
+  // wider screens: the sidebar on the right (empty on phones, where its parts are in the page)
+  const side = el("aside", "d-side");
+  side.setAttribute("aria-label", page === "live" ? "Állítások, chat és játék" : "Állítások és felszólalók");
+  top.after(side);
 
   const moves = mover();
   let slots = null;
-  moves.add(player, top, strip);
-  moves.add(document.getElementById("speaker"), strip);
-  moves.add(document.querySelector(".speaker-col .tally"), strip);
+  moves.add(player, [top, strip]);
+  moves.add(document.getElementById("speaker"), [strip]);
+  // the sitting's tally: the sidebar's head on wider screens (phones show the speech under way instead, below)
+  moves.add(document.querySelector(".speaker-col .tally:not(.m-speech-tally)"), null, [side]);
+  moves.add(document.querySelector(".speaker-col .m-speech-tally"), [strip], null);  // phones: the speech under way
+  // wider screens: this speech's balance and the latest false claim and fallacy, in the strip (js/app.js fills them)
+  for (const id of ["speech-sum", "latest"]) moves.add(document.getElementById(id), null, [strip]);
   if (page === "live") {
     // the chat: its closed state's button moves off the video into the strip, the open chat under the pinned block
     const slot = el("div", "m-chat-slot");
     top.after(slot);
-    moves.add(document.getElementById("chat-open"), strip);
-    moves.add(document.getElementById("chat"), slot);
+    moves.add(document.getElementById("chat-open"), [strip]);
+    moves.add(document.getElementById("chat"), [slot]);
     // the games: out of the dock over the page, into the Játék tab
     const game = el("div", "m-game-slot");
     game.id = "m-game";
@@ -959,16 +959,20 @@ function mountPhone(page) {
     count();
     game.append(empty, how);
     slot.after(game);
-    moves.add(document.querySelector(".game-dock"), game, how);
+    moves.add(document.querySelector(".game-dock"), [game, how]);
     gameCards(document.querySelector(".game-dock"));
     gameTags(game);
     slots = { chat: slot, game };
   }
 
   compactFacts(document.getElementById("facts"));
-  if (page === "live") liveTabs(top, slots, followFeed(document.getElementById("facts")));
+  if (page === "live") {
+    const { bar, ai } = liveTabs(top, slots, followFeed(document.getElementById("facts")));
+    for (const node of [bar, ai, document.querySelector("main > .below"), slots.chat, slots.game]) moves.add(node, null, [side]);
+  }
   if (page === "watch") {
-    replayParts(top, moves);
+    replayParts(top, moves, side);
+    moves.add(document.querySelector("main > .below"), null, [side]);
     compactFacts(document.getElementById("speakers"));  // a speech's facts open as the facts list's do
     followReplay(document.getElementById("facts"));
   }
@@ -976,7 +980,8 @@ function mountPhone(page) {
   keyboardFit();
   composerInView();
   speakerSwap(document.getElementById("speaker"));
-  tallyBump(document.querySelector(".speaker-col .tally"));
+  tallyBump(document.querySelector(".speaker-col .tally:not(.m-speech-tally)"));  // the sitting's (wider screens)
+  tallyBump(document.querySelector(".speaker-col .m-speech-tally"));  // the speech's (phones)
   // a verdict lands (js/app.js marks the fact .flash): once the stamp is over the mark goes, so moving the row
   // around later does not replay it
   document.getElementById("facts")?.addEventListener("animationend", (e) => {
@@ -992,7 +997,7 @@ function mountPhone(page) {
 
 const page = document.body.classList.contains("m-live") ? "live" : document.body.classList.contains("m-watch") ? "watch" : null;
 try {
-  if (page) mountPhone(page);
+  if (page) mountApp(page);
 } finally {
   document.body.classList.add("m-ready");
 }
