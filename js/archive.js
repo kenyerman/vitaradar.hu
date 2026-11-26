@@ -310,10 +310,7 @@ getDocs(collection(db, "archive")).then((snap) => {
   }
   const dates = [...byDay.keys()].sort().reverse();
   const dayList = [], sections = new Map();
-  const cols = el("div", "arch-cols");  // wider screens: the columns' names over the rows
-  cols.setAttribute("aria-hidden", "true");
-  for (const name of ["Felvétel", "Időpont", "Felszólalók", "Állítás", "Minősítések"]) cols.append(el("span", null, name));
-  days.replaceChildren(cols, ...dates.map((d) => {
+  days.replaceChildren(...dates.map((d) => {
     const sec = el("section", "arch-day");
     const runs = byDay.get(d).sort((x, y) => (x.started_at || 0) - (y.started_at || 0));
     const claims = runs.reduce((n, a) => n + (a.claims || 0), 0);

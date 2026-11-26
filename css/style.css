@@ -1941,7 +1941,7 @@ body.m-watch[data-m-tab="speakers"] .m-ai #show-all { visibility: hidden; }
 .arch-body .empty { margin: 0; font-size: 11.5px; }
 /* what only the wider screens show (below), and the wrappers around a row's parts: no boxes on phones */
 .arch-layout, .arch-list, .arch-when, .arch-people, .arch-verdicts { display: contents; }
-.arch-side, .arch-cols, .arch-wd, .arch-claims, .arch-dur, .arch-faces, .arch-n, .arch-mini { display: none; }
+.arch-side, .arch-wd, .arch-claims, .arch-dur, .arch-faces, .arch-n, .arch-mini { display: none; }
 .arch-day[hidden], .arch-grid > li[hidden] { display: none; }  /* the filter's (wider screens) */
 
 /* ------------------------------------------------------------------ the archive on wider screens
@@ -1984,10 +1984,7 @@ body.m-watch[data-m-tab="speakers"] .m-ai #show-all { visibility: hidden; }
   /* the totals */
   .arch-totals ul { margin: 0; padding: 0; list-style: none; color: var(--muted); font: 400 12.5px/1.8 var(--sans); }
   .arch-totals b { color: #e9f2ed; font: 700 13px/1 var(--display); }
-  /* the rows: the columns' names over them, each day's head, the rows in columns */
-  .arch-cols { display: grid; grid-template-columns: 136px 118px minmax(0, 1fr) 86px 200px; gap: 18px; padding: 0 8px 8px;
-    color: var(--muted); font: 600 10.5px/1 var(--display); letter-spacing: 1.2px; text-transform: uppercase; }
-  .arch-cols > :nth-child(4) { text-align: right; }
+  /* the rows: each day's head, the rows in columns */
   .arch-day { scroll-margin-top: calc(var(--m-hdr, 57px) + 16px); margin: 0 0 24px; }
   .arch-day > .arch-date { font-size: 15px; letter-spacing: 1.3px; }
   .arch-wd { display: inline; margin-left: 12px; color: var(--muted); font: 600 12px/1 var(--display); letter-spacing: 1.2px; }
@@ -2021,11 +2018,10 @@ body.m-watch[data-m-tab="speakers"] .m-ai #show-all { visibility: hidden; }
   .arch-list > .empty { margin-top: 12px; }
 }
 /* narrower (a laptop, a tablet across): the sidebar narrower, and each row in two lines, the verdicts under the
-   speakers; no columns' names */
+   speakers */
 @media (min-width: 861px) and (max-width: 1199px) {
   .arch-layout { grid-template-columns: 232px minmax(0, 1fr); gap: 0 28px; }
   .arch-cal-title { font-size: 12px; letter-spacing: 1px; white-space: nowrap; }
-  .arch-cols { display: none; }
   .arch-card { grid-template-columns: 120px 104px minmax(0, 1fr) 72px; gap: 8px 16px; }
   .arch-poster { grid-row: 1 / span 2; width: 120px; }
   .arch-when { grid-column: 2; grid-row: 1 / span 2; }
