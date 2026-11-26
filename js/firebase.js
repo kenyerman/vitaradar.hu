@@ -65,19 +65,37 @@ export async function appCheckHeaders() {
 }
 
 // ------------------------------------------------------------------ sign-in (Google only)
-// getAuth()'s own setup. With the sign-in helper (an iframe from auth.vitaradar.hu, about 95 KB) given here, Firebase
-// loads it at page start on phones and in Safari: those open the Google window only straight from a tap, and loaded
-// on the tap the helper came too late, so the first tap on "Belépés" opened nothing. Other browsers load it on the tap.
+// getAuth()'s own setup, with the sign-in helper (an iframe from auth.vitaradar.hu, about 95 KB) ready before the
+// first tap on "Belépés" on phones and in Safari: those open the Google window only straight from a tap, and loaded
+// on the tap the helper came too late, so the first tap opened nothing. Firebase would load it at page start there,
+// but then it holds sign-in back until the iframe is in, and Firestore waits for sign-in: on a slow connection the
+// lists stayed empty for up to half a minute. So Firebase does not load it itself (_shouldInitProactively), and
+// warmSignIn() loads it once the page is in, for a visitor who is signed out. _shouldInitProactively and
+// _initialize are what Firebase itself uses for this (firebase-auth 10.14.1, pinned above).
+class Resolver extends browserPopupRedirectResolver {
+  get _shouldInitProactively() { return false; }
+  get _early() { return super._shouldInitProactively; }  // phones and Safari
+}
+
 export const auth = initializeAuth(app, {
   persistence: [indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence],
-  popupRedirectResolver: browserPopupRedirectResolver,
+  popupRedirectResolver: Resolver,
 });
 auth.languageCode = "hu";
+
+function warmSignIn() {
+  auth.authStateReady().then(() => {
+    const r = auth._popupRedirectResolver;
+    if (!auth.currentUser && r?._early) r._initialize(auth).catch(() => {});  // failed: the tap loads it again
+  });
+}
+if (document.readyState === "complete") setTimeout(warmSignIn, 1000);
+else addEventListener("load", () => setTimeout(warmSignIn, 1000), { once: true });
 
 export function signInWithGoogle() {
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: "select_account" });
-  return signInWithPopup(auth, provider, browserPopupRedirectResolver);
+  return signInWithPopup(auth, provider, Resolver);  // the same helper as auth's (one per class)
 }
 
 export function signOut() {
