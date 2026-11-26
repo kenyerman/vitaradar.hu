@@ -1417,7 +1417,11 @@ body:not([data-m-tab="feed"]) .m-ai { display: none; }
   padding: 12px 14px 16px; border: 0; background: none; box-shadow: none; animation: none; color: #e9f2ed;
   font: 400 14px/1.4 var(--sans); }
 .m-game-slot :is(.game-pop, .tip-box)[hidden] { display: none; }
-.m-game-slot :is(.game-pop, .tip-box) + :is(.game-pop, .tip-box):not([hidden]) { border-top: 1px solid rgba(61, 240, 130, .12); }
+/* a line between two cards, in the order they show: the tip first (.tip-box order 1), then the challenge, then the vote
+   (both order 2, in the page's order). A line by the page's order alone put none between the tip and the challenge */
+.m-game-slot .game-dock:has(> .tip-box:not([hidden])) > .game-pop:not([hidden]),
+.m-game-slot .game-dock:has(> .game-pop:not(.vote-pop):not([hidden])) > .vote-pop:not([hidden]) {
+  border-top: 1px solid rgba(61, 240, 130, .12); }
 .m-game-slot :is(.game-pop, .tip-box)::before, .m-game-slot :is(.game-pop, .tip-box)::after { display: none; }
 .m-game-slot:has(.game-dock > :not([hidden])) .m-game-empty { display: none; }
 /* the head: the tag, what it is worth, the seconds left, the ✕ */
@@ -1522,10 +1526,11 @@ body:not([data-m-tab="feed"]) .m-ai { display: none; }
 .m-game-slot .game-pop[data-kind="truth"]:has(> .m-ch-card) .game-opt.right { box-shadow: inset 0 0 0 3px #e9f2ed; opacity: 1; }
 .m-game-slot .game-pop[data-kind="truth"][data-state="result"]:has(> .m-ch-card) .game-opt.right[data-option="false"] {
   background: var(--false); color: #1a0402; }
-/* the outcome: while open only once answered; the result as a box on top */
+/* the outcome: while open only once answered; the result as a box under the answers, in its own card (on top it read
+   as the answer of the card above it) */
 .m-game-slot .game-pop:has(> .m-ch-card) .game-status { text-align: center; }
 .m-game-slot .game-pop[data-state="open"]:has(> .m-ch-card):not(:has(.game-opt.picked)) .game-status { display: none; }
-.m-game-slot .game-pop[data-state="result"]:has(> .m-ch-card) .game-status { order: -1; margin-top: 12px; padding: 10px;
+.m-game-slot .game-pop[data-state="result"]:has(> .m-ch-card) .game-status { padding: 10px;
   border: 1.5px solid #2a3a33; background: var(--panel); font-size: 14px; }
 .m-game-slot .game-pop[data-state="result"]:has(> .m-ch-card) .game-status[data-right="true"] { border-color: var(--green);
   background: rgba(61, 240, 130, .1); }
@@ -1556,6 +1561,9 @@ body:not([data-m-tab="feed"]) .m-ai { display: none; }
 .m-game-slot .tip-box[data-folded="true"]:has(> .m-ch-card) { gap: 4px; padding-bottom: 10px; }
 .m-game-slot .tip-box[data-folded="true"]:has(> .m-ch-card) > :is(.m-ch-card, .game-status, .game-after),
 .m-game-slot .tip-box[data-folded="true"] .m-ch-act .tip-send { display: none; }
+/* folded too, a tip whose speech is over says so: the result is coming, then what it was */
+.m-game-slot .tip-box[data-folded="true"]:is([data-ended="true"], [data-state="result"]):has(> .m-ch-card) > .game-status {
+  display: block; margin-top: 2px; color: #c5d3cb; font: 400 13px/1.4 var(--sans); letter-spacing: 0; }
 .m-game-slot .tip-box[data-folded="true"] .m-ch-act { padding-top: 10px; }
 .m-game-slot .tip-box[data-folded="true"] .m-ch-q { flex: none; }
 .m-game-slot .tip-box[data-folded="true"] .m-ch-ask .tip-title { display: block; flex: 1; min-width: 0; overflow: hidden;

@@ -557,9 +557,12 @@ class TipView {
   update() {
     const tip = this.tip, now = this.now, b = this.box, entry = this.mine.get(tip.id), r = tip.result;
     const lock = lockOf(tip, tip.tip_until, now), running = now < lock, open = running && !entry;
+    // the speech is over (the stream's clock): its result follows once its last claims are checked, about 1.5 min later
+    const ended = tip.ended_at != null && now >= tip.ended_at;
     if (r && !this.seen.has(tip.id)) this.seen.set(tip.id, now);
     const folded = this.folded();
     b.dataset.state = open ? "open" : r ? "result" : "sent";
+    b.dataset.ended = String(ended);
     b.dataset.folded = String(folded);
     this.toggle.textContent = folded ? "▴" : "▾";
     this.toggle.setAttribute("aria-expanded", String(!folded));
@@ -575,7 +578,7 @@ class TipView {
     worth.textContent = open ? "max +40 pont" : pts != null && entry.sent ? (pts ? `+${pts} pont` : "0 pont") : "";
     worth.classList.toggle("tip-points", pts != null && entry.sent);
     const status = b.querySelector(".game-status"), after = b.querySelector(".game-after");
-    const key = `${tip.id}|${open}|${Boolean(r)}|${entry ? `${entry.sent}|${entry.error}` : "-"}|${account.registered}`;
+    const key = `${tip.id}|${open}|${ended}|${Boolean(r)}|${entry ? `${entry.sent}|${entry.error}` : "-"}|${account.registered}`;
     if (key === this.bodyKey) return;  // the rest changes only with these
     this.bodyKey = key;
     after.replaceChildren();
@@ -586,7 +589,10 @@ class TipView {
     }
     if (!entry) { status.textContent = "Lejárt az idő."; return; }
     if (entry.error) { status.textContent = entry.error; return; }
-    if (!r) { status.textContent = "Tipp rögzítve! A felszólalás végén kiderül."; return; }
+    if (!r) {
+      status.textContent = ended ? "Véget ért a felszólalás, jön az eredmény…" : "Tipp rögzítve! A felszólalás végén kiderül.";
+      return;
+    }
     const a = r.actual || {};
     status.textContent = `Valójában: ${a.true || 0} igaz · ${a.false || 0} hamis · ${a.fallacy || 0} hibás érvelés.`;
     if (entry.sent) after.append(el("p", "game-won", pts ? `+${pts} pont` : "ezúttal 0 pont"));
