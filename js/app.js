@@ -7,12 +7,12 @@
 
 import { doc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { defaultStream } from "./config.js?v=202611241021";
-import { db, el, factBadge, FACT_VERDICTS, LABEL, sourceList, setPhoto, mpHref, setLiveNav } from "./common.js?v=202611260345";
-import { mountAccount } from "./account.js?v=202611260345";
-import { factSocial } from "./social.js?v=202611260345";
-import { mountChat } from "./chat.js?v=202611260345";
+import { db, el, factBadge, LABEL, sourceList, setPhoto, mpHref, setLiveNav } from "./common.js?v=202611262215";
+import { mountAccount } from "./account.js?v=202611262215";
+import { factSocial } from "./social.js?v=202611262215";
+import { mountChat } from "./chat.js?v=202611262215";
 import { scrollHint } from "./scrollhint.js?v=202611241021";
-import { mountGame } from "./game.js?v=202611260345";
+import { mountGame } from "./game.js?v=202611262215";
 import { cdnReady, cdnUrl, cdnXhr } from "./cdn.js?v=202611260345";
 import { useTwitch, mountTwitch, twitchNow } from "./twitch.js?v=202611241408";
 
@@ -195,7 +195,7 @@ function fallacyShown(c, now) {
 
 function fillVerdict(li, c, v, now) {
   const withFallacy = v !== "pending" && fallacyShown(c, now);
-  li.dataset.verdict = withFallacy && !FACT_VERDICTS.has(v) ? "fallacy" : v;
+  li.dataset.verdict = withFallacy ? "fallacy" : v;  // the fallacy said with it: the card is the fallacy's
   li.querySelector(".verdict").replaceWith(factBadge(c, v, withFallacy));
   const expl = li.querySelector(".fact-expl");
   expl.textContent = v === "pending" ? "" : (c.explanation || "");
@@ -237,15 +237,12 @@ function render() {
     if (tk && tk !== turnKey) { place(separator(tk, turn)); usedSeps.add(tk); }
     turnKey = tk;
     const v = verdictOf(c, now);
-    const withFallacy = v !== "pending" && fallacyShown(c, now);
-    if (v in tally) tally[v] += 1;
-    if (withFallacy) tally.fallacy += 1;
-    if (cur && turn === cur) {
-      if (v in speech) speech[v] += 1;
-      if (withFallacy) speech.fallacy += 1;
-    }
-    if (v === "false" && (!lastFalse || c.show_at > lastFalse.show_at)) lastFalse = c;
-    if ((v === "fallacy" || withFallacy) && (!lastFallacy || c.show_at > lastFallacy.show_at)) lastFallacy = c;
+    // a claim with its sentence's fallacy is the fallacy's card: one fallacy, in the tallies and the strip's latest rows
+    const k = v !== "pending" && fallacyShown(c, now) ? "fallacy" : v;
+    if (k in tally) tally[k] += 1;
+    if (cur && turn === cur && k in speech) speech[k] += 1;
+    if (k === "false" && (!lastFalse || c.show_at > lastFalse.show_at)) lastFalse = c;
+    if (k === "fallacy" && (!lastFallacy || c.show_at > lastFallacy.show_at)) lastFallacy = c;
     let s = shown.get(c.id);
     if (!s) {
       s = { li: buildFact(c), verdict: null };

@@ -12,8 +12,8 @@
 // unscored, and are asked to sign in.
 
 import { collection, doc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { db, el } from "./common.js?v=202611260345";
-import { account, onAccount, api, needAccount, toast } from "./account.js?v=202611260345";
+import { db, el } from "./common.js?v=202611262215";
+import { account, onAccount, api, needAccount, toast } from "./account.js?v=202611262215";
 
 const TRUTH = { true: "IGAZ", false: "HAMIS" };
 const MASKED = "Hibás érvelés?";
@@ -25,6 +25,8 @@ const TIP_RESULT_MS = 60000; // the tip's card stays this long once its result i
 const MAX_BEHIND_MS = 30000; // a delay behind the stream's clock beyond this (a wrong computer clock, a paused video)
                              // is not trusted for the server's close
 const SEND_MS = 500;         // an answer given at the last moment needs this long to reach the server
+const RESULT_LAG_MS = 1500;  // when a result is due after the server's close (26 Nov: settled 0.6-0.8 s after it, on a
+                             // page 0.7-0.9 s after): the wait's bar ends just after, a slow page gets no spinner flash
 const VOTE_SEND_MS = 1500;   // a vote prediction without a band is sent this long before the lock (a band sends it at once)
 
 const label = (ch, option) => (ch.kind === "truth" ? TRUTH[option] || option : option);
@@ -39,6 +41,19 @@ function lockOf(item, lock, now) {
   const behind = Date.now() - now;
   if (!item.closes_wall || behind < 0 || behind > MAX_BEHIND_MS) return lock;
   return Math.min(lock, item.closes_wall - SEND_MS - behind);
+}
+
+// After "jön az eredmény…", while the answers are closed and the result has not come: a thin bar (css) that runs down
+// from this viewer's lock to when the result is due, the server's close (`closes_wall`) and RESULT_LAG_MS, on the
+// stream's clock as in lockOf. With no time to go by (no close time, an untrusted delay) or once that time has passed
+// and the result is late, a small spinner instead.
+function showWait(status, item, lock, now, waiting) {
+  if (!waiting) { delete status.dataset.wait; return; }
+  const behind = Date.now() - now;
+  const due = item.closes_wall && behind >= 0 && behind <= MAX_BEHIND_MS ? item.closes_wall + RESULT_LAG_MS - behind : null;
+  if (due == null || now >= due || due <= lock) { status.dataset.wait = "late"; return; }
+  status.dataset.wait = "bar";
+  status.style.setProperty("--left", pct(due - now, due - lock));
 }
 
 function scoreTip(tip, actual) {  // the server's rule (live/game.py score_tip): 10 exact, 4 off by one, +10 all exact
@@ -179,6 +194,7 @@ class ChallengeView {
       btn.style.setProperty("--share", r && r.total ? `${(100 * n) / total}%` : "0%");
     }
     const status = b.querySelector(".game-status"), after = b.querySelector(".game-after");
+    showWait(status, ch, lock, now, !r && !open && !(pick && pick.error));  // on every tick, the text below only on a change
     // the rest changes only with these: written anew on every tick (five a second), the "+N pont" line started its
     // animation again each time and shook
     const key = `${ch.id}|${open}|${r ? JSON.stringify(r) : "-"}|${pick ? `${pick.choice}|${pick.sent}|${pick.error}` : "-"}|${account.registered}|${Boolean(account.user)}`;
@@ -372,6 +388,7 @@ class VoteView {
       chip.setAttribute("aria-pressed", String(Boolean(pick && pick.band === i)));
     }
     const status = b.querySelector(".game-status"), after = b.querySelector(".game-after");
+    showWait(status, v, lock, now, !r && !open && !(pick && pick.error));  // on every tick, the text below only on a change
     const label = (o) => ((v.labels || {})[o] || o);
     const key = `${v.id}|${open}|${Boolean(r)}|${pick ? `${pick.choice}|${pick.band}|${pick.sent}|${pick.sending}|${pick.error}` : "-"}|${account.registered}`;
     if (key === this.bodyKey) return;

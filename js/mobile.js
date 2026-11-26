@@ -199,9 +199,11 @@ function compactFacts(list) {
         talk.setAttribute("aria-label", `${m[1]} hozzászólás`);
       } else if (talk) talk.remove();
       const v = li.querySelector(".verdict");
-      if (!v) continue;
-      const t = v.textContent;
-      if (t.startsWith("[ ") && t.endsWith(" ]")) v.textContent = t.slice(2, -2);
+      // the [ ] are at the ends of the badge's first and last text (a pending badge has its loading sign between); the
+      // phones' design has none at any width
+      const a = v && v.firstChild, z = v && v.lastChild;
+      if (!a || a.nodeType !== Node.TEXT_NODE || z.nodeType !== Node.TEXT_NODE) continue;
+      if (a.data.startsWith("[ ") && z.data.endsWith(" ]")) { a.data = a.data.slice(2); z.data = z.data.slice(0, -2); }
     }
   };
   const later = () => { if (!queued) { queued = true; requestAnimationFrame(tidy); } };

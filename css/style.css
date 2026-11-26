@@ -174,7 +174,10 @@ main.wrap { padding-top: 32px; padding-bottom: 56px; }  /* main.wrap: beats .wra
 .verdict[data-v="misleading"] { background: var(--misleading); }
 .verdict[data-v="opinion"] { background: var(--opinion); }
 .verdict[data-v="promise"] { background: var(--promise); }
-.verdict[data-v="pending"]::after { content: " ░▒"; animation: blink .8s steps(1) infinite; }
+/* a fact still being checked: the stream's loading sign inside the brackets, "[ ELLENŐRZÉS ▒ ]", softly fading */
+.verdict .v-sign::before { content: "▒"; }
+.verdict .v-sign { display: inline-block; animation: v-sign 1.6s ease-in-out infinite; }
+@keyframes v-sign { 50% { opacity: .3; } }
 .fact-who { font-size: 12px; color: var(--muted); }
 .fact-who a { color: var(--muted); }
 .fact-time { font-size: 11px; color: var(--muted); margin-left: auto; }
@@ -471,7 +474,7 @@ details[open] > summary .lvl-title::before { content: "▾ "; }
   .scores { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .fact, .fact.flash, .live-dot, .online-badge .dot, .verdict::after, .brand-name::after { animation: none !important; }
+  .fact, .fact.flash, .live-dot, .online-badge .dot, .verdict::after, .verdict .v-sign, .brand-name::after { animation: none !important; }
 }
 
 /* accounts (js/account.js), votes and comments (js/social.js), the live chat (js/chat.js) */
@@ -787,6 +790,16 @@ a.acct-me, a.acct-me:hover { text-decoration: none; text-shadow: none; }
 .game-status { margin: 0; font-size: 13px; color: var(--muted); }
 .game-status[data-right="true"] { color: var(--true); font-weight: 700; text-shadow: var(--glow); }
 .game-status[data-right="false"] { color: var(--false); font-weight: 700; }
+/* answers closed, the result not yet out (js/game.js showWait): after "jön az eredmény…" a thin line to the card's edge,
+   its left part (--left) running down to when the result is due; with no time known, or once it is late, a small
+   spinner. In the text's own colour, dimmed, within the line's height: the card does not move. */
+.game-status[data-wait] { display: flex; align-items: center; gap: 10px; }
+.game-status[data-wait]::after { content: ""; flex: 1 1 0; min-width: 24px; height: 2px;
+  background: linear-gradient(to right, color-mix(in srgb, currentColor 55%, transparent) var(--left, 0%),
+    color-mix(in srgb, currentColor 14%, transparent) 0); }
+.game-status[data-wait="late"]::after { flex: none; width: 9px; min-width: 0; height: 9px; margin-right: 2px;
+  border: 1.5px solid color-mix(in srgb, currentColor 18%, transparent); border-top-color: currentColor; border-radius: 50%;
+  background: none; opacity: .7; animation: pt-spin 1.4s linear infinite; }
 .game-after { display: grid; gap: 6px; }
 .game-after:empty { display: none; }
 .game-same, .game-expl { margin: 0; font-size: 12px; color: var(--text); }
@@ -862,6 +875,10 @@ a.acct-me, a.acct-me:hover { text-decoration: none; text-shadow: none; }
 @media (prefers-reduced-motion: reduce) {
   .game-pop, .tip-box, .acct-points.bump, .game-won { animation: none; }
   .game-bar span { transition: none; }
+  /* the wait for the result: a still, dim line, neither running down nor spinning */
+  .game-status[data-wait]::after, .game-status[data-wait="late"]::after { flex: 1 1 0; width: auto; min-width: 24px;
+    height: 2px; margin: 0; border: 0; border-radius: 0; opacity: 1; animation: none;
+    background: color-mix(in srgb, currentColor 22%, transparent); }
 }
 
 /* archive (archive.html) and replay (watch.html) */
@@ -1592,7 +1609,7 @@ html.menu-open .menu-btn::before { content: "\2715"; font: 700 18px/1 var(--disp
 /* a fact still being checked: a small dot before ELLENŐRZÉS (it sends out radar rings, like the logo's dot) */
 .verdict[data-v="pending"] { display: inline-flex; align-items: center; gap: 6px; }
 .verdict[data-v="pending"]::before { content: ""; flex: none; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
-.verdict[data-v="pending"]::after { content: none; animation: none; }
+.verdict .v-sign { display: none; }  /* the dot is the sign (the old look's ▒ inside the brackets) */
 .imp-verdicts .verdict::before, .imp-verdicts .verdict::after { content: none; }  /* bare, as the facts' labels */
 @media (max-width: 860px) {
   /* iOS zooms the page in on a field whose text is under 16px, and stays zoomed */

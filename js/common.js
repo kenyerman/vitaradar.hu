@@ -46,25 +46,32 @@ export function huDate(iso) {
   return d.toLocaleDateString("hu-HU", { year: "numeric", month: "long", day: "numeric" });
 }
 
-// A verdict badge like the stream's: [ IGAZ ]
+// A verdict badge like the stream's: [ IGAZ ]. While the check runs, the stream's loading sign sits inside the
+// brackets, "[ ELLENŐRZÉS ▒ ]" (the sign is CSS on an empty span, .v-sign), and a conclusion check keeps its title,
+// "[ KÖVETKEZTETÉS ▒ ]". js/mobile.js drops the [ ] on phones from the text at either end.
 export function badge(verdict, kind) {
   const v = kind === "fallacy" ? "fallacy" : verdict || "pending";
   const b = el("span", "verdict");
   b.dataset.v = v;
-  b.textContent = `[ ${kind === "conclusion" && v !== "pending" ? "KÖVETKEZTETÉS: " : ""}${LABEL[v] || v} ]`;
+  if (v === "pending") {
+    const sign = el("span", "v-sign");
+    sign.setAttribute("aria-hidden", "true");
+    b.append(`[ ${kind === "conclusion" ? "KÖVETKEZTETÉS" : LABEL.pending} `, sign, " ]");
+    return b;
+  }
+  b.textContent = `[ ${kind === "conclusion" ? "KÖVETKEZTETÉS: " : ""}${LABEL[v] || v} ]`;
   return b;
 }
 
-// A fact's badge once the fallacy said in the same sentence shows on its card (pfc publish.link_docs): a decided
-// fact keeps its verdict and names the fallacy, "[ IGAZ · SZEMÉLYESKEDÉS ]"; an opinion or an unverifiable
-// statement shows the fallacy, "[ HIBÁS ÉRVELÉS: SZEMÉLYESKEDÉS ]". Without one it is the plain badge.
+// A fact's badge once the fallacy said in the same sentence shows on its card (pfc publish.link_docs): the card is
+// the fallacy's, whatever the fact's verdict, "[ HIBÁS ÉRVELÉS: SZEMÉLYESKEDÉS ]" (the fact's explanation stays on
+// it as context), and the pair counts once, as a fallacy. "[ IGAZ · SZALMABÁB ]" read as a contradiction. Without
+// one it is the plain badge.
 export function factBadge(c, v, fallacyShown) {
   if (!fallacyShown || !c.fallacy || v === "pending" || (c.kind && c.kind !== "claim")) return badge(v, c.kind);
-  const name = (c.fallacy.name || "").toUpperCase();
   const b = el("span", "verdict");
-  const fact = FACT_VERDICTS.has(v);
-  b.dataset.v = fact ? v : "fallacy";
-  b.textContent = fact ? `[ ${LABEL[v]} · ${name} ]` : `[ ${LABEL.fallacy}: ${name} ]`;
+  b.dataset.v = "fallacy";
+  b.textContent = `[ ${LABEL.fallacy}: ${(c.fallacy.name || "").toUpperCase()} ]`;
   return b;
 }
 
