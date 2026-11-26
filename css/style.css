@@ -1939,6 +1939,101 @@ body.m-watch[data-m-tab="speakers"] .m-ai #show-all { visibility: hidden; }
 .arch-body .bar { height: 3px; margin: 2px 0 0; }
 .arch-body .mp-stats { display: none; }
 .arch-body .empty { margin: 0; font-size: 11.5px; }
+/* what only the wider screens show (below), and the wrappers around a row's parts: no boxes on phones */
+.arch-layout, .arch-list, .arch-when, .arch-people, .arch-verdicts { display: contents; }
+.arch-side, .arch-cols, .arch-wd, .arch-claims, .arch-dur, .arch-faces, .arch-n, .arch-mini { display: none; }
+.arch-day[hidden], .arch-grid > li[hidden] { display: none; }  /* the filter's (wider screens) */
+
+/* ------------------------------------------------------------------ the archive on wider screens
+   A sidebar beside the days: the month's calendar (the sitting days shaded by their claims; a click goes to the day),
+   a filter by MP name and by party, the totals. Each run a row in columns: the picture, the time and length, the
+   speakers' photos (the party's colour under each) and names, the claims, the bar with true / false / fallacy. */
+@media (min-width: 861px) {
+  body:not(.m-live):not(.m-watch) > main.wrap.arch-main { max-width: 1200px; }
+  .arch-layout { display: grid; grid-template-columns: 272px minmax(0, 1fr); align-items: start; gap: 0 36px; margin-top: 22px; }
+  .arch-list { display: block; min-width: 0; }
+  .arch-side:not([hidden]) { position: sticky; top: calc(var(--m-hdr, 57px) + 20px); display: grid; gap: 18px; }
+  .arch-box { padding: 14px; border: 1px solid var(--line-dim); background: var(--panel); }
+  .arch-h { margin: 0 0 10px; color: var(--green); font: 700 11px/1 var(--display); letter-spacing: 1.6px; text-transform: uppercase; }
+  /* the calendar */
+  .arch-cal-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+  .arch-cal-head .cal-nav { width: 32px; height: 32px; }
+  .arch-cal-title { margin: 0; color: #e9f2ed; font: 700 13px/1 var(--display); letter-spacing: 1.4px; text-transform: uppercase; }
+  .arch-cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; text-align: center; }
+  .arch-cal-wd { padding: 4px 0; color: var(--muted); font: 600 10px/1 var(--display); letter-spacing: .8px; }
+  .arch-cal-day { display: grid; place-items: center; height: 30px; padding: 0; border: 0; background: none; color: #2f4a3b;
+    font: 600 12px/1 var(--display); }
+  .arch-cal-day.today { color: #e9f2ed; text-decoration: underline; text-underline-offset: 3px; }
+  .arch-cal-day.has { background: rgba(61, 240, 130, var(--a, 1)); color: #021108; font-weight: 700; cursor: pointer; }
+  .arch-cal-day.has.light { color: #e9f2ed; }
+  .arch-cal-day.has:hover, .arch-cal-day.has:focus-visible { outline: 2px solid #e9f2ed; outline-offset: -2px; }
+  .arch-cal-day.has[aria-pressed="true"] { outline: 2px solid #e9f2ed; outline-offset: -2px; }
+  .arch-cal-day.has.off { background: #16231d; color: #4d6a5a; }  /* the filter leaves nothing of the day */
+  .arch-cal-scale { display: flex; align-items: center; gap: 6px; margin: 10px 0 0; color: var(--muted); font: 400 11px/1 var(--sans); }
+  .arch-cal-scale i { width: 14px; height: 10px; background: rgba(61, 240, 130, var(--a)); }
+  /* the filter */
+  .arch-filter .field { width: 100%; }
+  .arch-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .arch-chip { display: inline-flex; align-items: center; gap: 7px; min-height: 32px; padding: 0 10px; border: 0; background: #16231d;
+    color: #e9f2ed; font: 700 11px/1 var(--display); letter-spacing: 1px; text-transform: uppercase; cursor: pointer; }
+  .arch-chip::before { content: ""; flex: none; width: 8px; height: 8px; background: var(--party, var(--muted)); }
+  .arch-chip small { color: var(--muted); font-size: 11px; }
+  .arch-chip:hover { background: #1d2d26; }
+  .arch-chip[aria-pressed="true"] { background: rgba(61, 240, 130, .14); box-shadow: inset 0 0 0 1px var(--green); }
+  .arch-chip:focus-visible { outline: 2px solid var(--green); outline-offset: 1px; }
+  /* the totals */
+  .arch-totals ul { margin: 0; padding: 0; list-style: none; color: var(--muted); font: 400 12.5px/1.8 var(--sans); }
+  .arch-totals b { color: #e9f2ed; font: 700 13px/1 var(--display); }
+  /* the rows: the columns' names over them, each day's head, the rows in columns */
+  .arch-cols { display: grid; grid-template-columns: 136px 118px minmax(0, 1fr) 86px 200px; gap: 18px; padding: 0 8px 8px;
+    color: var(--muted); font: 600 10.5px/1 var(--display); letter-spacing: 1.2px; text-transform: uppercase; }
+  .arch-cols > :nth-child(4) { text-align: right; }
+  .arch-day { scroll-margin-top: calc(var(--m-hdr, 57px) + 16px); margin: 0 0 24px; }
+  .arch-day > .arch-date { font-size: 15px; letter-spacing: 1.3px; }
+  .arch-wd { display: inline; margin-left: 12px; color: var(--muted); font: 600 12px/1 var(--display); letter-spacing: 1.2px; }
+  .arch-day > .count-line { font-size: 12.5px; }
+  .arch-claims { display: inline; }
+  .arch-grid { margin: 8px 0 0; }
+  .arch-card { grid-template-columns: 136px 118px minmax(0, 1fr) 86px 200px; gap: 18px; padding: 10px 8px; }
+  .arch-card:hover { background: rgba(61, 240, 130, .04); }
+  .arch-card:focus-visible { outline: 1px solid var(--green); outline-offset: -1px; }
+  .arch-poster { width: 136px; }
+  .arch-len { right: 4px; bottom: 4px; padding: 1px 5px; font-size: 11px; }
+  .arch-wait { left: 4px; top: 4px; font-size: 9.5px; }
+  .arch-body { display: contents; }
+  .arch-when, .arch-people, .arch-verdicts { display: block; min-width: 0; }
+  .arch-body h3 { font-size: 15px; }
+  .arch-dur { display: block; margin-top: 3px; color: var(--muted); font: 400 12px/1 var(--sans); }
+  .arch-people { display: grid; gap: 6px; }
+  .arch-faces { display: flex; align-items: flex-end; min-width: 0; overflow: hidden; }
+  .arch-face { position: relative; flex: none; display: grid; place-items: center; width: 26px; height: 32px; margin-right: 3px;
+    overflow: hidden; background: #16231d; border-bottom: 3px solid var(--party, #5d6f66); }
+  .arch-face-ini { color: #c5d3cb; font: 700 10px/1 var(--display); }
+  .arch-face img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+  .arch-more { align-self: center; margin-left: 6px; color: var(--muted); font: 600 12px/1 var(--display); letter-spacing: .6px; }
+  .arch-who { font-size: 12.5px; color: #c5d3cb; }
+  .arch-n { display: block; text-align: right; color: var(--muted); font: 400 11.5px/1.2 var(--sans); }
+  .arch-n b { display: block; color: #e9f2ed; font: 700 18px/1.1 var(--display); }
+  .arch-body .bar { height: 7px; margin: 0; }
+  .arch-mini { display: flex; gap: 10px; margin: 5px 0 0; color: var(--muted); font: 600 10.5px/1 var(--display); letter-spacing: .5px; }
+  .arch-mini b { font-weight: 700; text-shadow: none; }
+  .arch-body .empty { font-size: 12px; }
+  .arch-list > .empty { margin-top: 12px; }
+}
+/* narrower (a laptop, a tablet across): the sidebar narrower, and each row in two lines, the verdicts under the
+   speakers; no columns' names */
+@media (min-width: 861px) and (max-width: 1199px) {
+  .arch-layout { grid-template-columns: 232px minmax(0, 1fr); gap: 0 28px; }
+  .arch-cal-title { font-size: 12px; letter-spacing: 1px; white-space: nowrap; }
+  .arch-cols { display: none; }
+  .arch-card { grid-template-columns: 120px 104px minmax(0, 1fr) 72px; gap: 8px 16px; }
+  .arch-poster { grid-row: 1 / span 2; width: 120px; }
+  .arch-when { grid-column: 2; grid-row: 1 / span 2; }
+  .arch-people { grid-column: 3; grid-row: 1; }
+  .arch-n { grid-column: 4; grid-row: 1 / span 2; }
+  .arch-verdicts { grid-column: 3; grid-row: 2; }
+  .arch-face { width: 22px; height: 28px; }
+}
 
 /* ------------------------------------------------------------------ the MPs (the phones' design, every width)
    A compact list, as the archive: a small photo with the party's colour under it, the name, the party and the role in
