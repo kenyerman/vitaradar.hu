@@ -3,9 +3,9 @@
 import { doc, collection, query, where } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { searchUrl } from "./config.js?v=202611241021";
 import { appCheckHeaders } from "./firebase.js?v=202611260345";
-import { db, getDoc, getDocs, el, badge, sourceList, setPhoto, hms, huDate, watchLiveNav } from "./common.js?v=202611260345";
-import { mountAccount } from "./account.js?v=202611260345";
-import { factSocial } from "./social.js?v=202611260345";
+import { db, getDoc, getDocs, el, factBadge, LABEL, sourceList, setPhoto, hms, huDate, watchLiveNav } from "./common.js?v=202611262215";
+import { mountAccount } from "./account.js?v=202611262215";
+import { factSocial } from "./social.js?v=202611262215";
 import { calendar } from "./calendar.js?v=202611241021";
 import { watchHref } from "./links.js?v=202611241021";
 import { setPageMeta } from "./meta.js?v=202611241124";
@@ -60,17 +60,26 @@ function factTime(c, session) {
   return el("span", "fact-time", `T+${hms(c.at_s)}`);
 }
 
+// A speech's facts as its cards: a fallacy said with a claim is on the claim's card (pfc history: `fallacy` on the
+// claim, `merged_into` on the fallacy), so it is one fact, not two.
+const factsOf = (s) => (s.claims || []).filter((c) => !c.merged_into);
+
 // level 3: a fact. Collapsed it shows the verdict and the headline; open, the claim, the explanation and the sources.
+// A claim with its sentence's fallacy is the fallacy's card, as on the live page (common.js factBadge).
 function factItem(c, session) {
   const li = el("li", "fact");
   const v = c.kind === "fallacy" ? "fallacy" : c.verdict || "pending";
-  li.dataset.verdict = v;
+  const withFallacy = Boolean(c.fallacy) && v !== "pending";
+  li.dataset.verdict = withFallacy ? "fallacy" : v;
   const det = el("details", "fact-d");
   const sum = el("summary", "fact-sum");
-  sum.append(badge(v, c.kind), el("span", "fact-bullet", c.bullet || c.claim), factTime(c, session));
+  sum.append(factBadge(c, v, withFallacy), el("span", "fact-bullet", c.bullet || c.claim), factTime(c, session));
   const body = el("div", "fact-body");
   if (c.claim && c.claim !== c.bullet) body.append(el("p", "fact-claim", c.claim));
   if (c.explanation) body.append(el("p", "fact-expl", c.explanation));
+  if (withFallacy) {
+    body.append(el("p", "fact-fallacy", `» ${LABEL.fallacy.toLowerCase()} (${c.fallacy.name}): ${c.fallacy.explanation || ""}`));
+  }
   body.append(sourceList(c.sources));
   if (session && c.id && v !== "pending") body.append(factSocial(session, c.id));  // votes and comments (social.js)
   det.append(sum, body);
@@ -94,7 +103,7 @@ function speechItem(s, open) {
   const b = el("div", "bar");
   bar(b, t);
   sum.append(el("span", "lvl-title", `T+${hms(s.start_s)} → T+${hms(s.end_s)}`),
-    el("span", "meta", `${hms(s.duration_s)} perc · ${(s.claims || []).length} állítás`), nums(t), b);
+    el("span", "meta", `${hms(s.duration_s)} perc · ${factsOf(s).length} állítás`), nums(t), b);
   const body = el("div", "speech-body");
   if (s.video_start_s != null) {  // the whole speech in the archive's replay
     const w = el("a", "t-btn", `▶ visszanézés (${hms(s.video_start_s)})`);
@@ -102,7 +111,7 @@ function speechItem(s, open) {
     body.append(w);
   }
   const list = el("ol", "facts");
-  (s.claims || []).slice().sort((a, b2) => a.at_s - b2.at_s).forEach((c) => list.append(factItem(c, s.session)));
+  factsOf(s).sort((a, b2) => a.at_s - b2.at_s).forEach((c) => list.append(factItem(c, s.session)));
   if (list.children.length) body.append(list);
   else body.append(el("p", "empty", "ebben a felszólalásban nem volt ellenőrizhető állítás"));
   if (s.has_transcript && s.text) {
@@ -120,7 +129,7 @@ function dayItem(date, speeches, open) {
   let claims = 0;
   for (const s of speeches) {
     for (const k of Object.keys(t)) t[k] += (s.counts || {})[k] || 0;
-    claims += (s.claims || []).length;
+    claims += factsOf(s).length;
   }
   const det = el("details", "day panel");
   det.id = `day-${date}`;
@@ -179,7 +188,7 @@ function replays(speeches) {
     let claims = 0, secs = 0;
     for (const s of day) {
       for (const k of Object.keys(t)) t[k] += (s.counts || {})[k] || 0;
-      claims += (s.claims || []).length;
+      claims += factsOf(s).length;
       secs += s.duration_s || 0;
     }
     const li = el("li");
@@ -201,7 +210,7 @@ function replays(speeches) {
       a.href = watchHref(s.session, replayAt(s));
       a.append(el("span", "replay-title", from != null
         ? `${clockOf(from)}–${clockOf(from + (s.duration_s || 0) * 1000)}` : `${n + 1}. felszólalás`),
-      el("span", "replay-meta", `${hms(s.duration_s)} perc · ${(s.claims || []).length} állítás`),
+      el("span", "replay-meta", `${hms(s.duration_s)} perc · ${factsOf(s).length} állítás`),
       el("span", "replay-go"), countLine(st));
       a.setAttribute("aria-label", `${a.querySelector(".replay-title").textContent} visszanézése`);
       row.append(a);

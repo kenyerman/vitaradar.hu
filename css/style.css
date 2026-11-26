@@ -137,6 +137,8 @@ main.wrap { padding-top: 32px; padding-bottom: 56px; }  /* main.wrap: beats .wra
   text-align: center; color: var(--muted); pointer-events: none; letter-spacing: .5px; }
 .player-note::before { content: "//"; margin-right: 1ch; }
 .player-note.over-poster { background: rgba(0, 0, 0, .62); color: var(--text); }  /* watch.js: a replay not on YouTube yet */
+/* js/twitch.js: Twitch plays by itself only while nothing is drawn over its iframe, the corner marks neither */
+.player.panel:has(> #twitch)::before, .player.panel:has(> #twitch)::after { display: none; }
 
 /* below the player: facts left, speaker right */
 .below { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 22px; margin-top: 22px; align-items: start; }
@@ -174,7 +176,10 @@ main.wrap { padding-top: 32px; padding-bottom: 56px; }  /* main.wrap: beats .wra
 .verdict[data-v="misleading"] { background: var(--misleading); }
 .verdict[data-v="opinion"] { background: var(--opinion); }
 .verdict[data-v="promise"] { background: var(--promise); }
-.verdict[data-v="pending"]::after { content: " ░▒"; animation: blink .8s steps(1) infinite; }
+/* a fact still being checked: the stream's loading sign inside the brackets, "[ ELLENŐRZÉS ▒ ]", softly fading */
+.verdict .v-sign::before { content: "▒"; }
+.verdict .v-sign { display: inline-block; animation: v-sign 1.6s ease-in-out infinite; }
+@keyframes v-sign { 50% { opacity: .3; } }
 .fact-who { font-size: 12px; color: var(--muted); }
 .fact-who a { color: var(--muted); }
 .fact-time { font-size: 11px; color: var(--muted); margin-left: auto; }
@@ -471,7 +476,7 @@ details[open] > summary .lvl-title::before { content: "▾ "; }
   .scores { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .fact, .fact.flash, .live-dot, .online-badge .dot, .verdict::after, .brand-name::after { animation: none !important; }
+  .fact, .fact.flash, .live-dot, .online-badge .dot, .verdict::after, .verdict .v-sign, .brand-name::after { animation: none !important; }
 }
 
 /* accounts (js/account.js), votes and comments (js/social.js), the live chat (js/chat.js) */
@@ -1601,7 +1606,7 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   /* a fact still being checked: a small dot before ELLENŐRZÉS (it sends out radar rings, like the logo's dot) */
   .verdict[data-v="pending"] { display: inline-flex; align-items: center; gap: 6px; }
   .verdict[data-v="pending"]::before { content: ""; flex: none; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
-  .verdict[data-v="pending"]::after { content: none; animation: none; }
+  .verdict .v-sign { display: none; }  /* phones: the dot is the sign */
   .imp-verdicts .verdict::before, .imp-verdicts .verdict::after { content: none; }  /* bare, as the facts' labels */
   /* iOS zooms the page in on a field whose text is under 16px, and stays zoomed */
   input, textarea, select { font-size: 16px !important; }
