@@ -1287,6 +1287,7 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   .m-chat-slot .chat-head h2::after { content: " ·"; }
   .m-chat-slot .chat-close { display: none; }
   .m-chat-slot .chat-list { padding: 12px 14px; gap: 10px; font: 400 14px/1.4 var(--sans); }
+  .m-chat-slot .chat-list > :first-child { margin-top: auto; }  /* a few messages sit over the field, as in a chat app */
   .m-chat-slot .msg-nick { color: var(--green); font: 700 14px/1.4 var(--display); letter-spacing: .4px; }
   .m-chat-slot .msg.own .msg-nick { color: var(--green); }
   .m-chat-slot .msg-text { color: #c5d3cb; }
@@ -1494,7 +1495,9 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
    tab's panel scrolls under them (the facts, the chat, the game). js/mobile.js scrolls the facts in their panel. */
 @media (max-width: 860px) {
   html:has(> body.m-live) { height: 100%; overflow: hidden; }
-  body.m-live { height: 100dvh; overflow: hidden; display: flex; flex-direction: column; }
+  /* no min-height: body's 100vh is iOS's large viewport, 40px taller than the screen above Safari's bar; the extra
+     put the chat field under the bar, and the keyboard scrolled the page into it and left it there */
+  body.m-live { height: 100dvh; min-height: 0; overflow: hidden; display: flex; flex-direction: column; }
   body.m-live > .site-header { flex: none; }
   body.m-live > main.wrap { flex: 1; min-height: 0; display: flex; flex-direction: column; padding-bottom: 0; }
   .m-live .m-top { flex: none; position: relative; top: auto; }
@@ -1505,6 +1508,13 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   .m-live .m-chat-slot .chat { flex: 1; height: auto; min-height: 0; }
   .m-live:not([data-m-tab="chat"]) .m-chat-slot, .m-live:not([data-m-tab="game"]) .m-game-slot,
   .m-live:not([data-m-tab="feed"]) .below { display: none; }
+  /* a field with the keyboard up (js/mobile.js keyboardFit, also the replay's comment boxes): the page is as tall as
+     the screen above the keyboard, so it has nothing to move and a swipe scrolls the open panel. The header and the
+     pinned block (the video, the strip, the tabs, the notice) step aside until the keyboard closes, so the panel being
+     written in has that screen: the chat's messages over its field. Hidden, the stream plays on. */
+  html:has(> body.m-typing) { height: var(--m-kb-h, 100%); }
+  body.m-typing:is(.m-live, .m-watch) { height: var(--m-kb-h, 100dvh); }
+  body.m-typing > .site-header, body.m-typing .m-top { display: none; }
 }
 
 /* ------------------------------------------------------------------ phones: the replay page, as the live page
@@ -1514,7 +1524,7 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
 .m-whead, .m-tab-count, .speech-facts { display: none; }
 @media (max-width: 860px) {
   html:has(> body.m-watch) { height: 100%; overflow: hidden; }
-  body.m-watch { height: 100dvh; overflow: hidden; display: flex; flex-direction: column; }
+  body.m-watch { height: 100dvh; min-height: 0; overflow: hidden; display: flex; flex-direction: column; }  /* as .m-live */
   body.m-watch > .site-header { flex: none; }
   body.m-watch > main.wrap { flex: 1; min-height: 0; display: flex; flex-direction: column; padding-bottom: 0; }
   .m-watch .m-top { flex: none; position: relative; top: auto; margin: -20px -16px 0; }

@@ -327,6 +327,7 @@ function liveTabs(top, slots, feed) {
     }
     if (id === "feed") feed.resume();
     else { feed.show(); scrollTo({ top: 0 }); }
+    if (id === "chat") chatToEnd();  // it was hidden while its messages came: open on the newest
   }
   bar.addEventListener("click", (e) => {
     const b = e.target.closest(".m-tab");
@@ -624,6 +625,115 @@ function replayParts(top, moves) {
   sync();
 }
 
+// Phones, live and replay pages: while a field has the keyboard up, the page is exactly as tall as the screen above it
+// (body.m-typing, --m-kb-h; css). Otherwise iOS moved the whole page to show the field, and a swipe moved the page,
+// not the chat. The header and the pinned block (the video too) step aside until the keyboard closes, and the open
+// panel (the chat, or the facts with a comment box) has the screen above the keyboard.
+const FIELD = "input:not([type=checkbox], [type=radio], [type=button], [type=submit], [type=range]), textarea, [contenteditable=true]";
+
+// the chat's newest messages into view (its list scrolls; js/chat.js keeps it there as messages come)
+function chatToEnd() {
+  const list = document.querySelector(".m-chat-slot .chat-list");
+  if (list) requestAnimationFrame(() => { list.scrollTop = list.scrollHeight; });
+}
+
+// While the keyboard is up, a swipe moves only what can scroll that way: the chat's messages, the facts, a long comment
+// in its box. Otherwise iOS moved the page itself, to show what is behind the keyboard (in the empty chat, at the end of
+// the messages, on the field's row), keyboardFit put it back every frame, and the screen shook. On only while typing:
+// a listener that may stop a swipe makes iOS wait for the page before every scroll.
+function swipeLock() {
+  let start = null, stop = null;  // where the touch began; once it moves, whether its swipe is stopped
+  const scrolls = (node, dx, dy) => {  // from the touched element up: something that can still scroll the finger's way
+    for (; node instanceof Element && node !== document.body; node = node.parentElement) {
+      const cs = getComputedStyle(node);
+      if (dy && (/auto|scroll/.test(cs.overflowY) || node.tagName === "TEXTAREA")
+        && (dy > 0 ? node.scrollTop > 0 : node.scrollTop < node.scrollHeight - node.clientHeight - 1)) return true;
+      if (dx && /auto|scroll/.test(cs.overflowX)
+        && (dx > 0 ? node.scrollLeft > 0 : node.scrollLeft < node.scrollWidth - node.clientWidth - 1)) return true;
+    }
+    return false;
+  };
+  const down = (e) => {
+    start = e.touches.length === 1 ? { x: e.touches[0].clientX, y: e.touches[0].clientY, at: e.target } : null;
+    stop = null;
+  };
+  const move = (e) => {
+    if (!start || e.touches.length !== 1) return;  // two fingers: zoom as usual
+    if (stop === null) {  // the first move decides, along its main direction
+      const dx = e.touches[0].clientX - start.x, dy = e.touches[0].clientY - start.y;
+      if (!dx && !dy) return;
+      stop = Math.abs(dy) >= Math.abs(dx) ? !scrolls(start.at, 0, dy) : !scrolls(start.at, dx, 0);
+    }
+    if (stop && e.cancelable) e.preventDefault();
+  };
+  return (on) => {
+    start = null;
+    if (on) {
+      addEventListener("touchstart", down, { passive: true });
+      addEventListener("touchmove", move, { passive: false });
+    } else {
+      removeEventListener("touchstart", down);
+      removeEventListener("touchmove", move);
+    }
+  };
+}
+
+function keyboardFit() {
+  const vv = window.visualViewport;
+  if (!vv) return;
+  const lock = swipeLock();
+  let full = vv.height;  // the screen without the keyboard
+  let fingers = 0, settle = 0;  // touches on the screen; the wait for the page to stop after them
+  const later = () => { clearTimeout(settle); settle = setTimeout(() => { settle = 0; fit(); }, 150); };
+  const fit = () => {
+    const field = PHONE.matches && document.activeElement?.matches?.(FIELD);
+    if (!field) full = vv.height;
+    const on = Boolean(field) && vv.height < full - 100;
+    if (on) root.style.setProperty("--m-kb-h", `${Math.round(vv.height)}px`);
+    if (on !== document.body.classList.contains("m-typing")) {
+      const chat = document.querySelector(".m-chat-slot .chat-list");
+      const atEnd = chat && chat.scrollHeight - chat.scrollTop - chat.clientHeight < 40;
+      document.body.classList.toggle("m-typing", on);
+      lock(on);
+      if (!on) root.style.removeProperty("--m-kb-h");
+      // writing in the chat: its newest messages over the field; after it, they stay if they were in view
+      if (on && document.activeElement.closest(".m-chat-slot")) chatToEnd();
+      else if (atEnd) chat.scrollTop = chat.scrollHeight;
+    }
+    // what iOS scrolled to show the field, back. Not under a finger, nor while the page still glides from one (each
+    // frame put back against it shook the screen): once it has stood still.
+    if (scrollY && (on || !field)) {
+      if (fingers || settle) later();
+      else scrollTo(0, 0);
+    }
+  };
+  for (const type of ["touchstart", "touchend", "touchcancel"]) {
+    addEventListener(type, (e) => {
+      fingers = e.touches.length;
+      if (!fingers && scrollY) later();
+    }, { passive: true });
+  }
+  vv.addEventListener("resize", fit);
+  vv.addEventListener("scroll", fit);
+  addEventListener("focusin", fit);
+  addEventListener("focusout", () => setTimeout(fit, 0));  // to another field, or closed
+}
+
+// Phones: a comment box grows when tapped (js/social.js), and its counter and send button came to sit behind the
+// keyboard. Once the keyboard is up the whole box comes into view. scrollIntoView may move the page here: with the
+// keyboard open iOS scrolls it anyway, and closed, the app page has nothing to scroll.
+function composerInView() {
+  document.addEventListener("focusin", (e) => {
+    const box = PHONE.matches && e.target.matches(".composer textarea") && e.target.closest(".composer");
+    if (!box) return;
+    const show = () => box.scrollIntoView({ block: "nearest" });
+    const vv = window.visualViewport;
+    vv?.addEventListener("resize", show);  // the keyboard is up
+    setTimeout(show, 350);                 // or it was already (another field), or there is none
+    setTimeout(() => vv?.removeEventListener("resize", show), 1000);
+  });
+}
+
 // page: "live" (index.html) or "watch" (watch.html)
 function mountPhone(page) {
   const main = document.querySelector("main");
@@ -676,6 +786,8 @@ function mountPhone(page) {
     followReplay(document.getElementById("facts"));
   }
 
+  keyboardFit();
+  composerInView();
   speakerSwap(document.getElementById("speaker"));
   tallyBump(document.querySelector(".speaker-col .tally"));
   // a verdict lands (js/app.js marks the fact .flash): once the stamp is over the mark goes, so moving the row

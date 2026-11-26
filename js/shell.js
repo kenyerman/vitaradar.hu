@@ -142,6 +142,26 @@ function loading() {
   setTimeout(done, PATIENT.has(page) ? 30000 : 6000);
 }
 
+// Phones: a tap outside the field being typed in closes the keyboard (iOS keeps it up until another field takes the
+// focus). Not a swipe: that scrolls the chat with the keyboard up. Not a tap in the field's own form: its button sends.
+// The keyboard goes once the tap has done its own work, so what it pressed does not move away first.
+const FIELD = "input:not([type=checkbox], [type=radio], [type=button], [type=submit], [type=range]), textarea, [contenteditable=true]";
+
+function tapToClose() {
+  let down = null;
+  addEventListener("pointerdown", (e) => { down = e.isPrimary ? { x: e.clientX, y: e.clientY } : null; }, { capture: true, passive: true });
+  addEventListener("pointercancel", () => { down = null; }, { capture: true, passive: true });  // a swipe
+  addEventListener("pointerup", (e) => {
+    const field = document.activeElement;
+    const from = down;
+    down = null;
+    if (!from || !PHONE.matches || !field?.matches?.(FIELD)) return;
+    if (Math.hypot(e.clientX - from.x, e.clientY - from.y) > 10) return;
+    if ((field.closest("form") || field).contains(e.target) || e.target.closest?.(FIELD)) return;
+    setTimeout(() => { if (document.activeElement === field) field.blur(); }, 0);
+  }, { capture: true, passive: true });
+}
+
 function mountShell() {  // body.m-site is in each page's markup, so the css has it from the first paint
   const moves = mover();
   onAir();
@@ -149,6 +169,7 @@ function mountShell() {  // body.m-site is in each page's markup, so the css has
   menuClosing();
   headerHeight();
   loading();
+  tapToClose();
   PHONE.addEventListener("change", () => moves.place());
   moves.place();
 }
