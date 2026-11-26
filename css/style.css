@@ -411,20 +411,10 @@ details[open] > summary .lvl-title::before { content: "▾ "; }
   .fact-d > summary .verdict { flex: 0 1 auto; min-width: 0; white-space: normal; line-height: 1.4; }  /* long badges wrap */
 }
 
-/* footer */
-.site-footer { border-top: 1px solid var(--line); padding: 20px 0 26px; font-size: 12px; background: rgba(0, 0, 0, .82); }
-.footer-row { display: grid; gap: 4px; }
+/* footer (wider screens only: phones have it in the menu). Its look is with the other pages' desktop rules below. */
+.site-footer { border-top: 1px solid var(--line); padding: 34px 0 0; font-size: 12px; background: rgba(0, 0, 0, .82); }
 .footer-row p { margin: 0; }
-.footer-row p:first-child { color: var(--green); }
-.footer-links {
-  display: grid; grid-template-columns: repeat(4, max-content); gap: 14px 56px;
-  padding-bottom: 16px; margin-bottom: 14px; border-bottom: 1px solid var(--line-dim);
-}
-.footer-links ul { list-style: none; margin: 0; padding: 0; }
-.footer-links li a { display: inline-block; padding: 3px 0; color: var(--text); }  /* a 24px-tall target */
-.footer-links li a:hover, .footer-links li a:focus-visible { color: var(--green); }
 .footer-h { margin: 0 0 4px; color: var(--green); letter-spacing: .5px; }
-@media (max-width: 700px) { .footer-links { grid-template-columns: 1fr 1fr; gap: 16px 24px; } }  /* four columns need ~630px */
 
 /* impresszum */
 .imp { display: grid; gap: 18px; max-width: 900px; }
@@ -2486,37 +2476,69 @@ html:not([data-loaded]) #mps:empty { background-image: url("data:image/svg+xml,%
   .site-header .nav a.nav-support::before { font-size: 16px; }
   .site-header .acct :is(.btn, .acct-btn) { padding: 0 12px; }
 }
-/* the live and replay pages' footer (wider screens): the page doesn't scroll, so the original's is out of reach; its
-   links in one line across the bottom instead, in its look. Of "// oldalak" only the impresszum (the header has the
-   rest, and drops the impresszum below 1200px); the long sentences (.foot-more) stay on the other pages. In order: the
-   copyright and the recording's source, the contact, the support, the maker; the impresszum and the source code at the
-   right */
+/* ------------------------------------------------------------------ the other pages' footer (wider screens)
+   The brand at the left (the chamber icon and the name, the tagline, the Patreon button and where the money goes), the
+   pages, the contact and the maker's pages in three columns beside it; under a line the copyright and the source code,
+   then the recording's source and the note that the AI can be wrong. The live and replay pages keep their one line
+   (above), and phones have none (the menu says what it says, js/shell.js). */
+.footer-top { display: grid; grid-template-columns: minmax(0, 1fr) repeat(3, max-content); gap: 0 48px; padding-bottom: 26px; }
+.footer-brand { display: inline-flex; align-items: center; gap: 10px; color: var(--green); }
+.footer-mark { flex: none; width: 40px; height: 23px; fill: var(--green); }
+.footer-mark circle { fill: var(--false); }
+.footer-name { font: 700 20px/1 "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace; letter-spacing: -.02em; }
+.footer-name::after { content: "_"; }
+.footer-tag { max-width: 240px; margin: 10px 0 16px; color: var(--muted); font: 400 13px/1.45 var(--sans); }
+.footer-support { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 14px;
+  border: 1px solid var(--green); color: var(--green); font: 700 12px/1 var(--display); letter-spacing: 1.4px;
+  text-transform: uppercase; }
+.footer-support::before { content: "\2665"; color: var(--false); font-size: 14px; }
+.footer-support:is(:hover, :focus-visible) { background: rgba(61, 240, 130, .08); color: var(--green); }
+.footer-why { display: block; width: fit-content; margin-top: 8px; padding: 3px 0; color: var(--muted);
+  font: 400 12px/1.4 var(--sans); text-decoration: underline; text-decoration-color: rgba(138, 158, 148, .4);
+  text-underline-offset: 3px; }
+.footer-why:is(:hover, :focus-visible) { color: var(--text); text-decoration-color: currentColor; }
+.footer-top .footer-h { margin: 4px 0 10px; font-size: 11px; }
+.footer-top ul { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
+.footer-top li a { display: inline-block; padding: 4px 0; color: #e9f2ed; font: 400 13px/1.3 var(--sans); }  /* 25px tall */
+.footer-top li a:is(:hover, :focus-visible), .footer-top li a[aria-current="page"] { color: var(--green); }
+.site-footer > .footer-bottom { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 18px; padding-top: 14px;
+  padding-bottom: 18px; border-top: 1px solid var(--line-dim); color: var(--muted); font: 400 11.5px/1.5 var(--sans); }
+.footer-bottom :is(.footer-copy, .footer-source) { font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace; }
+.footer-bottom .footer-copy { color: var(--green); }
+.footer-bottom .footer-source { margin-left: auto; color: var(--muted); }
+.footer-bottom .footer-source:is(:hover, :focus-visible) { color: var(--green); }
+.footer-bottom .footer-note { flex-basis: 100%; }
+/* the live and replay pages' footer (wider screens), in the other pages' look: the page doesn't scroll, so the footer
+   is one line across the bottom instead. In order: the copyright and the recording's source, the contact, the maker's
+   pages; the impresszum (the header drops it below 1200px) and the source code at the right. The brand, the tagline,
+   the Patreon button and where the money goes (the header's Támogatás is right above), the other pages (the header has
+   them) and the long note stay on the other pages. */
 @media (min-width: 861px) {
   body:is(.m-live, .m-watch) > .site-footer { display: flex; flex: none; align-items: center; gap: 0 22px; height: 32px;
     padding: 0 16px; font-size: 11px; line-height: 1.4; white-space: nowrap; overflow: hidden; }
   body:is(.m-live, .m-watch) > .site-footer > .wrap { display: contents; }
-  body:is(.m-live, .m-watch) .site-footer .foot-more { display: none; }
-  body:is(.m-live, .m-watch) .footer-links > * { display: flex; align-items: baseline; gap: 10px; }
-  body:is(.m-live, .m-watch) .footer-h { margin: 0; font-size: 10px; }
-  body:is(.m-live, .m-watch) .footer-links ul { display: flex; gap: 0 12px; }
-  body:is(.m-live, .m-watch) .footer-links li a { padding: 2px 0; }
-  body:is(.m-live, .m-watch) .footer-links > :first-child :is(.footer-h, li:not(:last-child)) { display: none; }
-  body:is(.m-live, .m-watch) .footer-row > :nth-child(1) { order: 1; }
-  body:is(.m-live, .m-watch) .footer-row > :nth-child(2) { order: 2; }
-  body:is(.m-live, .m-watch) .footer-links > :nth-child(3) { order: 3; }
-  body:is(.m-live, .m-watch) .footer-links > :nth-child(4) { order: 4; }
-  body:is(.m-live, .m-watch) .footer-links > :nth-child(2) { order: 5; }
-  body:is(.m-live, .m-watch) .footer-links > :nth-child(1) { order: 6; margin-left: auto; }
-  body:is(.m-live, .m-watch) .footer-row > :nth-child(3) { order: 7; }
+  body:is(.m-live, .m-watch) .site-footer :is(.footer-about, .foot-more) { display: none; }
+  body:is(.m-live, .m-watch) .footer-top > * { display: flex; align-items: center; gap: 10px; }
+  body:is(.m-live, .m-watch) .footer-top .footer-h { margin: 0; font-size: 10px; }
+  body:is(.m-live, .m-watch) .footer-top ul { display: flex; gap: 0 12px; }
+  body:is(.m-live, .m-watch) .footer-top li a { padding: 2px 0; font-size: 11px; }
+  body:is(.m-live, .m-watch) .footer-top > nav[aria-label="Oldalak"] :is(.footer-h, li:not(:last-child)) { display: none; }
+  body:is(.m-live, .m-watch) .footer-top > nav[aria-label="Oldalak"] a[aria-current] { color: #e9f2ed; }
+  body:is(.m-live, .m-watch) .footer-bottom { display: contents; }
+  body:is(.m-live, .m-watch) .footer-copy { order: 1; color: var(--green); }
+  body:is(.m-live, .m-watch) .footer-note { order: 2; flex-basis: auto; color: var(--muted); }
+  body:is(.m-live, .m-watch) .footer-top > :nth-child(3) { order: 3; }  /* the contact */
+  body:is(.m-live, .m-watch) .footer-top > nav[aria-label="A készítő máshol"] { order: 4; }
+  body:is(.m-live, .m-watch) .footer-top > nav[aria-label="Oldalak"] { order: 5; margin-left: auto; }
+  body:is(.m-live, .m-watch) .footer-source { order: 6; margin-left: 0; color: var(--muted); }
 }
-/* still one line in a narrower window: the "// …" labels go (it needs 1284px with them, ~970 without), and below 980px
-   the maker's links (the other pages' footers have them) */
-@media (min-width: 861px) and (max-width: 1299px) {
+/* still one line in a narrower window: the labels go, then the maker's pages (the other pages' footers have them) */
+@media (min-width: 861px) and (max-width: 1119px) {
   body:is(.m-live, .m-watch) > .site-footer { gap: 0 16px; }
   body:is(.m-live, .m-watch) .site-footer .footer-h { display: none; }
 }
-@media (min-width: 861px) and (max-width: 979px) {
-  body:is(.m-live, .m-watch) .footer-links > :nth-child(2) { display: none; }
+@media (min-width: 861px) and (max-width: 939px) {
+  body:is(.m-live, .m-watch) .footer-top > nav[aria-label="A készítő máshol"] { display: none; }
 }
 /* the wordmark and the cookie bar's text: the phones' sizes on every width */
 .site-header .brand-name { font-size: 17px; }
