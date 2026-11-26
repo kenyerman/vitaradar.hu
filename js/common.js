@@ -157,6 +157,7 @@ export function setPhoto(img, fallback, url, name, { id, color } = {}) {
 const GLYPHS = "0123456789ÁÉÍÓÖŐÚÜŰABCDEFGHIJKLMNOPRSTUVZ%§$#=+<>≠∑∆¿?!*/";
 
 export function startRain(canvas) {
+  if (!canvas || getComputedStyle(canvas).display === "none") return;  // the new look has none (css)
   const ctx = canvas.getContext("2d");
   const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const size = 16;
@@ -204,10 +205,14 @@ if (year) year.textContent = String(new Date().getFullYear());
 
 // The header's "Élő adás" link tells whether a broadcast is on: it glows red with a blinking dot while live and reads
 // "nincs adás" otherwise. Both labels are in the page from the start, stacked in one grid cell (css .live-stack), so the
-// link keeps the width of the longer one; until the state is known (data-live="loading") it reads "Élő adás", its dot
-// dim and still.
+// link keeps the width of the longer one; until the state is known (data-live="loading") it reads what the last page
+// knew (html[data-live], set in each page's head from localStorage), else "nincs adás".
 // The phone menu's hamburger follows its data-live (js/menu.js).
 export function setLiveNav(on) {
+  // remembered for the next page: it shows the same label from its first paint (each page's head, css), so a page
+  // change does not flip "Élő adás" to "nincs adás" while the state loads
+  try { localStorage.setItem("vr-live", on ? "on" : "off"); } catch { /* private mode: the loading label stays */ }
+  document.documentElement.dataset.live = on ? "on" : "off";
   for (const a of document.querySelectorAll(".nav-live")) {
     a.dataset.live = on ? "on" : "off";
     // the state in the accessible name (the visible label alone reads "nincs adás", or "Élő adás" either way)

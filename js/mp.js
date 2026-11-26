@@ -351,9 +351,8 @@ $("search").addEventListener("submit", async (ev) => {
     for (const h of data.hits) {
       const li = el("li", "hit panel");
       const top = el("div", "hit-top");
-      const a = el("a", null, `${huDate(h.date)} · T+${hms(h.at_s)}`);
-      a.href = `#speech-${h.speech_id}`;
-      top.append(el("span", "hit-score", `${Math.round(h.score * 100)}% egyezés`), a);
+      // when it was said (the days with their speeches are the replay rows now; ▶ opens it in the replay)
+      top.append(el("span", "hit-score", `${Math.round(h.score * 100)}% egyezés`), el("span", null, `${huDate(h.date)} · T+${hms(h.at_s)}`));
       const at = h.video_s ?? h.at_s;  // the passage's moment in the archive's video
       if (h.session && at != null) {
         const w = el("a", "fact-time", `▶ ${hms(at)}`);

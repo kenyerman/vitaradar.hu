@@ -34,7 +34,7 @@
   <script>try{if(sessionStorage.getItem("vr-intro"))document.documentElement.dataset.intro="seen";else sessionStorage.setItem("vr-intro","1")}catch(e){}</script>
   <!-- arriving from another page with a page transition (css: phones, motion): the page does not also play its own opening; back slides the other way -->
   <script>addEventListener("pagereveal",function(e){if(!e.viewTransition)return;var r=document.documentElement;r.classList.add("m-vt");try{if(navigation.activation.navigationType==="traverse")r.classList.add("m-vt-back")}catch(x){}})</script>
-  <script>try{document.documentElement.dataset.acct=localStorage.getItem("vr-acct")||"out"}catch(e){}</script>
+  <script>try{document.documentElement.dataset.acct=localStorage.getItem("vr-acct")||"out";document.documentElement.dataset.live=localStorage.getItem("vr-live")||"off"}catch(e){}</script>
   <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js">
   <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check.js">
   <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js">
