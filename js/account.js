@@ -9,11 +9,11 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import {
-  auth, db, appCheckHeaders, signInWithGoogle, signInAgain, readySignIn, signOut,
-} from "./firebase.js?v=202611260345";
+  auth, db, appCheckHeaders, signInWithGoogle, signInAgain, readySignIn, signOut, signInLeavesPage, redirectError,
+} from "./firebase.js?v=202611270330";
 import { apiUrl, avatarUrl, photoPrefix } from "./config.js?v=202611241021";
-import { el, initials, huDate } from "./common.js?v=202611262350";
-import { cdnReady, cdnUrl } from "./cdn.js?v=202611260345";
+import { el, initials, huDate } from "./common.js?v=202611270330";
+import { cdnReady, cdnUrl } from "./cdn.js?v=202611270330";
 import { profileHref } from "./links.js?v=202611241021";
 
 export const account = {
@@ -109,6 +109,11 @@ export async function signIn() {
   try { await signInWithGoogle(); }
   catch (e) { if (e.code !== "auth/popup-closed-by-user" && e.code !== "auth/cancelled-popup-request") toast(`Nem sikerült belépni (${e.code || e.message}).`); }
 }
+
+// the iPhone app signs in by leaving the page (js/firebase.js): a sign-in that failed there is told when it is back
+redirectError().then((e) => {
+  if (e && e.code !== "auth/redirect-cancelled-by-user") toast(`Nem sikerült belépni (${e.code || e.message}).`);
+});
 
 async function load(user) {
   const me = await api("/me");
@@ -583,7 +588,8 @@ export async function deleteAccount() {
   const word = input("text", { name: "confirm", autocomplete: "off", autocapitalize: "characters", spellcheck: "false" });
   const list = el("ul", "dlg-list");
   for (const t of DELETED) list.append(el("li", null, t));
-  const again = el("p", "dlg-text", "Biztonsági okból a törlés előtt még egyszer be kell lépned a Google-fiókoddal.");
+  const again = el("p", "dlg-text", "Biztonsági okból a törlés előtt még egyszer be kell lépned a Google-fiókoddal."
+    + (signInLeavesPage ? " Az appban ehhez a Google oldalára lépsz; ha visszatértél, kezdd újra a törlést." : ""));
   again.hidden = fresh;
   const dlg = dialog("Fiók törlése", [
     el("p", "dlg-text", "A fiókoddal együtt minden adatodat véglegesen töröljük:"), list,

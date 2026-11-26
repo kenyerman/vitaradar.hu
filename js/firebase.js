@@ -10,6 +10,7 @@ import { getFirestore, onSnapshot, disableNetwork, enableNetwork } from "https:/
 import {
   initializeAuth, indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence,
   browserPopupRedirectResolver, GoogleAuthProvider, signInWithPopup, reauthenticateWithPopup, signOut as fbSignOut,
+  signInWithRedirect, reauthenticateWithRedirect, getRedirectResult,
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import { firebaseConfig, recaptchaSiteKey } from "./config.js?v=202611241021";
 
@@ -72,6 +73,13 @@ export async function appCheckHeaders() {
 // lists stayed empty for up to half a minute. So Firebase does not load it itself (_shouldInitProactively), and
 // warmSignIn() loads it once the page is in, for a visitor who is signed out. _shouldInitProactively and
 // _initialize are what Firebase itself uses for this (firebase-auth 10.14.1, pinned above).
+//
+// In the iPhone app (the site added to the home screen, js/pwa.js) Google's window would open in a Safari sheet of its
+// own, which keeps its own storage and cannot hand the sign-in back to the app. There the page itself goes to Google and
+// comes back (a redirect, through auth.vitaradar.hu, the same site): Firebase finishes it as the page loads again, and
+// js/account.js sees the user as after a popup. Everywhere else (Android's app too) the popup, as before.
+export const signInLeavesPage = navigator.standalone === true;
+
 class Resolver extends browserPopupRedirectResolver {
   get _shouldInitProactively() { return false; }
   get _early() { return super._shouldInitProactively; }  // phones and Safari
@@ -86,6 +94,7 @@ auth.languageCode = "hu";
 // The helper, now, where it is needed before the tap (phones and Safari): for a visitor who is signed out, and for a
 // user who will have to sign in again (deleting the account, js/account.js).
 export function readySignIn() {
+  if (signInLeavesPage) return;  // no popup there: the helper loads when the page comes back from Google
   const r = auth._popupRedirectResolver;
   if (r?._early) r._initialize(auth).catch(() => {});  // failed: the tap loads it again
 }
@@ -99,15 +108,24 @@ else addEventListener("load", () => setTimeout(warmSignIn, 1000), { once: true }
 export function signInWithGoogle() {
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: "select_account" });
+  if (signInLeavesPage) return signInWithRedirect(auth, provider, Resolver);
   return signInWithPopup(auth, provider, Resolver);  // the same helper as auth's (one per class)
 }
 
 // Google's sign-in window again, for the signed-in user (deleting the account wants a recent sign-in): through the
-// same helper, not a second one that would load only on the tap.
+// same helper, not a second one that would load only on the tap. In the iPhone app the page goes and comes back, signed
+// in anew: the deletion is then started again (js/account.js says so before).
 export function signInAgain(user) {
   const provider = new GoogleAuthProvider();
   if (user.email) provider.setCustomParameters({ login_hint: user.email });
+  if (signInLeavesPage) return reauthenticateWithRedirect(user, provider, Resolver);
   return reauthenticateWithPopup(user, provider, Resolver);
+}
+
+// How the last redirect sign-in ended, in the iPhone app: null, or the error to show (Firebase finished it at start).
+export function redirectError() {
+  if (!signInLeavesPage) return Promise.resolve(null);
+  return getRedirectResult(auth, Resolver).then(() => null, (e) => e);
 }
 
 export function signOut() {
