@@ -10,11 +10,15 @@
 // screen = viewer clock - 6.3 s - reported latency, steady to ±25 ms. The player's reported latency jumps around
 // (1.0-1.9 s at a steady delay), so it is only used averaged, to follow a viewer who falls further behind.
 //
-// Autoplay (measured in Chrome, 26 Nov 2026): Twitch starts the player by itself only while nothing on the page is
-// drawn over its iframe, and pauses a playback it started itself as soon as something is (a viewer's own click plays
-// whatever covers it). Even the panel's 12 px corner marks count, so the Twitch player has none (css/style.css), and
-// ?debug=1 shows its line off the video. The closed chat's button, the first visit's scroll arrow, a game card or the
-// cookie bar over the video still hold autoplay until they go.
+// Starting (measured in Chrome, 26 Nov 2026): a playback Twitch starts by itself (autoplay) is held to the embed's
+// visibility rules. It starts only while nothing on the page is drawn over the iframe, pauses as soon as something
+// is, and about 30 s after the tab goes to the background it stops loading ("Playhead stalling" in its console; it
+// went on, 13 s behind, when the tab came back). A playback the viewer started with a click plays on whatever
+// covers it and in a background tab, with sound. So the first player waits for the viewer's click (autoplay off,
+// sound on, as on YouTube), and only a player rebuilt in a visible tab (below) starts by itself, with the viewer's
+// mute. For that start the Twitch player has no corner marks (even the panel's 12 px ones count, css/style.css), and
+// ?debug=1 shows its line off the video; the closed chat's button, a game card or the cookie bar over the video
+// still hold it until they go.
 //
 // Recovery: some playback errors stop Twitch's player for good until the viewer clicks "Click Here to Reload
 // Player" (26 Nov 2026: "Your browser encountered an error while decoding the video. (Error #3000)" in a viewer's
@@ -23,9 +27,10 @@
 // isPaused(), and a 0x0 picture (a network error, #2000, too, also before it ever played), where a viewer's pause
 // (or Twitch's own, above) keeps the picture's size and a player waiting for its first click is not paused. So a
 // watchdog builds a new player when it is in that state for DEAD_MS, or when it played and its time has not moved
-// for STALL_MS without a pause, while Twitch says the channel is live and the tab is visible. Rebuilds back off
-// (BACKOFF_MS) and keep the viewer's mute. The new player starts by itself where nothing covers it (above);
-// otherwise it waits with Twitch's play button instead of the error.
+// for STALL_MS without a pause, while Twitch says the channel is live and the tab is visible (a hidden tab's player
+// is never rebuilt: its check waits until the tab is back). Rebuilds back off (BACKOFF_MS) and keep the viewer's
+// mute. The new player starts by itself where nothing covers it (above); otherwise it waits with Twitch's play
+// button instead of the error. A first player still waiting for its click is left alone.
 //
 //   useTwitch()              Twitch is the player here (anything but ?player=cdn)
 //   mountTwitch(box)         the player into box, once
@@ -51,6 +56,7 @@ let latency = null;  // seconds, averaged
 let online = null;   // Twitch's ONLINE / OFFLINE (ENDED), null before either
 let ready = false;   // this player's READY came
 let played = false;  // this player has played
+let auto = false;    // this player starts by itself (a rebuilt one); the first one waits for the viewer's click
 let rebuilds = 0, lastRebuild = 0, playingSince = 0;
 let lastTime = null, lastMove = 0, deadSince = 0;
 
@@ -78,7 +84,7 @@ async function embed(box) {
   holder = document.createElement("div");
   holder.id = "twitch";
   box.prepend(holder);
-  create(true);
+  create(false, false);
   setInterval(sample, 1000);
   setInterval(watch, 1000);
   document.addEventListener("visibilitychange", () => { lastMove = Date.now(); deadSince = 0; });
@@ -86,16 +92,18 @@ async function embed(box) {
   return player;
 }
 
-// A player in the holder: the first one, or a new one in place of a dead one.
-function create(muted) {
+// A player in the holder: the first one (autoplay false: the viewer's click starts it), or one that starts by itself
+// in place of a dead one.
+function create(muted, autoplay) {
   const P = window.Twitch.Player;
   holder.replaceChildren();
   playing = played = ready = false;
+  auto = autoplay;
   lastTime = null;
   lastMove = Date.now();
   deadSince = 0;
   const p = player = new P(holder.id, {
-    channel: CHANNEL, width: "100%", height: "100%", muted, autoplay: true, parent: [location.hostname],
+    channel: CHANNEL, width: "100%", height: "100%", muted, autoplay, parent: [location.hostname],
   });
   const on = (ev, f) => p.addEventListener(ev, () => { if (p === player) f(); });  // not a replaced player's
   on(P.READY, () => { ready = true; });
@@ -111,7 +119,7 @@ function create(muted) {
 
 // Once a second: a new player for one that errored or stalled (see the top).
 function watch() {
-  if (!player || document.hidden || online === false || !ready) return;
+  if (!player || document.hidden || online === false || !ready || !(played || auto)) return;
   const now = Date.now();
   let paused, t, size;
   try {
@@ -131,7 +139,7 @@ function watch() {
   let muted = true;
   try { muted = player.getMuted(); } catch { /* keep it muted */ }
   console.info(`twitch: a new player (${dead ? "error" : "stalled"}), #${rebuilds}`);
-  create(muted);
+  create(muted, true);
 }
 
 function sample() {
