@@ -1494,12 +1494,11 @@ body:not([data-m-tab="feed"]) .m-ai { display: none; }
   letter-spacing: .6px; }
 .m-ch-ask .game-close { order: 0; width: 36px; height: 36px; margin: -6px -10px -6px -4px; font-size: 14px; }
 .m-game-slot .game-pop[data-state="result"] .m-ch-q { visibility: hidden; }
-/* while open: the foot and the answers stay at the panel's foot, the statement scrolls behind them; the quote waits for
-   the result */
+/* while open: the foot and the answers stay at the panel's foot, the statement and its quote scroll behind them. The
+   quote shows from the opening on: it is what was said, not the answer, and it does not jump in at the lock */
 .m-ch-act { display: flex; flex-direction: column; gap: 6px; }
 .m-game-slot .game-pop[data-state="open"] .m-ch-act { position: sticky; bottom: 0; z-index: 1; margin: 0 -14px;
   padding: 6px 14px 12px; background: var(--bg); border-top: 1px solid rgba(61, 240, 130, .12); }
-.m-game-slot .game-pop[data-state="open"] .m-ch-card .game-quote { display: none; }
 /* true or false: two buttons, ✓ IGAZ green and ✗ HAMIS red; once answered the other dims, and with the result the
    right one stays bright, with its share of the players */
 .m-game-slot .game-pop[data-kind="truth"]:has(> .m-ch-card) .game-opt { min-height: 44px; justify-content: center; gap: 8px;
