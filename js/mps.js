@@ -3,7 +3,7 @@
 import { collection } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { dropdown } from "./dropdown.js?v=202611241021";
 import { db, getDocs, el, setPhoto, mpHref, watchLiveNav } from "./common.js?v=202611262215";
-import { mountAccount } from "./account.js?v=202611262215";
+import { mountAccount } from "./account.js?v=202611262059";
 
 watchLiveNav();
 mountAccount();
