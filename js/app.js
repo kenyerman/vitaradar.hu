@@ -12,9 +12,9 @@ import { mountAccount } from "./account.js?v=202611262215";
 import { factSocial } from "./social.js?v=202611262215";
 import { mountChat } from "./chat.js?v=202611262215";
 import { scrollHint } from "./scrollhint.js?v=202611241021";
-import { mountGame } from "./game.js?v=202611262038";
+import { mountGame } from "./game.js?v=202611262139";
 import { cdnReady, cdnUrl, cdnXhr } from "./cdn.js?v=202611260345";
-import { useTwitch, mountTwitch, twitchNow } from "./twitch.js?v=202611241408";
+import { useTwitch, mountTwitch, twitchNow } from "./twitch.js?v=202611262305";
 
 const TWITCH = useTwitch();  // the stream from twitch.tv/vitaradar; ?player=cdn: our own CDN (supporters)
 if (!TWITCH) cdnReady();  // the stream is on cdn.vitaradar.hu, which needs its cookie: get it before the player asks
