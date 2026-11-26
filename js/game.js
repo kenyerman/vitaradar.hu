@@ -12,8 +12,8 @@
 // unscored, and are asked to sign in.
 
 import { collection, doc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { db, el } from "./common.js?v=202611250130";
-import { account, onAccount, api, needAccount, toast } from "./account.js?v=202611260300";
+import { db, el } from "./common.js?v=202611260345";
+import { account, onAccount, api, needAccount, toast } from "./account.js?v=202611260345";
 
 const TRUTH = { true: "IGAZ", false: "HAMIS" };
 const MASKED = "Hibás érvelés?";
@@ -188,7 +188,7 @@ class ChallengeView {
       return;
     }
     const right = Boolean(pick && pick.choice === r.answer);
-    status.dataset.right = String(right);
+    if (pick) status.dataset.right = String(right);  // no answer: neither right nor wrong (it showed in the wrong colour)
     status.textContent = !pick ? `A helyes válasz: ${label(ch, r.answer)}.`
       : right ? "Eltaláltad!" : `Nem talált. A helyes válasz: ${label(ch, r.answer)}.`;
     if (pick) {
@@ -387,7 +387,7 @@ class VoteView {
     const choice = pick && pick.choice, rightOutcome = choice === r.outcome;
     const rightBand = Boolean(pick && pick.band != null && pick.band === r.band);
     const pts = (rightOutcome ? v.points || 0 : 0) + (rightBand ? v.band_points || 0 : 0);
-    status.dataset.right = String(Boolean(choice) && rightOutcome);
+    if (choice) status.dataset.right = String(rightOutcome);  // no prediction: neither right nor wrong
     status.textContent = !choice ? `${past}: ${counts}.`
       : rightOutcome ? `Eltaláltad! ${past}: ${counts}.` : `Nem talált. ${past}: ${counts}.`;
     if (choice && pick.sent && account.registered) {
@@ -574,8 +574,8 @@ class TipView {
 // mountGame({now}): now() is the date (ms) of the frame on screen. The dock spans the bottom of the window: the speech
 // tip on the left, the challenge on the right (on a phone, one above the other).
 export function mountGame({ now: streamNow }) {
-  const dock = el("div", "game-dock");
-  document.body.append(dock);
+  // in the page already (index.html), so js/mobile.js can take it into the phone's Játék tab from the start
+  const dock = document.querySelector(".game-dock") || document.body.appendChild(el("div", "game-dock"));
   const pop = new ChallengeView(dock);
   const tipView = new TipView(dock);
   const voteView = new VoteView(dock);
@@ -600,7 +600,11 @@ export function mountGame({ now: streamNow }) {
   function tick() {
     const now = streamNow();
     if (now != null) lastNow = now;
-    if (now == null || !session) { pop.hide(); tipView.hide(); voteView.hide(); return; }
+    if (now == null || !session) { pop.hide(); tipView.hide(); voteView.hide(); delete dock.dataset.played; return; }
+    // how many games this broadcast has had so far: "challenges tips votes" (the phones' Játék tab shows it)
+    const so = (games) => [...games.values()].filter((g) => g.opens_at <= now).length;
+    const played = `${so(challenges)} ${so(tips)} ${so(votes)}`;
+    if (dock.dataset.played !== played) dock.dataset.played = played;
     // the challenge on screen: from its opening until its result has been shown for a while
     let current = null;
     for (const ch of challenges.values()) {

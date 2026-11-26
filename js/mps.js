@@ -1,9 +1,9 @@
 // vitaradar.hu MP list: everyone whose speeches were fact-checked, with their totals.
 
-import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { collection } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { dropdown } from "./dropdown.js?v=202611241021";
-import { db, el, setPhoto, mpHref, watchLiveNav } from "./common.js?v=202611250130";
-import { mountAccount } from "./account.js?v=202611260300";
+import { db, getDocs, el, setPhoto, mpHref, watchLiveNav } from "./common.js?v=202611260345";
+import { mountAccount } from "./account.js?v=202611260345";
 
 watchLiveNav();
 mountAccount();
@@ -12,7 +12,7 @@ const filter = document.getElementById("filter");
 const sort = dropdown(document.getElementById("sort"), {
   label: "Rendezés", value: "claims", onChange: () => render(),
   options: [
-    { value: "claims", label: "legtöbb állítás" }, { value: "false", label: "legtöbb hamis" },
+    { value: "claims", label: "legtöbb állítás" }, { value: "false_share", label: "legmagasabb hamis arány" },
     { value: "true_share", label: "legmagasabb igaz arány" }, { value: "recent", label: "legutóbb felszólalt" },
     { value: "name", label: "név szerint" },
   ],
@@ -21,10 +21,18 @@ const onlyData = document.getElementById("only-data"), count = document.getEleme
 let mps = [];
 const hasData = (m) => m.has_data ?? (m.speeches || 0) > 0;
 
+// The verdicts, in the live page's tally order: the bar and the count list beside it. The first four always show;
+// the extended ones only when there are any (older sittings have none).
+const BAR = ["true", "partly_true", "misleading", "false", "opinion", "promise", "unverifiable", "fallacy"];
+const BASE = new Set(["true", "false", "unverifiable", "fallacy"]);
+const NAMES = { true: "igaz", partly_true: "részben igaz", misleading: "félrevezető", false: "hamis", opinion: "vélemény",
+  promise: "ígéret", unverifiable: "nem ellenőrizhető", fallacy: "hibás érvelés" };
+const listed = (t) => BAR.filter((k) => BASE.has(k) || t[k] > 0);
+
 function bar(t) {
   const b = el("div", "bar");
-  const total = t.true + t.unverifiable + t.false + t.fallacy;
-  for (const k of ["true", "unverifiable", "false", "fallacy"]) {
+  const total = BAR.reduce((n, k) => n + (t[k] || 0), 0);
+  for (const k of BAR) {
     if (!t[k]) continue;
     const s = el("span", `b-${k}`);
     s.style.width = `${(100 * t[k]) / total}%`;
@@ -43,6 +51,7 @@ function card(m) {
   const li = el("li");
   const a = el("a", hasData(m) ? "mp-card panel" : "mp-card panel no-data");
   a.href = mpHref(m.id);
+  if (m.color) a.style.setProperty("--party", m.color);  // phones: a square of it before the party (css)
   const thumb = el("div", "mp-thumb");
   const img = el("img"); img.hidden = true;
   const ini = el("span", "initials");
@@ -61,15 +70,17 @@ function card(m) {
   body.append(el("h2", null, m.name), party, role, bar(t));  // h2: the page's h1 is right above
   const stats = el("dl", "mp-stats");
   for (const [label, value, cls] of [
-    ["igaz", t.true, "c-true"], ["nem ellenőrizhető", t.unverifiable, "c-unverifiable"], ["hamis", t.false, "c-false"],
-    ["hibás érvelés", t.fallacy, "c-fallacy"], ["állítás összesen", m.claims || 0, ""], ["felszólalás", m.speeches || 0, ""],
+    ...listed(t).map((k) => [NAMES[k], t[k] || 0, `c-${k}`]),
+    ["állítás összesen", m.claims || 0, ""], ["felszólalás", m.speeches || 0, ""],
   ]) {
     const row = el("div");
     row.append(el("dt", null, label), el("dd", cls, String(value)));
     stats.append(row);
   }
   body.append(stats);
-  a.append(thumb, body);
+  const total = el("p", "mp-total");  // phones: the number of facts on the right (the table is for wider screens)
+  total.append(el("b", null, String(m.claims || 0)), el("span", null, "állítás"));
+  a.append(thumb, body, total);
   li.append(a);
   return li;
 }
@@ -85,13 +96,14 @@ function render() {
       if (hasData(a) !== hasData(b)) return hasData(a) ? -1 : 1;  // those we have data on first
       if (by === "name") return a.name.localeCompare(b.name, "hu");
       if (by === "recent") return (b.last_date || "").localeCompare(a.last_date || "");
-      if (by === "false") return ((b.totals || {}).false || 0) - ((a.totals || {}).false || 0);
+      if (by === "false_share") return (b.false_share ?? -1) - (a.false_share ?? -1);
       if (by === "true_share") return (b.true_share ?? -1) - (a.true_share ?? -1);
       return (b.claims || 0) - (a.claims || 0);
     });
   if (near) near.disconnect();  // the old cards go
   list.replaceChildren(...shown.map(card));
   empty.hidden = shown.length > 0;
+  empty.textContent = mps.length ? "nincs találat" : "még nincs adat";  // the search or the switch left no one
   const withData = mps.filter(hasData).length;
   count.textContent = `// ${shown.length} képviselő látszik · ${mps.length}-ből ${withData} felszólalásait ellenőriztük`;
 }

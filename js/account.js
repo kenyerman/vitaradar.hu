@@ -5,13 +5,15 @@
 // asks. Everything a user typed is put on the page with textContent, never as HTML.
 
 import {
-  onAuthStateChanged, getIdToken, getIdTokenResult, reauthenticateWithPopup, GoogleAuthProvider, browserPopupRedirectResolver,
+  onAuthStateChanged, getIdToken, getIdTokenResult,
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { auth, db, appCheckHeaders, signInWithGoogle, signOut } from "./firebase.js?v=202611241021";
+import {
+  auth, db, appCheckHeaders, signInWithGoogle, signInAgain, readySignIn, signOut,
+} from "./firebase.js?v=202611260345";
 import { apiUrl, avatarUrl, photoPrefix } from "./config.js?v=202611241021";
-import { el, initials, huDate } from "./common.js?v=202611250130";
-import { cdnReady, cdnUrl } from "./cdn.js?v=202611241021";
+import { el, initials, huDate } from "./common.js?v=202611260345";
+import { cdnReady, cdnUrl } from "./cdn.js?v=202611260345";
 import { profileHref } from "./links.js?v=202611241021";
 
 export const account = {
@@ -450,6 +452,7 @@ export async function deleteAccount() {
   const user = account.user;
   if (!user) return;
   let fresh = await signedInLately(user);
+  if (!fresh) readySignIn();  // the sign-in helper in while the word is typed: Google's window opens on the tap
   const word = input("text", { name: "confirm", autocomplete: "off", autocapitalize: "characters", spellcheck: "false" });
   const list = el("ul", "dlg-list");
   for (const t of DELETED) list.append(el("li", null, t));
@@ -476,9 +479,7 @@ export async function deleteAccount() {
     dlg.error("");
     try {
       if (!fresh) {  // first, straight from the click: browsers open the sign-in window only then
-        const provider = new GoogleAuthProvider();
-        if (user.email) provider.setCustomParameters({ login_hint: user.email });
-        await reauthenticateWithPopup(user, provider, browserPopupRedirectResolver);
+        await signInAgain(user);
         fresh = true;
         again.hidden = true;
       }
@@ -492,7 +493,7 @@ export async function deleteAccount() {
       try { await signOut(); } catch { /* the account is gone already */ }
       toast("A fiókodat és minden adatodat töröltük.");
     } catch (err) {
-      if (err.code === "recent_signin") { fresh = false; again.hidden = false; }
+      if (err.code === "recent_signin") { fresh = false; again.hidden = false; readySignIn(); }
       const code = String(err.code || "");
       dlg.error(REAUTH_ERRORS[code] || (code.startsWith("auth/") ? `Nem sikerült belépni (${code}).` : err.message));
       dlg.busy(false);
@@ -534,24 +535,32 @@ export function mountAccount() {
       if (known === "out") localStorage.removeItem(ACCT_KEY); else localStorage.setItem(ACCT_KEY, known);
     } catch { /* no storage: the placeholder stays the visitor's */ }
     box.replaceChildren();
+    // The phone menu shows more of each state (css: hidden in the header): a door for newcomers next to "Belépés"
+    // (the same sign-in; the nickname is asked for after it), why the registration waits, the nick and the points.
     if (!a.user) {
       const b = el("button", "btn acct-btn", "Belépés");
       b.type = "button";
       b.addEventListener("click", signIn);
-      box.append(b);
+      const n = el("button", "btn acct-btn acct-new", "Regisztráció");
+      n.type = "button";
+      n.addEventListener("click", signIn);
+      box.append(b, n);
     } else if (!a.registered) {
       const b = el("button", "btn acct-btn acct-reg", "Regisztráció");
       b.append(el("span", "acct-more", " befejezése"));  // phones show only the first word (css)
       b.type = "button";
       b.title = "Regisztráció befejezése";
       b.addEventListener("click", () => openRegister({}));
-      box.append(b);
+      box.append(el("span", "acct-hint", "Már csak a beceneved hiányzik."), b);
     } else {
       const b = el("a", "acct-me");  // to one's own profile page, where it can be edited
       b.href = profileHref(null);
       const pts = el("span", "acct-points");
       pts.hidden = true;
-      b.append(avatar(a.profile?.photo && a.profile.photo["64"], a.profile?.nick, 32), pts);
+      const sub = el("span", "acct-sub", "profil");
+      const text = el("span", "acct-text");
+      text.append(el("b", "acct-nick", a.profile?.nick || "Profil"), sub);
+      b.append(avatar(a.profile?.photo && a.profile.photo["64"], a.profile?.nick, 32), pts, text);
       const label = (p) => {
         b.title = p == null ? "Profil" : `Profil · ${p.toLocaleString("hu-HU")} pont`;
         b.setAttribute("aria-label", b.title);
@@ -563,6 +572,7 @@ export function mountAccount() {
         pts.dataset.points = String(p);
         pts.textContent = p.toLocaleString("hu-HU");
         pts.hidden = false;
+        sub.textContent = `${p.toLocaleString("hu-HU")} pont · profil`;
         label(p);
         if (before != null && p > before) { pts.classList.remove("bump"); void pts.offsetWidth; pts.classList.add("bump"); }
       });

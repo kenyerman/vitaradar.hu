@@ -29,31 +29,36 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
-  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
-  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap"></noscript>
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Chakra+Petch:wght@600;700&family=Inter+Tight:wght@400;500;600;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Chakra+Petch:wght@600;700&family=Inter+Tight:wght@400;500;600;700&display=swap"></noscript>
   <!-- the header's account slot keeps the size of the last known state (js/account.js stores it) -->
+  <!-- the opening animation plays in full on the first page of a visit, shorter after (css: phones, motion) -->
+  <script>try{if(sessionStorage.getItem("vr-intro"))document.documentElement.dataset.intro="seen";else sessionStorage.setItem("vr-intro","1")}catch(e){}</script>
+  <!-- arriving from another page with a page transition (css: phones, motion): the page does not also play its own opening; back slides the other way -->
+  <script>addEventListener("pagereveal",function(e){if(!e.viewTransition)return;var r=document.documentElement;r.classList.add("m-vt");try{if(navigation.activation.navigationType==="traverse")r.classList.add("m-vt-back")}catch(x){}})</script>
   <script>try{document.documentElement.dataset.acct=localStorage.getItem("vr-acct")||"out"}catch(e){}</script>
   <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js">
   <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check.js">
   <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js">
   <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js">
-  <link rel="modulepreload" href="js/firebase.js?v=202611241021">
+  <link rel="modulepreload" href="js/firebase.js?v=202611260345">
   <link rel="modulepreload" href="js/config.js?v=202611241021">
-  <link rel="modulepreload" href="js/common.js?v=202611250130">
-  <link rel="modulepreload" href="js/account.js?v=202611260300">
-  <link rel="modulepreload" href="js/cdn.js?v=202611241021">
+  <link rel="modulepreload" href="js/common.js?v=202611260345">
+  <link rel="modulepreload" href="js/account.js?v=202611260345">
+  <link rel="modulepreload" href="js/cdn.js?v=202611260345">
   <link rel="modulepreload" href="js/consent.js?v=202611241021">
-  <link rel="modulepreload" href="js/presence.js?v=202611241206">
+  <link rel="modulepreload" href="js/presence.js?v=202611260345">
   <link rel="modulepreload" href="js/menu.js?v=202611241206">
-  <link rel="stylesheet" href="css/style.css?v=202611260300">
+  <link rel="stylesheet" href="css/style.css?v=202611260345">
 </head>
-<body>
+<body class="m-site">  <!-- the page's kind, for the phone layout from the first paint (css, js/mobile.js) -->
   <canvas id="rain" aria-hidden="true"></canvas>
   <header class="site-header">
     <div class="wrap header-row">
       <div class="brand-box">
         <a class="brand" href="./" aria-label="vitaradar.hu kezdőlap">
           <img src="img/logo.svg" alt="" width="32" height="32">
+          <svg class="m-logo" viewBox="0 0 240 138" aria-hidden="true" focusable="false"><path class="seat s1" d="M4 16 A116 118 0 0 0 50 109.8 L68 81.5 A84 84 0 0 1 36 16 Z"/><path class="seat s2" d="M62 117.6 A116 118 0 0 0 178 117.6 L161 88.8 A84 84 0 0 1 79 88.8 Z"/><path class="seat s3" d="M236 16 A116 118 0 0 1 190 109.8 L172 81.5 A84 84 0 0 0 204 16 Z"/><path class="seat s4" d="M46 16 A74 74 0 0 0 73.4 72.8 L88.6 49.5 A45.8 45.8 0 0 1 74.2 16 Z"/><path class="seat s5" d="M84 80 A74 74 0 0 0 156 80 L142 56 A45.8 45.8 0 0 1 98 56 Z"/><path class="seat s6" d="M194 16 A74 74 0 0 1 166.6 72.8 L151.4 49.5 A45.8 45.8 0 0 0 165.8 16 Z"/><circle class="spk-ring" cx="120" cy="18.5" r="15.2"/><circle class="spk" cx="120" cy="18.5" r="15.2"/></svg>
           <span class="brand-name">vitaradar<span class="brand-tld">.hu</span></span>
         </a>
         <span class="brand-sub"><span class="brand-beta" aria-hidden="true">BETA</span><span id="online" class="online-badge" data-state="loading" role="status"><span class="dot" aria-hidden="true"></span><span class="online-n">– online</span></span></span>
@@ -117,6 +122,7 @@
       <p class="muted"><a href="https://github.com/kenyerman/vitaradar.hu">&gt; forráskód a GitHubon</a></p>
     </div>
   </footer>
-  <script type="module" src="js/archive.js?v=202611260300"></script>
+  <script type="module" src="js/archive.js?v=202611260345"></script>
+  <script type="module" src="js/shell.js?v=202611260345"></script>
 </body>
 </html>

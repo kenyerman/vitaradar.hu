@@ -7,13 +7,13 @@
 
 import { doc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { defaultStream } from "./config.js?v=202611241021";
-import { db, el, factBadge, FACT_VERDICTS, LABEL, sourceList, setPhoto, mpHref, setLiveNav } from "./common.js?v=202611250130";
-import { mountAccount } from "./account.js?v=202611260300";
-import { factSocial } from "./social.js?v=202611260300";
-import { mountChat } from "./chat.js?v=202611260300";
+import { db, el, factBadge, FACT_VERDICTS, LABEL, sourceList, setPhoto, mpHref, setLiveNav } from "./common.js?v=202611260345";
+import { mountAccount } from "./account.js?v=202611260345";
+import { factSocial } from "./social.js?v=202611260345";
+import { mountChat } from "./chat.js?v=202611260345";
 import { scrollHint } from "./scrollhint.js?v=202611241021";
-import { mountGame } from "./game.js?v=202611260300";
-import { cdnReady, cdnUrl, cdnXhr } from "./cdn.js?v=202611241021";
+import { mountGame } from "./game.js?v=202611260345";
+import { cdnReady, cdnUrl, cdnXhr } from "./cdn.js?v=202611260345";
 import { useTwitch, mountTwitch, twitchNow } from "./twitch.js?v=202611241408";
 
 const TWITCH = useTwitch();  // the stream from twitch.tv/vitaradar; ?player=cdn: our own CDN (supporters)
@@ -28,6 +28,7 @@ const els = {
   more: $("speaker-more"),
 };
 const MAX_SHOWN = 200;
+const PHONE = matchMedia("(max-width: 860px)");  // phones: the feed's speaker dividers (js/mobile.js lays the page out)
 
 mountAccount();
 mountChat($("stage"));
@@ -63,6 +64,7 @@ function follow(session) {
   claims = new Map();
   turns = [];
   shown.clear();
+  seps.clear();
   els.facts.replaceChildren();
   game.follow(session);
   unsub = [
@@ -136,6 +138,7 @@ async function loadStream(url) {
 function note(text) {
   els.note.hidden = !text;
   if (text) els.note.textContent = text;
+  video.controls = !text;  // nothing to play while the note says why (iOS would draw its play button over the note)
 }
 
 // The date (ms) of the frame on screen, on the stream's clock; null when it is unknown.
@@ -212,13 +215,27 @@ function render() {
     .map((c) => game.mask(c, now))  // a challenge's fact stays "being checked" until the game is over
     .sort((a, b) => b.show_at - a.show_at)
     .slice(0, MAX_SHOWN);
+  const phone = PHONE.matches;
 
   const keep = new Set(visible.map((c) => c.id));
   for (const [id, s] of shown) if (!keep.has(id)) { s.li.remove(); shown.delete(id); }
 
   let prev = null;
+  const place = (node) => {
+    const want = prev ? prev.nextSibling : els.facts.firstChild;
+    if (want !== node) els.facts.insertBefore(node, want);
+    prev = node;
+  };
+  const usedSeps = new Set();
+  let turnKey = null;
   const tally = { true: 0, partly_true: 0, misleading: 0, false: 0, opinion: 0, promise: 0, unverifiable: 0, fallacy: 0 };
   for (const c of visible) {
+    if (phone) {  // phones: a divider above each speaker's facts (newest first, as everywhere)
+      const t = turnAt(c.show_at);
+      const key = t ? `${t.speaker_id}|${t.start_at}` : null;
+      if (key && key !== turnKey) { place(separator(key, t)); usedSeps.add(key); }
+      turnKey = key;
+    }
     const v = verdictOf(c, now);
     if (v in tally) tally[v] += 1;
     if (v !== "pending" && fallacyShown(c, now)) tally.fallacy += 1;
@@ -236,15 +253,34 @@ function render() {
       s.verdict = key;
       s.text = text;
     }
-    const want = prev ? prev.nextSibling : els.facts.firstChild;
-    if (want !== s.li) els.facts.insertBefore(s.li, want);
-    prev = s.li;
+    place(s.li);
   }
+  for (const [key, li] of seps) if (!usedSeps.has(key)) { li.remove(); if (!phone) seps.delete(key); }
   els.empty.hidden = visible.length > 0;
   els.count.textContent = visible.length ? `[${String(visible.length).padStart(2, "0")}]` : "";
   for (const k of Object.keys(tally)) $(`n-${k}`).textContent = String(tally[k]);
 
   renderSpeaker(now);
+}
+
+// the speaker turn under way at ms (stream clock), and the divider that opens it in the phone feed
+function turnAt(ms) {
+  let t = null;
+  for (const x of turns) if (x.start_at <= ms) t = x; else break;
+  return t;
+}
+const seps = new Map();  // turn key -> li
+function separator(key, t) {
+  let li = seps.get(key);
+  if (!li) {
+    li = el("li", "m-sep");
+    li.append(el("span", "m-sep-name", t.name || "Ismeretlen felszólaló"));
+    const meta = [t.party, clock(t.start_at)].filter(Boolean).join(" · ");
+    li.append(el("span", "m-sep-meta", meta));
+    if (t.color) li.style.setProperty("--party", t.color);
+    seps.set(key, li);
+  }
+  return li;
 }
 
 let speakerKey = null;
