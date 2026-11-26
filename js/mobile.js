@@ -1,6 +1,6 @@
 // vitaradar.hu's live and replay pages as an app, on phones (up to 860px, as js/menu.js) and on wider screens. The
 // video never scrolls away (Twitch pauses an embed that is off-screen or covered) and nothing is ever drawn over it.
-// Phones: the player pinned under the header, a compact strip under it (the speaker, the sitting's tally), the tabs and
+// Phones: the player pinned under the header, a compact strip under it (the speaker, their speech's counts), the tabs and
 // the open tab's panel. Wider screens, all on one screen: the player and the strip on the left, a sidebar on the right
 // with the sitting's tally, the tabs and the panels.
 //
@@ -425,7 +425,7 @@ function speakerSwap(card) {
   card.addEventListener("animationend", (e) => { if (e.target === card) card.classList.remove("m-swap"); });
 }
 
-// The tally's figures tick (css .m-bump) when they grow, once the sitting's first count is in.
+// The counts' figures tick (css .m-bump) when they grow, once the first counts are in (a new speech starts at 0: no tick).
 function tallyBump(tally) {
   if (!tally) return;
   const start = performance.now();
@@ -856,7 +856,9 @@ function mountApp(page) {
   let slots = null;
   moves.add(player, [top, strip]);
   moves.add(document.getElementById("speaker"), [strip]);
-  moves.add(document.querySelector(".speaker-col .tally"), [strip], [side]);  // wider screens: the sidebar's head
+  // the sitting's tally: the sidebar's head on wider screens (phones show the speech under way instead, below)
+  moves.add(document.querySelector(".speaker-col .tally:not(.m-speech-tally)"), null, [side]);
+  moves.add(document.querySelector(".speaker-col .m-speech-tally"), [strip], null);  // phones: the speech under way
   // wider screens: this speech's balance and the latest false claim and fallacy, in the strip (js/app.js fills them)
   for (const id of ["speech-sum", "latest"]) moves.add(document.getElementById(id), null, [strip]);
   if (page === "live") {
@@ -924,7 +926,8 @@ function mountApp(page) {
   keyboardFit();
   composerInView();
   speakerSwap(document.getElementById("speaker"));
-  tallyBump(document.querySelector(".speaker-col .tally"));
+  tallyBump(document.querySelector(".speaker-col .tally:not(.m-speech-tally)"));  // the sitting's (wider screens)
+  tallyBump(document.querySelector(".speaker-col .m-speech-tally"));  // the speech's (phones)
   // a verdict lands (js/app.js marks the fact .flash): once the stamp is over the mark goes, so moving the row
   // around later does not replay it
   document.getElementById("facts")?.addEventListener("animationend", (e) => {

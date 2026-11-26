@@ -228,7 +228,8 @@ function render() {
   const usedSeps = new Set();
   let turnKey = null;
   const tally = { true: 0, partly_true: 0, misleading: 0, false: 0, opinion: 0, promise: 0, unverifiable: 0, fallacy: 0 };
-  const speech = Object.fromEntries(Object.keys(tally).map((k) => [k, 0]));  // the speech under way: its own balance
+  const speech = Object.fromEntries(Object.keys(tally).map((k) => [k, 0]));  // the speech under way: its own balance (the
+  // strip under the player on wider screens, the row under the speaker on phones)
   const cur = turnAt(now ?? Infinity);
   let lastFalse = null, lastFallacy = null;  // the newest of each, for the strip
   for (const c of visible) {
@@ -264,6 +265,7 @@ function render() {
   els.count.textContent = visible.length ? `[${String(visible.length).padStart(2, "0")}]` : "";
   for (const k of Object.keys(tally)) $(`n-${k}`).textContent = String(tally[k]);
   renderStrip(cur ? speech : null, [lastFalse, lastFallacy], now);
+  for (const k of Object.keys(speech)) $(`s-${k}`).textContent = String(speech[k]);  // phones: under the speaker
 
   renderSpeaker(now);
 }
