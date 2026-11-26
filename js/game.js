@@ -12,8 +12,8 @@
 // unscored, and are asked to sign in.
 
 import { collection, doc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { db, el } from "./common.js?v=202611262215";
-import { account, onAccount, api, needAccount, toast } from "./account.js?v=202611262215";
+import { db, el } from "./common.js?v=202611262121";
+import { account, onAccount, api, needAccount, toast } from "./account.js?v=202611262121";
 
 const TRUTH = { true: "IGAZ", false: "HAMIS" };
 const MASKED = "Hibás érvelés?";
@@ -195,9 +195,10 @@ class ChallengeView {
     }
     const status = b.querySelector(".game-status"), after = b.querySelector(".game-after");
     showWait(status, ch, lock, now, !r && !open && !(pick && pick.error));  // on every tick, the text below only on a change
-    // (a sign-in button built anew on every tick is new content to iOS Safari: a tap during which one came was taken
-    // for a hover and sent no click, so the Chat tab, or an answer, did nothing)
-    const key = `${ch.id}|${open}|${Boolean(r)}|${pick ? `${pick.choice}|${pick.sent}|${pick.error}` : "-"}|${account.registered}|${Boolean(account.user)}`;
+    // the rest changes only with these. Written anew on every tick (five a second), a sign-in button was new content
+    // to iOS Safari, which then took a tap for a hover and sent no click (the Chat tab or an answer did nothing), and
+    // the "+N pont" line restarted its animation and shook
+    const key = `${ch.id}|${open}|${r ? JSON.stringify(r) : "-"}|${pick ? `${pick.choice}|${pick.sent}|${pick.error}` : "-"}|${account.registered}|${Boolean(account.user)}`;
     if (key === this.bodyKey) return;
     this.bodyKey = key;
     after.replaceChildren();
