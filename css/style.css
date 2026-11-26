@@ -494,6 +494,9 @@ details[open] > summary .lvl-title::before { content: "▾ "; }
 .btn.ghost { background: transparent; color: var(--muted); border-color: var(--line); }
 .btn.ghost:hover { color: var(--green); border-color: var(--green); }
 .btn.small { padding: 6px 10px; font-size: 12px; }
+.btn.danger { background: transparent; color: var(--false); border-color: rgba(255, 59, 59, .55); }
+.btn.danger:hover { background: rgba(255, 59, 59, .12); border-color: var(--false); box-shadow: 0 0 8px rgba(255, 59, 59, .35); }
+.dlg-list { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 13px; }
 .btn:disabled { opacity: .5; cursor: wait; }
 .fld { display: grid; gap: 4px; }
 .fld-label { font-size: 11px; letter-spacing: .8px; text-transform: uppercase; color: var(--muted); }
@@ -686,6 +689,7 @@ body:has(.game-dock > :not([hidden])) .scroll-hint { display: none; }
 .prof-privacy { margin: 0; padding: 0; border: 0; min-width: 0; gap: 8px; }
 .prof-privacy > legend { padding: 0; margin-bottom: 8px; }
 .prof-privacy .fld.check { font-size: 13px; color: var(--text); }
+.prof-delete { justify-items: start; gap: 6px; margin-top: 6px; padding-top: 14px; border-top: 1px solid var(--line); }
 .prof-privacy .fld.check > span { display: grid; gap: 2px; }
 .prof-saved.is-error { color: var(--false); }
 /* a game in the history: what was asked, the player's answer, the right one, the points */
