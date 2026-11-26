@@ -1646,6 +1646,10 @@ html.menu-open .menu-btn::before { content: "\2715"; font: 700 18px/1 var(--disp
   .site-header .acct { display: none; }
   .menu-btn[data-live="on"]::after { display: none; }  /* the "Élő" tag says it */
 }
+@media (max-width: 369px) {  /* the name, the "Élő" tag, the heart and ☰ need 370px: while live the heart goes (the menu has it) */
+  .site-header .header-row:has(.m-onair:not([hidden])) .hdr-support { display: none !important; }
+  .site-header .header-row:has(.m-onair:not([hidden])) .menu-btn { margin-left: auto; }
+}
 .brand img, .menu-bars span { filter: none; box-shadow: none; }
 .page-title, .section-head h2, .speaker-name, .m-sep-name, .m-tab, .m-new, .m-ai, .tally, .verdict,
 .fact-time, .t-btn, .btn, .acct-btn, .hdr-support, .brand-beta, .online-badge, .menu-panel .nav a, .menu-title,
@@ -1970,7 +1974,8 @@ body.m-watch[data-m-tab="speakers"] .m-ai #show-all { visibility: hidden; }
     padding: 10px 16px 0; border-color: rgba(61, 240, 130, .14); }
   .sheet-grab { display: block; position: absolute; top: 6px; left: 50%; width: 36px; height: 4px; margin-left: -18px; border-radius: 2px;
     background: #3a403d; }
-  .sheet-cancel, .sheet-back { display: block; grid-column: 1; grid-row: 1; justify-self: start; font: 500 15px/1 var(--sans); }
+  .sheet-cancel, .sheet-back { display: inline-flex; align-items: center; grid-column: 1; grid-row: 1; justify-self: start;
+    min-height: 44px; font: 500 15px/1 var(--sans); }
   .sheet-title { grid-column: 2; grid-row: 1; color: #e9f2ed; font: 700 13px/1 var(--display); letter-spacing: 1.2px; white-space: nowrap; }
   .sheet-save { display: inline-flex; grid-column: 3; grid-row: 1; justify-self: end; }
   .sheet-x, .sheet-foot { display: none !important; }
@@ -1988,6 +1993,10 @@ body.m-watch[data-m-tab="speakers"] .m-ai #show-all { visibility: hidden; }
   .sheet-del { color: #ff8a80; }
   .sheet-intro { font-family: var(--sans); }
   .prof-sheet .prof-privacy .fld.check { border-color: rgba(61, 240, 130, .08); font-family: var(--sans); }
+}
+@media (max-width: 374px) {  /* the head's title and Mentés (or ‹ Vissza) side by side, no longer centred over the sheet */
+  .sheet-head { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .sheet-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; text-align: center; font-size: 11px; letter-spacing: .6px; }
 }
 
 /* ------------------------------------------------------------------ an MP's page (the phones' design, every width)
@@ -2231,7 +2240,7 @@ html:not([data-loaded]) #mps:empty { background-image: url("data:image/svg+xml,%
 @media (min-width: 861px) {
   .header-row { min-height: 56px; padding-top: 6px; padding-bottom: 6px; }  /* every page: the phones' header height */
   html:has(> body:is(.m-live, .m-watch)) { height: 100%; overflow: hidden; }
-  body:is(.m-live, .m-watch) { --d-side: clamp(340px, 30vw, 420px); --d-strip: 168px; --d-compact: 118px; --d-gap: 16px;
+  body:is(.m-live, .m-watch) { --d-side: clamp(290px, calc(100vw - 566px), clamp(340px, 30vw, 420px)); --d-strip: 168px; --d-compact: 118px; --d-gap: 16px;
     /* one scale for the strip and the sidebar: the side padding of every box, labels, reading text, names, figures */
     --d-pad: 16px; --d-label: 600 11px/1.3 var(--display); --d-text: 400 15px/1.4 var(--sans);
     --d-name: 700 22px/1.15 var(--display); --d-num: 700 30px/1 var(--display);
@@ -2254,8 +2263,10 @@ html:not([data-loaded]) #mps:empty { background-image: url("data:image/svg+xml,%
     --d-give: calc((100cqw - 2 * var(--d-gap)) * 9 / 16 / 20);
     --d-now: calc(var(--d-compact) + clamp(0px, (var(--d-room) + var(--d-give) - var(--d-strip) + 1px) * 1000,
       var(--d-strip) - var(--d-compact)));
-    width: min(calc(100cqw - 2 * var(--d-gap)), calc((100cqh - 2 * var(--d-gap) - 12px - var(--d-now)) * 16 / 9)); }
+    width: max(min(534px, calc(100cqw - 2 * var(--d-gap))),  /* Twitch's embed minimum: 400×300 */
+      min(calc(100cqw - 2 * var(--d-gap)), calc((100cqh - 2 * var(--d-gap) - 12px - var(--d-now)) * 16 / 9))); }
   .m-live .m-top > .stage { display: block; aspect-ratio: 16 / 9; }
+  @media (max-height: 560px) { :is(.m-live, .m-watch) .m-top { overflow-y: auto; } }  /* the video at its minimum: the strip below it */
   .m-live .m-top .player { width: 100%; height: 100%; }
   .m-top .player { border: 0; box-shadow: none; }
   .m-top .player::before, .m-top .player::after { display: none; }
@@ -2313,7 +2324,7 @@ html:not([data-loaded]) #mps:empty { background-image: url("data:image/svg+xml,%
   .speech-tally { flex: 1; min-width: 0; display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 0 10px; margin: 0; }
   .speech-tally div { display: flex; flex-direction: column; align-items: center; gap: 5px; min-width: 0; padding: 0;
     background: none; border: 0; text-align: center; }  /* each figure and its name in the middle of its column */
-  .speech-tally dd { margin: 0; font: 700 26px/1 var(--display); text-shadow: none; }
+  .speech-tally dd { order: -1; margin: 0; font: 700 26px/1 var(--display); text-shadow: none; }
   .speech-tally dt { color: var(--muted); font: var(--d-label); letter-spacing: 1.2px; text-transform: uppercase; }
   .latest-rows { display: flex; flex-direction: column; gap: 8px; }
   .latest-row { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 0; border: 0; background: none; color: #c5d3cb;

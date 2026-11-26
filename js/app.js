@@ -7,12 +7,12 @@
 
 import { doc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { defaultStream } from "./config.js?v=202611241021";
-import { db, el, factBadge, LABEL, sourceList, setPhoto, mpHref, setLiveNav } from "./common.js?v=202611262121";
-import { mountAccount } from "./account.js?v=202611262121";
-import { factSocial } from "./social.js?v=202611262121";
-import { mountChat } from "./chat.js?v=202611262121";
+import { db, el, factBadge, LABEL, sourceList, setPhoto, mpHref, setLiveNav } from "./common.js?v=202611262350";
+import { mountAccount } from "./account.js?v=202611262350";
+import { factSocial } from "./social.js?v=202611262350";
+import { mountChat } from "./chat.js?v=202611262350";
 import { scrollHint } from "./scrollhint.js?v=202611241021";
-import { mountGame } from "./game.js?v=202611262038";
+import { mountGame } from "./game.js?v=202611262350";
 import { cdnReady, cdnUrl, cdnXhr } from "./cdn.js?v=202611260345";
 import { useTwitch, mountTwitch, twitchNow } from "./twitch.js?v=202611262305";
 
@@ -289,7 +289,7 @@ function renderStrip(speech, latest, now) {
       const dt = el("dt", null);
       dt.append(el("span", "st-full", STRIP_NAMES[k]));
       if (STRIP_SHORT[k]) { dt.append(el("span", "st-short", STRIP_SHORT[k])); dt.title = STRIP_NAMES[k]; }
-      d.append(el("dd", `c-${k}`, String(speech[k])), dt);
+      d.append(dt, el("dd", `c-${k}`, String(speech[k])));  // the term first (a <dl>); css shows the figure first
       return d;
     }));
   }

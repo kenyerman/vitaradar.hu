@@ -12,7 +12,7 @@ import {
   auth, db, appCheckHeaders, signInWithGoogle, signInAgain, readySignIn, signOut,
 } from "./firebase.js?v=202611260345";
 import { apiUrl, avatarUrl, photoPrefix } from "./config.js?v=202611241021";
-import { el, initials, huDate } from "./common.js?v=202611262121";
+import { el, initials, huDate } from "./common.js?v=202611262350";
 import { cdnReady, cdnUrl } from "./cdn.js?v=202611260345";
 import { profileHref } from "./links.js?v=202611241021";
 
@@ -543,6 +543,7 @@ export function openProfileEditor() {
 
   document.body.append(d);
   d.showModal();
+  d.focus({ preventScroll: true });  // the sheet itself: a dialog's autofocus is not honoured everywhere (Chrome focused Mégse)
   editing = { close };
   return editing;
 }
