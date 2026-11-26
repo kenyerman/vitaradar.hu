@@ -2,11 +2,18 @@
 // nothing for long: messages are deleted an hour after they were sent (a TTL policy on expireAt). There is no
 // moderation, but the rules check every message: sent by its own author, under their own nick and picture,
 // 300 characters at most, one message every 2 seconds per user (chatRate/{uid}, written in the same batch).
+// The nick and the picture sent with a message are the profile document's (followed live): one changed in another tab,
+// or on the profile page before coming back to a page restored from the browser's history, would be refused. The
+// expiry is set by the site's clock (the Date header), not the browser's. A refused message says why, as far as the
+// page can tell, and is sent once more when the reason was something the page could fix.
 // Everyone else sees the column blurred, with placeholder messages and a prompt to sign in. Messages of users the
 // reader blocked are not shown.
 
 import { collection, doc, query, orderBy, limit, onSnapshot, writeBatch, serverTimestamp, Timestamp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { db, el } from "./common.js?v=202611262350";
+import { getToken } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check.js";
+import { getIdToken, getIdTokenResult } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import { appCheck } from "./firebase.js?v=202611260345";
+import { db, el, getDoc } from "./common.js?v=202611262350";
 import { account, onAccount, onBlocks, isBlocked, avatar, toast, blockUser } from "./account.js?v=202611262350";
 import { userCard } from "./usercard.js?v=202611262350";
 import { linkify, locked, LOREM, LOREM_NICKS } from "./social.js?v=202611262350";
@@ -17,6 +24,28 @@ const KEEP = 60 * 60 * 1000; // a message lives an hour
 const SHOWN = 120;
 
 const messages = () => collection(db, "chat", "live", "messages");
+
+// The site's clock minus the browser's, in ms, from the Date header of a small request to the site itself (whole
+// seconds). The rules want a message's expiry about an hour after the server's time; a phone set by hand can be minutes
+// or hours off. Under 30 s it counts as none. null: not measured (no answer, or no Date header).
+let skew = 0;
+async function measureSkew() {
+  try {
+    const t0 = Date.now();
+    const r = await fetch(`/robots.txt?clock=${t0}`, { method: "HEAD", cache: "no-store" });
+    const t1 = Date.now();
+    const server = Date.parse(r.headers.get("Date") || "");
+    if (!Number.isFinite(server)) return null;
+    const d = server + 500 - (t0 + t1) / 2;  // the header drops the milliseconds: half a second on average
+    skew = Math.abs(d) > 30000 ? d : 0;
+    return d;
+  } catch {
+    return null;
+  }
+}
+const now = () => Date.now() + skew;
+
+const REFUSED = "Nem ment el: a szerver elutasította. Töltsd újra az oldalt, és próbáld újra.";
 
 function head(onClose) {
   const h = el("div", "chat-head");
@@ -162,7 +191,7 @@ function liveChat(col, uid, fold) {
   let docs = [];
   function render() {
     const atEnd = list.scrollHeight - list.scrollTop - list.clientHeight < 40;
-    const cutoff = Date.now() - KEEP;  // the TTL deletes late (within a day): hide what is past its hour
+    const cutoff = now() - KEEP;  // the TTL deletes late (within a day): hide what is past its hour
     const shown = docs.filter((m) => (!m.createdAt || m.createdAt.toMillis() > cutoff) && !isBlocked(m.uid));
     const keep = new Set(shown.map((m) => m.id));
     for (const [id, n] of nodes) if (!keep.has(id)) { n.remove(); nodes.delete(id); }
@@ -180,6 +209,12 @@ function liveChat(col, uid, fold) {
     list.replaceChildren(el("li", "empty", "a chat most nem érhető el"));
   });
   const stopBlocks = onBlocks(render);
+  // the nick and picture the rules compare a message with: the profile as it is now (account.profile is the one this
+  // page loaded)
+  let me = account.profile || {};
+  const stopMe = onSnapshot(doc(db, "profiles", uid), (snap) => { if (snap.exists()) me = snap.data(); },
+    (e) => console.warn("chat profile:", e));
+  measureSkew();
 
   function remember(m) {
     const li = el("li", "msg");
@@ -201,36 +236,80 @@ function liveChat(col, uid, fold) {
     return li;
   }
 
+  function message(text) {
+    return {
+      uid, nick: me.nick || "", photo: (me.photo && me.photo["64"]) || null, text: text.slice(0, MAX),
+      createdAt: serverTimestamp(), expireAt: Timestamp.fromMillis(now() + KEEP),
+    };
+  }
+  function commit(msg) {
+    const b = writeBatch(db);
+    b.set(doc(messages()), msg);
+    b.set(doc(db, "chatRate", uid), { last: serverTimestamp() });
+    return b.commit();
+  }
+
+  // Why the rules refused a message: { retry: true } when the page fixed the reason (sending again may work), else
+  // { text } for the toast. The checks are the rules' own, minus the ones the page never gets wrong (text, fields).
+  async function refused(msg) {
+    let retry = false;
+    try {  // the nick or picture changed since this page had them
+      const p = (await getDoc(doc(db, "profiles", uid))).data() || {};
+      if ((p.nick || "") !== msg.nick || ((p.photo && p.photo["64"]) || null) !== msg.photo) { me = p; retry = true; }
+    } catch (e) { console.warn("chat profile:", e); }
+    try {  // the sign-in token lacks the 18+ mark (the rules read it from there)
+      if ((await getIdTokenResult(account.user)).claims.a18 !== true) { await getIdToken(account.user, true); retry = true; }
+    } catch (e) { console.warn("chat token:", e); }
+    const had = skew;
+    const d = await measureSkew();  // the browser's clock (the expiry)
+    if (skew !== had) retry = true;
+    if (retry) return { retry };
+    try { await getToken(appCheck, false); }  // the site check (reCAPTCHA): Firestore refuses requests without it
+    catch (e) {
+      console.warn("chat app check:", e);
+      return { text: "Nem ment el: a böngésződet nem sikerült ellenőrizni (reCAPTCHA). Töltsd újra az oldalt, és próbáld újra." };
+    }
+    const mine = docs.filter((m) => m.uid === uid && m.createdAt).at(-1);  // another tab or device of this user
+    if (mine && now() - mine.createdAt.toMillis() < GAP + 1000) return { text: "Lassabban: 2 másodpercenként egy üzenet." };
+    return { text: d == null ? `${REFUSED} Ha így sem megy, nézd meg, pontos-e a géped órája.` : REFUSED };
+  }
+
+  // Sends a message; refused once for a reason the page could fix, it tries once more. Throws with .text for the toast.
+  async function deliver(text) {
+    for (let attempt = 0; ; attempt++) {
+      const msg = message(text);
+      try {
+        await commit(msg);
+        return;
+      } catch (err) {
+        if (err.code !== "permission-denied") throw err;
+        const why = await refused(msg);
+        if (!why.retry || attempt) { err.text = why.text || REFUSED; throw err; }
+      }
+    }
+  }
+
   let last = 0;
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const text = input.value.trim();
     if (!text) return;
     if (Date.now() - last < GAP) { toast("Lassabban: 2 másodpercenként egy üzenet."); return; }
-    const p = account.profile || {};
-    const b = writeBatch(db);
-    b.set(doc(messages()), {
-      uid, nick: p.nick || "", photo: (p.photo && p.photo["64"]) || null, text: text.slice(0, MAX),
-      createdAt: serverTimestamp(), expireAt: Timestamp.fromMillis(Date.now() + KEEP),
-    });
-    b.set(doc(db, "chatRate", uid), { last: serverTimestamp() });
     last = Date.now();
     input.value = "";
     send.disabled = true;
     try {
-      await b.commit();
+      await deliver(text);
       list.scrollTop = list.scrollHeight;
     } catch (err) {
       console.warn("chat send:", err);
       input.value = text;
-      toast(err.code === "permission-denied"
-        ? "Nem ment el: túl gyorsan írtál, vagy nem pontos a géped órája."
-        : "Nem ment el, próbáld újra.");
+      toast(err.text || "Nem ment el, próbáld újra.");
     } finally {
       send.disabled = false;
       input.focus();
     }
   });
 
-  return () => { unsub(); stopBlocks(); };
+  return () => { unsub(); stopBlocks(); stopMe(); };
 }
