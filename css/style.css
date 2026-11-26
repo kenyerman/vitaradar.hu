@@ -137,6 +137,8 @@ main.wrap { padding-top: 32px; padding-bottom: 56px; }  /* main.wrap: beats .wra
   text-align: center; color: var(--muted); pointer-events: none; letter-spacing: .5px; }
 .player-note::before { content: "//"; margin-right: 1ch; }
 .player-note.over-poster { background: rgba(0, 0, 0, .62); color: var(--text); }  /* watch.js: a replay not on YouTube yet */
+/* js/twitch.js: Twitch plays by itself only while nothing is drawn over its iframe, the corner marks neither */
+.player.panel:has(> #twitch)::before, .player.panel:has(> #twitch)::after { display: none; }
 
 /* below the player: facts left, speaker right */
 .below { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 22px; margin-top: 22px; align-items: start; }
