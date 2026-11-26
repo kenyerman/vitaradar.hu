@@ -369,6 +369,7 @@ function liveTabs(top, slots, feed) {
 
   const chatCol = document.getElementById("chat");
   const chatOpen = document.getElementById("chat-open");
+  let gameNote = () => {};  // set below, once the games are there
   function select(id, focus = false) {
     document.body.dataset.mTab = id;
     for (const t of tabs) {
@@ -383,6 +384,7 @@ function liveTabs(top, slots, feed) {
     if (id === "feed") feed.resume();
     else { feed.show(); scrollTo({ top: 0 }); }
     if (id === "chat") chatToEnd();  // it was hidden while its messages came: open on the newest
+    gameNote();
   }
   bar.addEventListener("click", (e) => {
     const b = e.target.closest(".m-tab");
@@ -403,16 +405,34 @@ function liveTabs(top, slots, feed) {
     copy();
   }
 
-  // a game open: the tab turns green and shows its countdown (js/game.js keeps it in .game-time)
+  // a game open: the tab turns green and shows its countdown (js/game.js keeps it in .game-time), and while the facts
+  // are shown a note at the foot of the screen says which game and how long it is open, "KIHÍVÁS · 9 MP ›": a tap on
+  // it opens Játék. Not on the Chat tab, where the foot is the message field.
   const dock = slots.game.querySelector(".game-dock") || document.querySelector(".game-dock");
   if (dock) {
+    const note = el("button", "m-game-note");
+    note.type = "button";
+    note.hidden = true;
+    note.addEventListener("click", () => select("game"));
+    document.body.append(note);
     const live = () => {
       const card = dock.querySelector(':scope > :not([hidden])[data-state="open"]');
       const time = card ? ((card.querySelector(".game-time") || {}).textContent || "").trim() : "";
       if (card) gameTab.b.dataset.live = "true"; else delete gameTab.b.dataset.live;
       gameTab.n.textContent = time;
       gameTab.n.hidden = !card || !time;
+      const show = Boolean(card) && PHONE.matches && document.body.dataset.mTab === "feed";
+      if (show) {
+        // its tag, "[ KIHÍVÁS · HIBÁS ÉRVELÉS ]" (bare on phones): its first word
+        const kind = ((card.querySelector(".game-tag") || {}).textContent || "Játék").replace(/[[\]]/g, "").split("·")[0].trim();
+        const text = `${kind}${time ? ` · ${time}` : ""} ›`;
+        if (note.textContent !== text) note.textContent = text;
+        note.setAttribute("aria-label", `${kind} fut${time ? `, még ${time}` : ""}: a Játék fülre`);
+      }
+      if (note.hidden === show) note.hidden = !show;
     };
+    gameNote = live;
+    PHONE.addEventListener("change", live);
     new MutationObserver(live).observe(dock, { childList: true, subtree: true, characterData: true, attributes: true,
       attributeFilter: ["hidden", "data-state"] });
     live();
