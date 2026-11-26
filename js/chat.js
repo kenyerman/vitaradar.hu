@@ -13,10 +13,10 @@ import { collection, doc, query, orderBy, limit, onSnapshot, writeBatch, serverT
 import { getToken } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check.js";
 import { getIdToken, getIdTokenResult } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import { appCheck } from "./firebase.js?v=202611260345";
-import { db, el, getDoc } from "./common.js?v=202611262350";
-import { account, onAccount, onBlocks, isBlocked, avatar, toast, blockUser } from "./account.js?v=202611262350";
-import { userCard } from "./usercard.js?v=202611262350";
-import { linkify, locked, LOREM, LOREM_NICKS } from "./social.js?v=202611262350";
+import { db, el, getDoc } from "./common.js?v=202611270142";
+import { account, onAccount, onBlocks, isBlocked, avatar, toast, blockUser } from "./account.js?v=202611270142";
+import { userCard } from "./usercard.js?v=202611270142";
+import { linkify, locked, LOREM, LOREM_NICKS } from "./social.js?v=202611270142";
 
 const MAX = 300;
 const GAP = 2000;            // ms between two messages (the rules allow one every 2 s)

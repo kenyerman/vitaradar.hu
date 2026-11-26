@@ -9,8 +9,8 @@
 // make it unreadable for others (rules), so the card then asks the API for the rest (/user).
 
 import { doc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { db, getDoc, el } from "./common.js?v=202611262350";
-import { account, avatar, api } from "./account.js?v=202611262350";
+import { db, getDoc, el } from "./common.js?v=202611270142";
+import { account, avatar, api } from "./account.js?v=202611270142";
 import { profileHref } from "./links.js?v=202611241021";
 
 const KEEP_MS = 60_000;

@@ -7,12 +7,12 @@
 
 import { doc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { defaultStream } from "./config.js?v=202611241021";
-import { db, el, factBadge, LABEL, sourceList, setPhoto, mpHref, setLiveNav } from "./common.js?v=202611262350";
-import { mountAccount } from "./account.js?v=202611262350";
-import { factSocial } from "./social.js?v=202611262350";
-import { mountChat } from "./chat.js?v=202611270005";
+import { db, el, factBadge, LABEL, sourceList, setPhoto, mpHref, setLiveNav } from "./common.js?v=202611270142";
+import { mountAccount } from "./account.js?v=202611270142";
+import { factSocial } from "./social.js?v=202611270142";
+import { mountChat } from "./chat.js?v=202611270142";
 import { scrollHint } from "./scrollhint.js?v=202611241021";
-import { mountGame } from "./game.js?v=202611262350";
+import { mountGame } from "./game.js?v=202611270142";
 import { cdnReady, cdnUrl, cdnXhr } from "./cdn.js?v=202611260345";
 import { useTwitch, mountTwitch, twitchNow } from "./twitch.js?v=202611262305";
 
@@ -238,12 +238,16 @@ function render() {
     if (tk && tk !== turnKey) { place(separator(tk, turn)); usedSeps.add(tk); }
     turnKey = tk;
     const v = verdictOf(c, now);
-    // a claim with its sentence's fallacy is the fallacy's card: one fallacy, in the tallies and the strip's latest rows
+    // a claim with its sentence's fallacy is the fallacy's card: one fallacy, in the tallies and the strip's latest rows.
+    // A conclusion check is not a fact (MEGALAPOZATLAN is not HAMIS, js/common.js): its card shows, it is not counted,
+    // as on the stream's overlay and in the speech tips (pfc counts only claims there).
     const k = v !== "pending" && fallacyShown(c, now) ? "fallacy" : v;
-    if (k in tally) tally[k] += 1;
-    if (cur && turn === cur && k in speech) speech[k] += 1;
-    if (k === "false" && (!lastFalse || c.show_at > lastFalse.show_at)) lastFalse = c;
-    if (k === "fallacy" && (!lastFallacy || c.show_at > lastFallacy.show_at)) lastFallacy = c;
+    if (c.kind !== "conclusion") {
+      if (k in tally) tally[k] += 1;
+      if (cur && turn === cur && k in speech) speech[k] += 1;
+      if (k === "false" && (!lastFalse || c.show_at > lastFalse.show_at)) lastFalse = c;
+      if (k === "fallacy" && (!lastFallacy || c.show_at > lastFallacy.show_at)) lastFallacy = c;
+    }
     let s = shown.get(c.id);
     if (!s) {
       s = { li: buildFact(c), verdict: null };
