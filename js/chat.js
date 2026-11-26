@@ -3,9 +3,10 @@
 // moderation, but the rules check every message: sent by its own author, under their own nick and picture,
 // 300 characters at most, one message every 2 seconds per user (chatRate/{uid}, written in the same batch).
 // Everyone else sees the column blurred, with placeholder messages and a prompt to sign in. Messages of users the
-// reader blocked are not shown.
+// reader blocked are not shown. Readers react to messages (👍 ❤️ 😂 😠 😮, one each), see reactions() below.
 
 import { collection, doc, query, orderBy, limit, onSnapshot, writeBatch, serverTimestamp, Timestamp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { FieldPath, deleteField } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";  // reactions
 import { db, el } from "./common.js?v=202611262350";
 import { account, onAccount, onBlocks, isBlocked, avatar, toast, blockUser } from "./account.js?v=202611262350";
 import { userCard } from "./usercard.js?v=202611262350";
@@ -108,6 +109,11 @@ function fakeChat() {
     const nick = LOREM_NICKS[(i * 5) % LOREM_NICKS.length];
     li.append(avatar(null, nick, 20), el("span", "msg-nick", nick), el("time", "msg-time", `18:${String(10 + i * 2).padStart(2, "0")}`),
       el("span", "msg-text", LOREM[(i * 3) % LOREM.length]));
+    if (i % 4 === 1) {  // a few reactions, so the blurred column shows that there are some
+      const row = el("div", "rx-chips");
+      row.append(el("span", "rx-chip", `${REACTIONS[i % 5][1]} ${1 + (i % 3)}`), el("span", "rx-chip", `${REACTIONS[(i + 2) % 5][1]} 1`));
+      li.append(row);
+    }
     list.append(li);
   }
   return list;
@@ -160,13 +166,21 @@ function liveChat(col, uid, fold) {
 
   const nodes = new Map();
   let docs = [];
+  const expired = (m) => Boolean(m.createdAt) && m.createdAt.toMillis() <= Date.now() - KEEP;
+  const rx = reactions(list, uid, expired, () => render());
   function render() {
     const atEnd = list.scrollHeight - list.scrollTop - list.clientHeight < 40;
-    const cutoff = Date.now() - KEEP;  // the TTL deletes late (within a day): hide what is past its hour
-    const shown = docs.filter((m) => (!m.createdAt || m.createdAt.toMillis() > cutoff) && !isBlocked(m.uid));
+    // the TTL deletes late (within a day): hide what is past its hour
+    const shown = docs.filter((m) => !expired(m) && !isBlocked(m.uid));
     const keep = new Set(shown.map((m) => m.id));
-    for (const [id, n] of nodes) if (!keep.has(id)) { n.remove(); nodes.delete(id); }
-    list.replaceChildren(...shown.map((m) => nodes.get(m.id) || remember(m)));
+    for (const [id, n] of nodes) if (!keep.has(id)) { n.remove(); nodes.delete(id); rx.forget(id); }
+    // in order, moving only what is out of place: a reaction changes a message, and a moved node would lose the focus
+    shown.forEach((m, i) => {
+      const n = nodes.get(m.id) || remember(m);
+      if (list.children[i] !== n) list.insertBefore(n, list.children[i] || null);
+      rx.paint(m);
+    });
+    while (list.children.length > shown.length) list.lastElementChild.remove();
     if (atEnd) list.scrollTop = list.scrollHeight;
   }
   let backlog = true;  // until the server's first answer: what was there before
@@ -197,6 +211,7 @@ function liveChat(col, uid, fold) {
       b.addEventListener("click", () => blockUser(m.uid, m.nick));
       li.append(b);
     }
+    rx.attach(m, li);
     nodes.set(m.id, li);
     return li;
   }
@@ -232,5 +247,184 @@ function liveChat(col, uid, fold) {
     }
   });
 
-  return () => { unsub(); stopBlocks(); };
+  return () => { unsub(); stopBlocks(); rx.stop(); };
+}
+
+// ------------------------------------------------------------------ reactions
+// One reaction per reader on a message, which they can change or take back: the message's map r (uid -> reaction).
+// The rules let a reader write only their own entry, an allowed one, within the message's hour (its createdAt), and
+// at most once a second (reactRate/{uid}, in the same batch); so reactions go with the message, nothing else keeps them.
+// The counts under a message leave out the users the reader blocked. Clicks faster than that wait their turn here, and
+// only the last choice for a message is sent; the message's listener shows a sent one at once (and takes it back if
+// the rules refuse it). A bar of the five shows on hover or keyboard focus (one tab stop per message, the arrows move
+// in it); on touch screens a tap on the message opens it.
+const REACTIONS = [["like", "👍", "Tetszik"], ["heart", "❤️", "Imádom"], ["haha", "😂", "Haha"], ["angry", "😠", "Dühös"],
+  ["wow", "😮", "Hűha"]];
+const REACT_GAP = 1100;  // ms between two reaction writes (the rules allow one a second)
+
+function reactions(list, uid, expired, refresh) {
+  const want = new Map();     // message id -> the reader's choice waiting for its turn (null: taken back)
+  const parts = new Map();    // message id -> its bar and chips
+  const current = new Map();  // message id -> its latest data
+  let last = 0, busy = false, timer = 0, open = null, pointer = "mouse";
+  const hover = matchMedia("(hover: hover)");
+  const tapping = () => pointer !== "mouse" || !hover.matches;  // a touch, or a screen without hover
+
+  const stored = (m) => (m.r && typeof m.r[uid] === "string" ? m.r[uid] : null);
+  const mine = (m) => (want.has(m.id) ? want.get(m.id) : stored(m));
+
+  function paint(m) {
+    current.set(m.id, m);
+    const p = parts.get(m.id);
+    if (!p) return;
+    const me = mine(m);
+    const n = {};
+    for (const [who, type] of Object.entries(m.r || {})) if (who !== uid && !isBlocked(who)) n[type] = (n[type] || 0) + 1;
+    if (me) n[me] = (n[me] || 0) + 1;
+    const focused = p.bar.contains(document.activeElement);
+    let any = false, lost = false;
+    REACTIONS.forEach(([type, , label], i) => {
+      const b = p.picks[type], c = p.chips[type], k = n[type] || 0;
+      b.setAttribute("aria-pressed", String(me === type));
+      if (!focused) b.tabIndex = (me ? me === type : i === 0) ? 0 : -1;
+      if (!k && c === document.activeElement) lost = true;
+      c.hidden = !k;
+      any ||= k > 0;
+      if (!k) return;
+      c.lastChild.textContent = String(k);
+      c.setAttribute("aria-pressed", String(me === type));
+      c.title = `${label}: ${k}${me === type ? " (te is)" : ""}`;
+      c.setAttribute("aria-label", c.title);
+    });
+    p.row.hidden = !any;
+    if (lost) p.bar.querySelector('[tabindex="0"]').focus({ preventScroll: true });
+  }
+
+  function choose(id, type) {
+    const m = current.get(id);
+    if (!m) return;
+    if (expired(m)) { toast("Ez az üzenet már lejárt."); refresh(); return; }  // and it goes from the list
+    want.set(id, mine(m) === type ? null : type);  // the same one again takes it back
+    paint(m);
+    send();
+  }
+
+  async function send() {
+    clearTimeout(timer);
+    if (busy || !want.size) return;
+    const wait = last + REACT_GAP - Date.now();
+    if (wait > 0) { timer = setTimeout(send, wait); return; }
+    const [id, type] = want.entries().next().value;
+    want.delete(id);
+    const m = current.get(id);
+    if (!m || stored(m) === type || expired(m)) { if (m) paint(m); send(); return; }  // nothing to change
+    busy = true;
+    const b = writeBatch(db);
+    b.update(doc(messages(), id), new FieldPath("r", uid), type || deleteField());
+    b.set(doc(db, "reactRate", uid), { at: serverTimestamp() });
+    try {
+      await b.commit();
+    } catch (err) {
+      console.warn("chat reaction:", err);
+      toast("A reakció nem ment el, próbáld újra.");
+    } finally {
+      last = Date.now();
+      busy = false;
+      if (current.has(id)) paint(current.get(id));
+      send();
+    }
+  }
+
+  // the bar above the message, or under it when the message is at the top of the list (it would be cut off there)
+  function place(li) {
+    li.classList.toggle("rx-below", li.getBoundingClientRect().top - list.getBoundingClientRect().top < 52);
+  }
+  function show(id) {
+    if (open && parts.has(open)) parts.get(open).li.classList.remove("rx-open");
+    open = id && parts.has(id) ? id : null;
+    if (!open) return;
+    const { li } = parts.get(open);
+    place(li);
+    li.classList.add("rx-open");
+  }
+
+  function attach(m, li) {
+    li.dataset.id = m.id;
+    const bar = el("div", "rx-bar");
+    bar.setAttribute("role", "toolbar");
+    bar.setAttribute("aria-label", m.uid === uid ? "Reakció a saját üzenetedre" : `Reakció ${m.nick || "?"} üzenetére`);
+    const row = el("div", "rx-chips");
+    row.setAttribute("aria-live", "off");  // others' reactions are not read out as new messages
+    row.hidden = true;
+    const picks = {}, chips = {};
+    for (const [type, face, label] of REACTIONS) {
+      const b = el("button", "rx-pick", face);
+      b.type = "button";
+      b.title = label;
+      b.setAttribute("aria-label", label);
+      b.addEventListener("click", (e) => {
+        for (const x of bar.children) x.tabIndex = x === b ? 0 : -1;
+        choose(m.id, type);
+        if (e.detail && tapping()) show(null);  // a tap chose: the bar goes
+      });
+      picks[type] = b;
+      bar.append(b);
+      const c = el("button", "rx-chip");
+      c.type = "button";
+      const f = el("span", "rx-face", face);
+      f.setAttribute("aria-hidden", "true");
+      c.append(f, el("span", "rx-n"));
+      c.hidden = true;
+      c.addEventListener("click", () => choose(m.id, type));
+      chips[type] = c;
+      row.append(c);
+    }
+    bar.addEventListener("keydown", (e) => {
+      const all = [...bar.children], i = all.indexOf(document.activeElement);
+      const j = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: all.length - 1 }[e.key];
+      if (e.key === "Escape") { show(null); return; }
+      if (j === undefined || i < 0) return;
+      e.preventDefault();
+      const k = (j + all.length) % all.length;
+      all.forEach((b, x) => { b.tabIndex = x === k ? 0 : -1; });
+      all[k].focus();
+    });
+    parts.set(m.id, { li, bar, row, picks, chips });
+    li.append(bar, row);
+    current.set(m.id, m);
+  }
+
+  // touch: a tap on a message (not on its name, a link or a button) opens its bar; a tap anywhere else closes it
+  const onDown = (e) => {
+    if (open && parts.has(open) && !parts.get(open).li.contains(e.target)) show(null);
+  };
+  const onKey = (e) => { if (e.key === "Escape" && open) show(null); };
+  list.addEventListener("pointerdown", (e) => { pointer = e.pointerType || "mouse"; }, true);
+  list.addEventListener("click", (e) => {
+    if (!tapping() || e.target.closest("a, button, [role='button'], input")) return;
+    const li = e.target.closest(".msg");
+    if (li && parts.has(li.dataset.id)) show(open === li.dataset.id ? null : li.dataset.id);
+  });
+  list.addEventListener("pointerover", (e) => {  // hover and keyboard: the bar where it is not cut off
+    const li = e.pointerType === "mouse" && e.target.closest(".msg");
+    if (li && !li.classList.contains("rx-open")) place(li);
+  });
+  list.addEventListener("focusin", (e) => { const li = e.target.closest(".msg"); if (li && li !== parts.get(open)?.li) place(li); });
+  document.addEventListener("pointerdown", onDown, true);
+  document.addEventListener("keydown", onKey);
+
+  return {
+    attach,
+    paint,
+    forget(id) {
+      parts.delete(id);
+      current.delete(id);
+      if (open === id) open = null;
+    },
+    stop() {
+      clearTimeout(timer);
+      document.removeEventListener("pointerdown", onDown, true);
+      document.removeEventListener("keydown", onKey);
+    },
+  };
 }
