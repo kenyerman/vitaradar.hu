@@ -2191,6 +2191,9 @@ html:not([data-loaded]) #mps:empty { background-image: url("data:image/svg+xml,%
     background: var(--panel-solid); border: 1px solid var(--line-dim); }
   body.m-watch { --d-strip: 90px; --d-compact: 90px; }  /* the speaker alone: no smaller strip */
   .m-watch .m-strip { grid-template-rows: 88px; }
+  /* no speaker yet (a replay before its first speech) and nothing else in it: the strip keeps its place, so the video
+     doesn't change size when the first speaker comes, but no empty box shows */
+  .m-strip:has(> .speaker[data-empty="true"]):not(:has(> :is(.speech-sum, .latest):not([hidden]))) { visibility: hidden; }
   .m-strip .speaker { position: relative; grid-column: 1 / -1; grid-row: 1; min-width: 0; min-height: 88px; display: flex;
     align-items: center; gap: var(--d-pad); padding: 0 56px 0 var(--d-pad); background: none; border: 0; }
   .m-strip:has(> .latest:not([hidden])) > .speaker { grid-column: 1; }
