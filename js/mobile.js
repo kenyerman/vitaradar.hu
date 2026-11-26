@@ -51,6 +51,44 @@ function scroller(list) {
   return (app && list.closest(".below")) || window;
 }
 
+// A row's height from `from` to `to` px (whole numbers), frame by frame in whole pixels, with the rows' own easing
+// (cubic-bezier(.22, 1, .36, 1), "ease out quint"); then end(). For a row folding above one that keeps its place: the
+// panel under them scrolls by whole pixels, a height animation steps by fractions of one, and the row kept in place
+// shook by up to a pixel at every frame. Returns its stop; the height is left as it is, for the caller.
+function pixelFold(li, from, to, duration, end) {
+  const t0 = performance.now();
+  let raf = 0;
+  const step = (now) => {
+    const p = Math.min(1, Math.max(0, (now - t0) / duration));
+    li.style.height = `${from - Math.round((from - to) * (1 - (1 - p) ** 5))}px`;
+    if (p < 1) raf = requestAnimationFrame(step);
+    else end();
+  };
+  li.style.height = `${from}px`;
+  raf = requestAnimationFrame(step);
+  return () => cancelAnimationFrame(raf);
+}
+
+// Scrolls `box` (a panel, or the window) by dy pixels, as far as it can go, and only when that moves it: at the panel's
+// top a row kept in place cannot be kept any more, and asking again at every frame changes nothing.
+function nudge(box, dy) {
+  const win = box === window, at = win ? scrollY : box.scrollTop;
+  const max = win ? document.documentElement.scrollHeight - innerHeight : box.scrollHeight - box.clientHeight;
+  const y = Math.max(0, Math.min(max, at + dy));
+  if (Math.round(y) === Math.round(at)) return;
+  if (win) scrollTo(scrollX, y); else box.scrollTop = y;
+}
+
+// Whether the reader touches the screen (or turns the wheel) from now on: a scroll that keeps a row in place stops
+// then. Going on, it scrolled the panel back against their finger (it puts back whatever moved the row).
+function touchWatch() {
+  const w = { on: false, done() { removeEventListener("touchstart", hit); removeEventListener("wheel", hit); } };
+  const hit = () => { w.on = true; };
+  addEventListener("touchstart", hit, { passive: true });
+  addEventListener("wheel", hit, { passive: true });
+  return w;
+}
+
 function measure(header, top, video) {
   const set = () => {
     const h = header ? header.offsetHeight : 0;
@@ -105,19 +143,18 @@ function compactFacts(list) {
   };
   const calm = matchMedia("(prefers-reduced-motion: reduce)");
   const motion = () => !calm.matches;
-  const ease = "cubic-bezier(.22, 1, .36, 1)";
-  const runs = new WeakMap();  // li -> its running open or close: { kind, a, fades }
+  const ease = "cubic-bezier(.22, 1, .36, 1)", DURATION = 340;
+  const runs = new WeakMap();  // li -> its running open or close: { kind, cancel }
   const stop = (li) => {
     const r = runs.get(li);
     if (!r) return;
     runs.delete(li);
-    r.a.cancel();
-    r.fades.forEach((f) => f.cancel());
-    li.style.overflow = "";
+    r.cancel();
   };
   const details = (li) => [...li.querySelectorAll(":scope > :is(.fact-claim, .fact-expl, .fact-fallacy, .fact-sources, .social)")];
-  // the row's height goes from what it is now to its height open or closed; the text stays where it is (no sliding)
-  const resize = (li, open) => {
+  // the row's height goes from what it is now to its height open or closed; the text stays where it is (no sliding).
+  // whole: in whole pixels (pixelFold), for a row folding above the one tapped, which keeps its place (toggle)
+  const resize = (li, open, whole = false) => {
     const from = li.offsetHeight;
     stop(li);
     if (open) li.dataset.open = "true"; else delete li.dataset.open;
@@ -126,48 +163,51 @@ function compactFacts(list) {
     const to = li.offsetHeight;
     if (!open) li.dataset.open = "true";  // closing: the details stay while they fade and the row folds
     li.style.overflow = "hidden";
-    // fill: kept at its end height until it is done below, or a closed row showed its details for a frame
-    const a = li.animate([{ height: `${from}px` }, { height: `${to}px` }], { duration: 340, easing: ease, fill: "forwards" });
     const fades = details(li).map((d, i) => d.animate([{ opacity: open ? 0 : 1 }, { opacity: open ? 1 : 0 }],
       open ? { duration: 260, delay: 60 + i * 50, easing: "ease-out", fill: "backwards" }
         : { duration: 180, easing: "ease-out", fill: "forwards" }));
-    runs.set(li, { kind: open ? "open" : "close", a, fades });
-    a.finished.then(() => {
-      if (runs.get(li)?.a !== a) return;
+    const run = { kind: open ? "open" : "close" };
+    const end = () => {
+      if (runs.get(li) !== run) return;
       runs.delete(li);
       if (!open) delete li.dataset.open;
-      a.cancel();
-      fades.forEach((f) => f.cancel());
-      li.style.overflow = "";
-    }, () => {});
+      run.cancel();
+    };
+    if (whole) {
+      const halt = pixelFold(li, from, to, DURATION, end);
+      run.cancel = () => { halt(); fades.forEach((f) => f.cancel()); li.style.height = ""; li.style.overflow = ""; };
+    } else {
+      // fill: kept at its end height until it is done below, or a closed row showed its details for a frame
+      const a = li.animate([{ height: `${from}px` }, { height: `${to}px` }], { duration: DURATION, easing: ease, fill: "forwards" });
+      a.finished.then(end, () => {});
+      run.cancel = () => { a.cancel(); fades.forEach((f) => f.cancel()); li.style.overflow = ""; };
+    }
+    runs.set(li, run);
   };
   const isOpen = (li) => li.dataset.open === "true" && runs.get(li)?.kind !== "close";
-  // Opening a row closes the one open before; the row tapped stays where it is in its panel while the one above it
-  // folds. In the panel's own terms: the panel itself slides in when a fact is opened from another tab (the strip's
-  // latest rows, js/app.js), and held on screen the row ended that much lower.
+  // Opening a row closes the one open before; the row tapped stays where it is in its panel while one above it folds
+  // (in whole pixels, and the panel scrolls by as much in the same frame): only while it folds, and not once the reader
+  // touches the screen. In the panel's own terms: the panel itself slides in when a fact is opened from another tab
+  // (the strip's latest rows, js/app.js), and held on screen the row ended that much lower.
   const toggle = (li) => {
     if (isOpen(li)) { resize(li, false); return; }
     const box = scroller(list);
     const at = () => li.getBoundingClientRect().top - (box === window ? 0 : box.getBoundingClientRect().top);
     const top = at();
     const others = [...list.querySelectorAll("li.fact")].filter((o) => o !== li && isOpen(o));
-    for (const o of others) resize(o, false);
+    const above = (o) => Boolean(o.compareDocumentPosition(li) & Node.DOCUMENT_POSITION_FOLLOWING);
+    for (const o of others) resize(o, false, above(o));
     resize(li, true);
-    const above = others.some((o) => o.compareDocumentPosition(li) & Node.DOCUMENT_POSITION_FOLLOWING);
-    if (!above) return;
-    const place = () => {
-      const dy = at() - top;
-      if (Math.abs(dy) >= 1) box.scrollBy(0, dy);
-    };
-    const until = performance.now() + 420;
+    const folding = others.filter(above);
+    if (!folding.length) return;
+    const hands = touchWatch();
     const hold = () => {
-      place();
-      if (performance.now() < until) requestAnimationFrame(hold);
+      if (hands.on) { hands.done(); return; }
+      nudge(box, Math.round(at() - top));
+      if (folding.some((o) => runs.get(o)?.kind === "close")) requestAnimationFrame(hold);
+      else hands.done();
     };
     hold();
-    // and once the fold has ended: with frames late (a busy page, a slow phone) it can end after the 420 ms, and the
-    // row was left where the fold took it
-    Promise.all(others.map((o) => runs.get(o)?.a.finished)).then(() => { if (isOpen(li)) place(); }, () => {});
   };
   list.addEventListener("click", (e) => {
     if (e.target.closest("a, button, input, textarea, select, label, form, .social")) return;
@@ -471,7 +511,7 @@ function openingSpeeches(list) {
   const calm = matchMedia("(prefers-reduced-motion: reduce)");
   const motion = () => !calm.matches;
   const ease = "cubic-bezier(.22, 1, .36, 1)", DURATION = 380;
-  const runs = new WeakMap();  // li -> its running open or close: { kind, a, fade }
+  const runs = new WeakMap();  // li -> its running open or close: { kind, cancel }
   const mark = (li) => {
     li.tabIndex = 0;
     li.setAttribute("aria-expanded", String(li.classList.contains("open") && runs.get(li)?.kind !== "close"));
@@ -480,13 +520,12 @@ function openingSpeeches(list) {
     const r = runs.get(li);
     if (!r) return;
     runs.delete(li);
-    r.a.cancel();
-    r.fade?.cancel();
-    li.style.overflow = "";
+    r.cancel();
   };
   const isOpen = (li) => li.classList.contains("open") && runs.get(li)?.kind !== "close";
-  // the speech's height goes from what it is now to its height open or closed; returns that height
-  const resize = (li, open) => {
+  // the speech's height goes from what it is now to its height open or closed; returns that height. whole: in whole
+  // pixels (pixelFold), for a speech folding above the one tapped, which the panel keeps in place (follow)
+  const resize = (li, open, whole = false) => {
     const from = li.offsetHeight;
     stop(li);
     if (open) {
@@ -497,42 +536,51 @@ function openingSpeeches(list) {
     if (motion() && from !== to) {
       if (!open) li.classList.add("open");  // closing: the facts stay while they fade and the speech folds
       li.style.overflow = "hidden";
-      // fill: kept at its end height until it is done below, or a folded speech showed all its facts for a frame
-      const a = li.animate([{ height: `${from}px` }, { height: `${to}px` }], { duration: DURATION, easing: ease, fill: "forwards" });
       const facts = li.querySelector(":scope > .speech-facts");
       const fade = facts?.animate([{ opacity: open ? 0 : 1 }, { opacity: open ? 1 : 0 }],
         open ? { duration: 300, delay: 60, easing: "ease-out", fill: "backwards" } : { duration: 200, easing: "ease-out", fill: "forwards" });
-      runs.set(li, { kind: open ? "open" : "close", a, fade });
-      a.finished.then(() => {
-        if (runs.get(li)?.a !== a) return;
+      const run = { kind: open ? "open" : "close" };
+      const end = () => {
+        if (runs.get(li) !== run) return;
         runs.delete(li);
         if (!open) li.classList.remove("open");
-        a.cancel();
-        fade?.cancel();
-        li.style.overflow = "";
+        run.cancel();
         mark(li);
-      }, () => {});
+      };
+      if (whole) {
+        const halt = pixelFold(li, from, to, DURATION, end);
+        run.cancel = () => { halt(); fade?.cancel(); li.style.height = ""; li.style.overflow = ""; };
+      } else {
+        // fill: kept at its end height until it is done below, or a folded speech showed all its facts for a frame
+        const a = li.animate([{ height: `${from}px` }, { height: `${to}px` }], { duration: DURATION, easing: ease, fill: "forwards" });
+        a.finished.then(end, () => {});
+        run.cancel = () => { a.cancel(); fade?.cancel(); li.style.overflow = ""; };
+      }
+      runs.set(li, run);
     }
     mark(li);
     return to;
   };
   // the speech in its panel: from where it was (top, from the panel's top) up by just enough to show it `height` tall,
   // while the speeches around it change. In the panel's own terms: the panel itself moves when the speaker strip above
-  // it fills in. Not scrollIntoView, which on iOS also scrolls the page and takes the header off the top.
+  // it fills in. Not scrollIntoView, which on iOS also scrolls the page and takes the header off the top. In whole
+  // pixels, as the panel scrolls (and a speech folding above it folds), and only until the reader touches the screen.
   const follow = (li, top, height) => {
     const box = li.closest(".below");
     if (!box) return;
     const room = box.clientHeight, bottom = top + height;
     const by = top < 0 ? top : bottom > room ? Math.min(bottom - room, top) : 0;
     const at = () => li.getBoundingClientRect().top - box.getBoundingClientRect().top;
-    const place = (k) => { const dy = at() - (top - by * k); if (Math.abs(dy) >= 0.5) box.scrollTop += dy; };
+    const place = (k) => nudge(box, Math.round(at() - (top - Math.round(by * k))));
     if (!motion()) { place(1); return; }
     place(0);  // this frame too: where it was
-    const t0 = performance.now();
+    const t0 = performance.now(), hands = touchWatch();
     const step = (now) => {
-      const p = Math.min(1, (now - t0) / DURATION);
-      place(1 - (1 - p) ** 4);  // close to the height's own easing
+      if (hands.on) { hands.done(); return; }
+      const p = Math.min(1, Math.max(0, (now - t0) / DURATION));
+      place(1 - (1 - p) ** 5);  // the heights' own easing
       if (p < 1) requestAnimationFrame(step);
+      else hands.done();
     };
     requestAnimationFrame(step);
   };
@@ -543,7 +591,9 @@ function openingSpeeches(list) {
     const box = li.closest(".below");
     const top = li.getBoundingClientRect().top - (box ? box.getBoundingClientRect().top : 0);
     const height = !open ? 0 : isOpen(li) ? li.offsetHeight : resize(li, true);
-    for (const o of list.querySelectorAll(":scope > li.open")) if (o !== li && isOpen(o)) resize(o, false);
+    for (const o of list.querySelectorAll(":scope > li.open")) {
+      if (o !== li && isOpen(o)) resize(o, false, Boolean(o.compareDocumentPosition(li) & Node.DOCUMENT_POSITION_FOLLOWING));
+    }
     if (!open) { resize(li, false); return; }
     follow(li, top, height);
   };
@@ -734,8 +784,12 @@ function keyboardFit() {
   }
   vv.addEventListener("resize", fit);
   vv.addEventListener("scroll", fit);
-  addEventListener("focusin", fit);
-  addEventListener("focusout", () => setTimeout(fit, 0));  // to another field, or closed
+  // The focus leaving a field: looked at once the tap that moved it is done (its press, release and click come in one
+  // go), wherever it went. A fact's row can take the focus: a tap on a button in it (a comment's Küldés) moved the focus
+  // there on the press, the header and the video came back at once, the release landed on them, and the button got no
+  // click. It sent only on a second tap.
+  addEventListener("focusin", (e) => { if (e.target.matches?.(FIELD)) fit(); });
+  addEventListener("focusout", () => setTimeout(fit, 0));
 }
 
 // Phones, live page, the games (js/game.js builds them in the dock), in the chosen compact designs. On top the time left
