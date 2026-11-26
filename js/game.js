@@ -12,8 +12,8 @@
 // unscored, and are asked to sign in.
 
 import { collection, doc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { db, el } from "./common.js?v=202611260345";
-import { account, onAccount, api, needAccount, toast } from "./account.js?v=202611260345";
+import { db, el } from "./common.js?v=202611262130";
+import { account, onAccount, api, needAccount, toast } from "./account.js?v=202611262130";
 
 const TRUTH = { true: "IGAZ", false: "HAMIS" };
 const MASKED = "Hibás érvelés?";

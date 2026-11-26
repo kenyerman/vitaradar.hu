@@ -55,16 +55,15 @@ export function badge(verdict, kind) {
   return b;
 }
 
-// A fact's badge once the fallacy said in the same sentence shows on its card (pfc publish.link_docs): a decided
-// fact keeps its verdict and names the fallacy, "[ IGAZ · SZEMÉLYESKEDÉS ]"; an opinion or an unverifiable
-// statement shows the fallacy, "[ HIBÁS ÉRVELÉS: SZEMÉLYESKEDÉS ]". Without one it is the plain badge.
+// A fact's badge once the fallacy said in the same sentence shows on its card (pfc publish.link_docs): the card is
+// the fallacy's, whatever the fact's verdict, "[ HIBÁS ÉRVELÉS: SZEMÉLYESKEDÉS ]" (the fact's explanation stays on
+// it as context), and the pair counts once, as a fallacy. "[ IGAZ · SZALMABÁB ]" read as a contradiction. Without
+// one it is the plain badge.
 export function factBadge(c, v, fallacyShown) {
   if (!fallacyShown || !c.fallacy || v === "pending" || (c.kind && c.kind !== "claim")) return badge(v, c.kind);
-  const name = (c.fallacy.name || "").toUpperCase();
   const b = el("span", "verdict");
-  const fact = FACT_VERDICTS.has(v);
-  b.dataset.v = fact ? v : "fallacy";
-  b.textContent = fact ? `[ ${LABEL[v]} · ${name} ]` : `[ ${LABEL.fallacy}: ${name} ]`;
+  b.dataset.v = "fallacy";
+  b.textContent = `[ ${LABEL.fallacy}: ${(c.fallacy.name || "").toUpperCase()} ]`;
   return b;
 }
 
