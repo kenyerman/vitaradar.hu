@@ -1,11 +1,11 @@
 // vitaradar.hu MP page: one MP's fact-checked speeches, their overall scores, and a search over what they said.
 
-import { doc, getDoc, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { doc, collection, query, where } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { searchUrl } from "./config.js?v=202611241021";
-import { appCheckHeaders } from "./firebase.js?v=202611251640";
-import { db, el, badge, sourceList, setPhoto, hms, huDate, watchLiveNav } from "./common.js?v=202611251640";
-import { mountAccount } from "./account.js?v=202611251640";
-import { factSocial } from "./social.js?v=202611251640";
+import { appCheckHeaders } from "./firebase.js?v=202611260057";
+import { db, getDoc, getDocs, el, badge, sourceList, setPhoto, hms, huDate, watchLiveNav } from "./common.js?v=202611260057";
+import { mountAccount } from "./account.js?v=202611260057";
+import { factSocial } from "./social.js?v=202611260057";
 import { calendar } from "./calendar.js?v=202611241021";
 import { watchHref } from "./links.js?v=202611241021";
 import { setPageMeta } from "./meta.js?v=202611241124";

@@ -17,9 +17,9 @@
 // has the editor (js/account.js profileEditor: picture, name, nick, who sees what, blocked users, sign-out).
 
 import {
-  doc, getDoc, onSnapshot, collection, query, where, orderBy, limit, startAfter, getDocs,
+  doc, onSnapshot, collection, query, where, orderBy, limit, startAfter,
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { db, el, badge, huDate, watchLiveNav, mpHref } from "./common.js?v=202611251640";
+import { db, getDoc, getDocs, el, badge, huDate, watchLiveNav, mpHref } from "./common.js?v=202611260057";
 import {
   account, onAccount, onBlocks, isBlocked, avatar, profileEditor, mountAccount, signIn, openRegister, blockUser, api, toast,
 } from "./account.js?v=202611251640";

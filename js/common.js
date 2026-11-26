@@ -1,13 +1,14 @@
 // Shared by every page: Firebase, the digital rain behind the page, and small helpers.
 
 import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { db } from "./firebase.js?v=202611251640";
+import { db, getDoc, getDocs } from "./firebase.js?v=202611260057";
 import "./consent.js?v=202611241021";   // the cookie and storage bar at the bottom, on every page
 import "./presence.js?v=202611251640";  // the header's "N online" (visitors included), on every page
 import "./menu.js?v=202611241206";      // the hamburger menu on phones, on every page
 import { CDN, cdnReady, cdnUrl } from "./cdn.js?v=202611251640";
 
 export { db };  // set up once, with App Check, in firebase.js
+export { getDoc, getDocs };  // reads that wait for the server, not Firestore's own (firebase.js says why)
 
 export const LABEL = {
   true: "IGAZ", partly_true: "RÉSZBEN IGAZ", misleading: "FÉLREVEZETŐ", false: "HAMIS", opinion: "VÉLEMÉNY",

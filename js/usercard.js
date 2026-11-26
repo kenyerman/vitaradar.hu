@@ -8,9 +8,9 @@
 // The card shows what the profile's owner lets others see: a hidden name is not on the document, and hidden stats
 // make it unreadable for others (rules), so the card then asks the API for the rest (/user).
 
-import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { db, el } from "./common.js?v=202611251640";
-import { account, avatar, api } from "./account.js?v=202611251640";
+import { doc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { db, getDoc, el } from "./common.js?v=202611260057";
+import { account, avatar, api } from "./account.js?v=202611260057";
 import { profileHref } from "./links.js?v=202611241021";
 
 const KEEP_MS = 60_000;

@@ -118,11 +118,13 @@ function headerHeight() {
 }
 
 // Loading (css: the strip under the header and the grey blocks): until the page's data is in. It comes from
-// Firestore after the scripts ran: the pages with a list are ready once its first entry is there; the others once
-// the page starts changing and then stays still for a moment. At most a few seconds, and at once on a page that has
-// nothing to fetch.
-const READY = { "": "#facts > li", "index.html": "#facts > li", "watch.html": "#facts > li", "archive.html": "#days > *",
-  "mps.html": "#mps > li" };
+// Firestore after the scripts ran: the pages with a list are ready once its first entry is there (Archívum and
+// Képviselők also once they say there is nothing); the others once the page starts changing and then stays still for
+// a moment. At most a few seconds, and at once on a page that has nothing to fetch. Archívum and Képviselők wait
+// longer: their data waits for the server (js/firebase.js getDocs), and an empty page looked like "nothing here".
+const READY = { "": "#facts > li", "index.html": "#facts > li", "watch.html": "#facts > li",
+  "archive.html": "#days > *, #arch-empty:not([hidden])", "mps.html": "#mps > li, #mps-empty:not([hidden])" };
+const PATIENT = new Set(["archive.html", "mps.html"]);
 
 function loading() {
   const done = () => { root.dataset.loaded = "1"; mo.disconnect(); };
@@ -136,8 +138,8 @@ function loading() {
     quiet = setTimeout(done, 400);
   });
   if (!main || page === "impresszum.html" || (ready && main.querySelector(ready))) { done(); return; }
-  mo.observe(main, { childList: true, subtree: true, characterData: true });
-  setTimeout(done, 6000);
+  mo.observe(main, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ["hidden"] });
+  setTimeout(done, PATIENT.has(page) ? 30000 : 6000);
 }
 
 function mountShell() {  // body.m-site is in each page's markup, so the css has it from the first paint
