@@ -12,7 +12,7 @@ import {
   auth, db, appCheckHeaders, signInWithGoogle, signInAgain, readySignIn, signOut,
 } from "./firebase.js?v=202611260345";
 import { apiUrl, avatarUrl, photoPrefix } from "./config.js?v=202611241021";
-import { el, initials, huDate } from "./common.js?v=202611262215";
+import { el, initials, huDate } from "./common.js?v=202611262115";
 import { cdnReady, cdnUrl } from "./cdn.js?v=202611260345";
 import { profileHref } from "./links.js?v=202611241021";
 
