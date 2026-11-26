@@ -1297,7 +1297,7 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   .locked-card { padding: 16px; border: 0; background: var(--panel); box-shadow: 0 14px 30px rgba(0, 0, 0, .5); }
   .locked-card p { color: #e9f2ed; font: 400 14px/1.45 var(--sans); }
   /* the Játék tab, as in the design: the game card full width on the page (no frame), then how the games work */
-  .m-game-slot { display: grid; margin: 0 -16px; }
+  .m-game-slot { display: grid; align-content: start; margin: 0 -16px; }  /* the card, then the kinds, from the top */
   .m-live:not([data-m-tab="game"]) .m-game-slot { display: none; }
   .m-game-slot .game-dock { position: static; display: flex; flex-direction: column; align-items: stretch; gap: 0; }
   .m-game-slot :is(.game-pop, .tip-box, .m-game-empty) { width: auto; margin: 0; display: flex; flex-direction: column; gap: 10px;
@@ -1359,6 +1359,106 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   .m-game-slot .game-upsell > span { flex: 1; color: #9fb2a8; font-size: 12px; }
   .m-game-slot .game-upsell .btn { flex: none; height: 44px; padding: 0 14px; border: 0; background: var(--green); color: #021108;
     box-shadow: none; text-shadow: none; font: 700 11px/1 var(--display); letter-spacing: 1.2px; }
+  /* a challenge, the chosen "card" design made compact (js/mobile.js gameCards): the time left as a bar, the statement
+     and who said it; at the foot the question, the seconds, the points and the ✕, then the answers. A true-or-false one in
+     green, a fallacy in pink. The result in a box on top: green right, red wrong, plain unanswered. */
+  .m-game-slot .game-pop:has(> .m-ch-card) { --ch: var(--green); gap: 10px; padding-top: 0; }
+  .m-game-slot .game-pop[data-kind="fallacy"]:has(> .m-ch-card) { --ch: var(--fallacy); }
+  .m-game-slot .game-pop:has(> .m-ch-card) > :is(.game-head, .game-q) { display: none; }
+  .m-ch-card { display: flex; flex-direction: column; gap: 6px; }
+  .m-ch-card .game-bar { height: 4px; margin: 0 -14px 6px; background: color-mix(in srgb, var(--ch) 15%, transparent); }
+  .m-ch-card .game-bar span { background: var(--ch); }
+  .m-ch-card .game-statement { font: 600 17px/1.35 var(--sans); }
+  .m-ch-card .game-who { margin: 0; color: #8a9e94; font-size: 12px; }
+  .m-ch-card .game-quote { margin: 0; display: -webkit-box; overflow: hidden; color: #8a9e94; font-size: 12px;
+    -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+  /* the foot: the question and the seconds, the points, the ✕ */
+  .m-ch-ask { display: flex; align-items: center; gap: 8px; min-height: 28px; }
+  .m-ch-q { flex: 1; min-width: 0; color: #8a9e94; font: 700 11px/1.2 var(--display); letter-spacing: 1.2px; text-transform: uppercase; }
+  .m-ch-q .game-time { color: var(--ch); font: inherit; }
+  .m-ch-q .game-time:not(:empty)::before { content: " · "; color: #8a9e94; }
+  .m-ch-ask .game-worth { order: 0; flex: none; padding: 3px 6px; background: var(--ch); color: #021108; font: 700 11px/1 var(--display);
+    letter-spacing: .6px; }
+  .m-ch-ask .game-close { order: 0; width: 36px; height: 36px; margin: -6px -10px -6px -4px; font-size: 14px; }
+  .m-game-slot .game-pop[data-state="result"] .m-ch-q { visibility: hidden; }
+  /* while open: the foot and the answers stay at the panel's foot, the statement scrolls behind them; the quote waits for
+     the result */
+  .m-ch-act { display: flex; flex-direction: column; gap: 6px; }
+  .m-game-slot .game-pop[data-state="open"] .m-ch-act { position: sticky; bottom: 0; z-index: 1; margin: 0 -14px;
+    padding: 6px 14px 12px; background: var(--bg); border-top: 1px solid rgba(61, 240, 130, .12); }
+  .m-game-slot .game-pop[data-state="open"] .m-ch-card .game-quote { display: none; }
+  /* true or false: two buttons, ✓ IGAZ green and ✗ HAMIS red; once answered the other dims, and with the result the
+     right one stays bright, with its share of the players */
+  .m-game-slot .game-pop[data-kind="truth"]:has(> .m-ch-card) .game-opt { min-height: 44px; justify-content: center; gap: 8px;
+    text-align: center; }
+  .m-game-slot .game-pop[data-kind="truth"]:has(> .m-ch-card) .game-opt[data-option="true"] { background: var(--true); color: #021108; }
+  .m-game-slot .game-pop[data-kind="truth"]:has(> .m-ch-card) .game-opt[data-option="false"] { background: var(--false); color: #1a0402; }
+  .m-game-slot .game-pop[data-kind="truth"]:has(> .m-ch-card) .game-opt[data-option="true"] .opt-label::before { content: "✓ "; color: inherit; }
+  .m-game-slot .game-pop[data-kind="truth"]:has(> .m-ch-card) .game-opt[data-option="false"] .opt-label::before { content: "✗ "; color: inherit; }
+  /* a fallacy: its names two by two (a last odd one across), lettered A, B, C */
+  .m-game-slot .game-pop[data-kind="fallacy"]:has(> .m-ch-card) .game-options { grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px; counter-reset: opt; }
+  .m-game-slot .game-pop[data-kind="fallacy"]:has(> .m-ch-card) .game-opt { min-height: 40px; padding: 6px 10px; font-size: 11.5px;
+    letter-spacing: .6px; line-height: 1.2; }
+  .m-game-slot .game-pop[data-kind="fallacy"]:has(> .m-ch-card) .game-opt:last-child:nth-child(odd) { grid-column: 1 / -1; }
+  .m-game-slot .game-pop[data-kind="fallacy"]:has(> .m-ch-card) .game-opt .opt-label::before { counter-increment: opt;
+    content: counter(opt, upper-alpha) " · "; color: var(--ch); }
+  .m-game-slot .game-pop[data-kind="fallacy"]:has(> .m-ch-card) .game-opt.right .opt-label::before { color: inherit; }
+  .m-game-slot .game-pop:has(> .m-ch-card) .game-opt.picked { box-shadow: inset 0 0 0 3px #e9f2ed; }
+  .m-game-slot .game-pop:not([data-state="result"]):has(> .m-ch-card):has(.game-opt.picked) .game-opt:not(.picked),
+  .m-game-slot .game-pop[data-state="result"]:has(> .m-ch-card) .game-opt:not(.right):not(.picked) { opacity: .38; }
+  .m-game-slot .game-pop[data-kind="truth"]:has(> .m-ch-card) .game-opt.right { box-shadow: inset 0 0 0 3px #e9f2ed; opacity: 1; }
+  .m-game-slot .game-pop[data-kind="truth"][data-state="result"]:has(> .m-ch-card) .game-opt.right[data-option="false"] {
+    background: var(--false); color: #1a0402; }
+  /* the outcome: while open only once answered; the result as a box on top */
+  .m-game-slot .game-pop:has(> .m-ch-card) .game-status { text-align: center; }
+  .m-game-slot .game-pop[data-state="open"]:has(> .m-ch-card):not(:has(.game-opt.picked)) .game-status { display: none; }
+  .m-game-slot .game-pop[data-state="result"]:has(> .m-ch-card) .game-status { order: -1; margin-top: 12px; padding: 10px;
+    border: 1.5px solid #2a3a33; background: var(--panel); font-size: 14px; }
+  .m-game-slot .game-pop[data-state="result"]:has(> .m-ch-card) .game-status[data-right="true"] { border-color: var(--green);
+    background: rgba(61, 240, 130, .1); }
+  .m-game-slot .game-pop[data-state="result"]:has(> .m-ch-card) .game-status[data-right="false"] { border-color: var(--false);
+    background: rgba(255, 93, 82, .08); }
+  /* the speech tip and the vote in the same layout (js/mobile.js gameCards, the chosen "steppers" design): the time as a
+     bar, the question and the tip's three counts with − and +, or what is voted on and the optional band of yes votes; at
+     the foot the label, the seconds, the points, the ✕ (a tip's fold toggle), then Tippelek or the vote's two answers,
+     kept at the panel's foot while open. A tip in amber, a vote in violet. */
+  .m-game-slot .tip-box:has(> .m-ch-card) { --ch: var(--unverifiable); gap: 10px; padding-top: 0; }
+  .m-game-slot .vote-pop:has(> .m-ch-card) { --ch: var(--promise); }
+  .m-game-slot .tip-box:has(> .m-ch-card) > :is(.game-head, .tip-body) { display: none; }
+  .m-game-slot :is(.tip-box, .vote-pop) .m-ch-card :is(.tip-q, .game-q) { margin: 0; color: #e9f2ed; font: 600 17px/1.35 var(--sans);
+    letter-spacing: 0; text-transform: none; }
+  .m-game-slot .tip-box[data-state="open"] .m-ch-act { position: sticky; bottom: 0; z-index: 1; margin: 0 -14px;
+    padding: 6px 14px 12px; background: var(--bg); border-top: 1px solid rgba(61, 240, 130, .12); }
+  .m-ch-ask .tip-toggle { order: 0; width: 36px; height: 36px; margin: -6px -10px -6px -4px; font-size: 14px; }
+  .m-ch-ask .tip-title { order: 0; display: none; }
+  .m-ch-ask .game-worth:empty { display: none; }  /* a tip without points (sent as a visitor, or none yet) */
+  .m-ch-ask .game-worth.tip-points { background: var(--green); }
+  /* the tip's counts: one row each, its name in its colour, − the number + */
+  .m-game-slot .m-ch-card .tip-row { grid-template-columns: minmax(0, 1fr) 36px 30px 36px; min-height: 42px; }
+  .m-game-slot .m-ch-card .tip-step { width: 36px; height: 36px; }
+  .m-game-slot .m-ch-card .tip-val { font-size: 17px; }
+  .m-game-slot .m-ch-act .tip-send { height: 44px; background: var(--ch); color: #2a1c00; clip-path: none; }
+  .m-game-slot .tip-box[data-state="open"]:has(> .m-ch-card) > .game-status { display: none; }  /* the question says it */
+  /* a tip in: it folds into its foot (the label and the speaker, the points, ▴) and the counts tipped */
+  .m-game-slot .tip-box[data-folded="true"]:has(> .m-ch-card) { gap: 4px; padding-bottom: 10px; }
+  .m-game-slot .tip-box[data-folded="true"]:has(> .m-ch-card) > :is(.m-ch-card, .game-status, .game-after),
+  .m-game-slot .tip-box[data-folded="true"] .m-ch-act .tip-send { display: none; }
+  .m-game-slot .tip-box[data-folded="true"] .m-ch-act { padding-top: 10px; }
+  .m-game-slot .tip-box[data-folded="true"] .m-ch-q { flex: none; }
+  .m-game-slot .tip-box[data-folded="true"] .m-ch-ask .tip-title { display: block; flex: 1; min-width: 0; overflow: hidden;
+    visibility: visible; color: #c5d3cb; font: 400 12px/1.3 var(--sans); text-overflow: ellipsis; white-space: nowrap; }
+  /* the vote: what is voted on, small; the band of yes votes as three chips; ✓ yes green, ✗ no red */
+  .m-game-slot .vote-pop .m-ch-card :is(.vote-item, .vote-mode) { margin: 0; color: #8a9e94; font: 400 12px/1.4 var(--sans); }
+  .m-game-slot .vote-pop .m-ch-card .vote-band-q { margin: 6px 0 0; color: #8a9e94; font: 400 12px/1.4 var(--sans); }
+  .m-game-slot .vote-pop .m-ch-card .vote-band { min-height: 36px; font-size: 11px; }
+  .m-game-slot .vote-pop:has(> .m-ch-card) .game-opt { min-height: 44px; justify-content: center; gap: 8px; text-align: center; }
+  .m-game-slot .vote-pop:has(> .m-ch-card) .game-opt[data-option="yes"] { background: var(--true); color: #021108; }
+  .m-game-slot .vote-pop:has(> .m-ch-card) .game-opt[data-option="no"] { background: var(--false); color: #1a0402; }
+  .m-game-slot .vote-pop:has(> .m-ch-card) .game-opt[data-option="yes"] .opt-label::before { content: "✓ "; color: inherit; }
+  .m-game-slot .vote-pop:has(> .m-ch-card) .game-opt[data-option="no"] .opt-label::before { content: "✗ "; color: inherit; }
+  .m-game-slot .vote-pop:has(> .m-ch-card) .game-opt.right { box-shadow: inset 0 0 0 3px #e9f2ed; opacity: 1; }
+  .m-game-slot .vote-pop[data-state="result"]:has(> .m-ch-card) .game-opt.right[data-option="no"] { background: var(--false); color: #1a0402; }
   /* the speech tip: its question, three steppers, the send button */
   .m-game-slot .tip-body { display: flex; flex-direction: column; gap: 10px; }
   .m-game-slot .tip-q { margin: 0; color: #e9f2ed; font: 600 16px/1.35 var(--sans); }
@@ -1380,12 +1480,16 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   .m-game-slot .tip-sum { color: #c5d3cb; font-size: 12px; }
   .m-game-slot .tip-sum b { font: 700 13px/1 var(--display); }
   .m-game-slot .tip-points { color: var(--green); text-shadow: none; }
-  /* how the games work */
-  .m-game-how { margin: 4px 14px 20px; padding-top: 12px; border-top: 1px solid rgba(61, 240, 130, .12); display: flex;
-    flex-direction: column; gap: 6px; color: #9fb2a8; font: 400 12px/1.45 var(--sans); }
-  .m-game-how p { margin: 0; }
-  .m-game-how b { color: #e9f2ed; font-weight: 600; }
-  .m-game-how .m-game-how-h { color: #8a9e94; font: 600 10.5px/1.2 var(--display); letter-spacing: 1.4px; text-transform: uppercase; }
+  /* no game running (js/mobile.js, the "standby" design): a radar, the state, that the reader will be told; under it, in
+     any state, how many games this broadcast has had */
+  .m-game-slot .m-game-empty { align-items: center; gap: 6px; padding: 26px 16px 18px; text-align: center; }
+  .m-game-radar { width: 44px; height: 44px; margin-bottom: 6px; }
+  .m-game-slot svg { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  .m-game-radar { color: var(--green); }
+  .m-game-how { margin: 4px 12px 20px; display: flex; flex-direction: column; gap: 14px; }
+  .m-game-played { margin: 0; color: #8a9e94; font: 600 10.5px/1.3 var(--display); letter-spacing: 1.2px; text-align: center;
+    text-transform: uppercase; }
+  .m-game-played[hidden] { display: none; }
 
   /* the replay page: the same pinned player and strip, below the title (it pins once the title has scrolled away) */
   .m-watch .m-top .player { aspect-ratio: 16 / 9; }

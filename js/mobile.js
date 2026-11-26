@@ -353,10 +353,10 @@ function liveTabs(top, slots, feed) {
   if (dock) {
     const live = () => {
       const card = dock.querySelector(':scope > :not([hidden])[data-state="open"]');
-      const time = card ? (card.querySelector(".game-time") || {}).textContent || "" : "";
+      const time = card ? ((card.querySelector(".game-time") || {}).textContent || "").trim() : "";
       if (card) gameTab.b.dataset.live = "true"; else delete gameTab.b.dataset.live;
-      gameTab.n.textContent = time.trim();
-      gameTab.n.hidden = !card || !time.trim();
+      gameTab.n.textContent = time;
+      gameTab.n.hidden = !card || !time;
     };
     new MutationObserver(live).observe(dock, { childList: true, subtree: true, characterData: true, attributes: true,
       attributeFilter: ["hidden", "data-state"] });
@@ -719,6 +719,105 @@ function keyboardFit() {
   addEventListener("focusout", () => setTimeout(fit, 0));  // to another field, or closed
 }
 
+// Phones, live page, the games (js/game.js builds them in the dock), in the chosen compact designs. On top the time left
+// as a bar, then what is asked: a challenge's statement and who said it, a tip's question and its three counts with −
+// and +, a vote's question, what is voted on and the optional band of yes votes. At the foot the game's label and the
+// seconds, the points and the ✕ (a tip's fold toggle), then the answers, Tippelek, or the vote's two buttons (css),
+// kept in view while the game is open. Only moved and relabelled here, each time js/game.js builds a card: it finds
+// its parts by class (or keeps them) wherever they are. Wide screens keep the cards as they were.
+function gameCards(dock) {
+  if (!dock) return;
+  // each part moved and where it came from (a comment left in its place), so a card goes back to the wide layout, and
+  // comes again, when the window crosses the phone width (a tablet turned during a tip)
+  const moves = new WeakMap();  // box -> [[node, mark]]
+  const take = (box, ...nodes) => nodes.filter(Boolean).map((node) => {
+    const mark = document.createComment(" m ");
+    node.before(mark);
+    moves.get(box).push([node, mark]);
+    return node;
+  });
+  // "+10 pont" reads "+10" in the small badge; its full words stay its name. A tip's js/game.js writes anew as it goes.
+  const watchedWorth = new WeakSet();
+  const shorten = (worth) => {
+    const t = worth.textContent;
+    if (!/\spont$/.test(t)) return;
+    worth.dataset.full = t;
+    worth.setAttribute("aria-label", t);
+    worth.textContent = t.replace(/\s*pont$/, "");
+  };
+  const dress = (box) => {
+    if (!PHONE.matches || box.querySelector(":scope > .m-ch-card")) return;
+    const part = (cls, from = box) => from.querySelector(`:scope > ${cls}`);
+    const head = part(".game-head");
+    if (!head) return;  // not built yet
+    const isTip = box.classList.contains("tip-box"), isVote = box.classList.contains("vote-pop");
+    const body = isTip ? part(".tip-body") : null;
+    if (isTip ? !body : !part(isVote ? ".game-q" : ".game-statement")) return;
+    moves.set(box, []);
+    const time = head.querySelector(".game-time"), worth = head.querySelector(".game-worth");
+    const card = el("div", "m-ch-card"), act = el("div", "m-ch-act"), line = el("div", "m-ch-ask"), q = el("span", "m-ch-q");
+    line.append(q);
+    if (isTip) {
+      // the tip: its body folds away once the tip is in; what folds goes out of it, the foot stays with the counts
+      card.append(...take(box, part(".game-bar", body), part(".tip-q", body), part(".tip-grid", body)));
+      q.append("Tipp", ...take(box, time));
+      line.append(...take(box, head.querySelector(".tip-title"), worth, head.querySelector(".tip-toggle")));
+      act.append(line, ...take(box, part(".tip-send", body)));
+      head.after(card, act);
+      act.after(...take(box, part(".tip-sum"), part(".game-status", body), part(".game-after", body)));
+    } else if (isVote) {
+      card.append(...take(box, part(".game-bar"), part(".game-q"), ...box.querySelectorAll(":scope > :is(.vote-item, .vote-mode)"),
+        part(".vote-band-q"), part(".vote-bands")));
+      q.append("Szavazás", ...take(box, time));
+      line.append(...take(box, worth, head.querySelector(".game-close")));
+      act.append(line, ...take(box, part(".game-options")));
+      head.after(card, act);
+    } else {
+      // a challenge: "Melyik hibás érvelés ez?" reads "Melyik hibás érvelés?"; a true-or-false one has no question of its own
+      card.append(...take(box, part(".game-bar"), part(".game-statement"), part(".game-who"), part(".game-quote")));
+      q.textContent = (part(".game-q")?.textContent || "").trim().replace(/\s+ez\?$/i, "?") || "Igaz vagy hamis?";
+      q.append(...take(box, time));
+      line.append(...take(box, worth, head.querySelector(".game-close")));
+      act.append(line, ...take(box, part(".game-options")));
+      head.after(card, act);
+    }
+    if (worth) {
+      shorten(worth);
+      if (!watchedWorth.has(worth)) {
+        watchedWorth.add(worth);
+        new MutationObserver(() => { if (moves.has(box)) shorten(worth); })
+          .observe(worth, { childList: true, characterData: true, subtree: true });
+      }
+    }
+  };
+  const undress = (box) => {
+    const list = moves.get(box);
+    if (!list) return;
+    moves.delete(box);
+    for (const [node, mark] of list) if (mark.parentNode) mark.replaceWith(node);
+    for (const x of box.querySelectorAll(":scope > :is(.m-ch-card, .m-ch-act)")) x.remove();
+    const worth = box.querySelector(".game-worth");
+    if (worth?.dataset.full) {
+      worth.textContent = worth.dataset.full;
+      delete worth.dataset.full;
+      worth.removeAttribute("aria-label");
+    }
+  };
+  const boxes = () => dock.querySelectorAll(":scope > :is(.game-pop, .tip-box)");
+  const watched = new WeakSet();
+  const watch = () => {
+    for (const box of boxes()) {
+      if (watched.has(box)) continue;
+      watched.add(box);
+      new MutationObserver(() => dress(box)).observe(box, { childList: true });  // js/game.js builds it anew
+      dress(box);
+    }
+  };
+  new MutationObserver(watch).observe(dock, { childList: true });
+  PHONE.addEventListener("change", () => { for (const box of boxes()) if (PHONE.matches) dress(box); else undress(box); });
+  watch();
+}
+
 // Phones: a comment box grows when tapped (js/social.js), and its counter and send button came to sit behind the
 // keyboard. Once the keyboard is up the whole box comes into view. scrollIntoView may move the page here: with the
 // keyboard open iOS scrolls it anyway, and closed, the app page has nothing to scroll.
@@ -759,21 +858,43 @@ function mountPhone(page) {
     // the games: out of the dock over the page, into the Játék tab
     const game = el("div", "m-game-slot");
     game.id = "m-game";
-    // no game running: the card's empty state, as in the design (its tag, a status line, what to expect)
-    const empty = el("div", "m-game-empty");
+    // no game running (the chosen "standby" design): a radar, the state, that the reader will be told (the note on the
+    // other tabs, liveTabs); under it, in any state, how many games this broadcast has had
     const line = (cls, text) => { const e = el("p", cls); e.textContent = text; return e; };
-    empty.append(line("m-game-tag", "Játék"), line("m-game-status", "Nincs futó kihívás"),
-      line("m-game-info", "Kihívás akkor ugrik fel, amikor egy biztos állítás elhangzik; a felszólalások elején a mérlegre tippelhetsz."));
-    // how the games work, under the card in any state
+    const icon = (paths) => {  // outline icons, as the design's; aria-hidden: the words say it
+      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.setAttribute("viewBox", "0 0 24 24");
+      svg.setAttribute("aria-hidden", "true");
+      for (const d of paths) {
+        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        path.setAttribute("d", d);
+        svg.append(path);
+      }
+      return svg;
+    };
+    const empty = el("div", "m-game-empty");
+    const radar = icon(["M11 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0", "M15.51 15.56a5 5 0 1 0 -3.51 1.44",
+      "M18.83 17.86a9 9 0 1 0 -6.83 3.14", "M12 12v9"]);
+    radar.classList.add("m-game-radar");
+    empty.append(radar, line("m-game-status", "Nincs futó játék"), line("m-game-info", "Szólunk, amikor indul a következő."));
     const how = el("div", "m-game-how");
-    const item = (name, text) => { const p = el("p"); const b = el("b"); b.textContent = name; p.append(b, ` ${text}`); return p; };
-    how.append(line("m-game-how-h", "Hogyan működik?"),
-      item("Kihívás:", "egy biztos állításnál 10 mp (igaz vagy hamis?) vagy 15 mp (melyik hibás érvelés?)."),
-      item("Tipp:", "a felszólalás elején 20 mp, hány igaz, hamis állítás és hibás érvelés lesz benne."),
-      item("Szavazás:", "tippeld meg, mit dönt az Országgyűlés."));
+    const played = line("m-game-played", "");
+    played.hidden = true;
+    how.append(played);
+    // js/game.js keeps the counts on the dock: "challenges tips votes" opened so far in this broadcast
+    const dockNow = document.querySelector(".game-dock");
+    const count = () => {
+      const [c, t, v] = (dockNow?.dataset.played || "").split(" ").map(Number);
+      const parts = [[c, "kihívás"], [t, "tipp"], [v, "szavazás"]].filter(([n]) => n > 0).map(([n, w]) => `${n} ${w}`);
+      played.textContent = parts.length ? `Ebben az adásban · ${parts.join(" · ")}` : "";
+      played.hidden = !parts.length;
+    };
+    if (dockNow) new MutationObserver(count).observe(dockNow, { attributes: true, attributeFilter: ["data-played"] });
+    count();
     game.append(empty, how);
     slot.after(game);
     moves.add(document.querySelector(".game-dock"), game, how);
+    gameCards(document.querySelector(".game-dock"));
     gameTags(game);
     slots = { chat: slot, game };
   }

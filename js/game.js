@@ -598,7 +598,11 @@ export function mountGame({ now: streamNow }) {
 
   function tick() {
     const now = streamNow();
-    if (now == null || !session) { pop.hide(); tipView.hide(); voteView.hide(); return; }
+    if (now == null || !session) { pop.hide(); tipView.hide(); voteView.hide(); delete dock.dataset.played; return; }
+    // how many games this broadcast has had so far: "challenges tips votes" (the phones' Játék tab shows it)
+    const so = (games) => [...games.values()].filter((g) => g.opens_at <= now).length;
+    const played = `${so(challenges)} ${so(tips)} ${so(votes)}`;
+    if (dock.dataset.played !== played) dock.dataset.played = played;
     // the challenge on screen: from its opening until its result has been shown for a while
     let current = null;
     for (const ch of challenges.values()) {
