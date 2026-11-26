@@ -233,10 +233,11 @@ function compactFacts(list) {
         talk.setAttribute("aria-label", `${m[1]} hozzászólás`);
       } else if (talk) talk.remove();
       const v = li.querySelector(".verdict");
-      if (!v) continue;
-      const t = v.textContent;
-      if (PHONE.matches && t.startsWith("[ ") && t.endsWith(" ]")) v.textContent = t.slice(2, -2);
-      else if (!PHONE.matches && !t.startsWith("[")) v.textContent = `[ ${t} ]`;
+      // the [ ] are at the ends of the badge's first and last text (a pending badge has its loading sign between)
+      const a = v && v.firstChild, z = v && v.lastChild;
+      if (!a || a.nodeType !== Node.TEXT_NODE || z.nodeType !== Node.TEXT_NODE) continue;
+      if (PHONE.matches && a.data.startsWith("[ ") && z.data.endsWith(" ]")) { a.data = a.data.slice(2); z.data = z.data.slice(0, -2); }
+      else if (!PHONE.matches && !a.data.startsWith("[")) { a.data = `[ ${a.data}`; z.data += " ]"; }
     }
   };
   const later = () => { if (!queued) { queued = true; requestAnimationFrame(tidy); } };
@@ -742,8 +743,12 @@ function keyboardFit() {
   let full = vv.height;  // the screen without the keyboard
   let fingers = 0, settle = 0;  // touches on the screen; the wait for the page to stop after them
   const later = () => { clearTimeout(settle); settle = setTimeout(() => { settle = 0; fit(); }, 150); };
+  // only the phone layout of the live and replay pages keeps the window still (the panels scroll); a wide screen, and
+  // a page that scrolls as a whole, are left alone: putting their scroll back sent every click to the page's top
+  const pinned = document.body.classList.contains("m-live") || document.body.classList.contains("m-watch");
   const fit = () => {
-    const field = PHONE.matches && document.activeElement?.matches?.(FIELD);
+    const active = PHONE.matches && pinned;
+    const field = active && document.activeElement?.matches?.(FIELD);
     if (!field) full = vv.height;
     const on = Boolean(field) && vv.height < full - 100;
     if (on) root.style.setProperty("--m-kb-h", `${Math.round(vv.height)}px`);
@@ -759,7 +764,7 @@ function keyboardFit() {
     }
     // what iOS scrolled to show the field, back. Not under a finger, nor while the page still glides from one (each
     // frame put back against it shook the screen): once it has stood still.
-    if (scrollY && (on || !field)) {
+    if (active && scrollY && (on || !field)) {
       if (fingers || settle) later();
       else scrollTo(0, 0);
     }
