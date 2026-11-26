@@ -1942,7 +1942,9 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   .m-tab { transition: color .25s, background-color .25s; }
   .m-live .below, .m-live .m-chat-slot, .m-live .m-game-slot { animation: m-page .45s var(--m-out); }
 
-  /* the facts */
+  /* the facts. Not the wide screens' own slide-in (.fact pop): it came back, a second slide, whenever one of the
+     classes below went (a new fact's m-in after 1.6 s, a verdict's flash, the first screenful's m-intro) */
+  .m-live .fact { animation: none; }
   .m-live .fact.m-intro { animation: m-from-left .55s var(--m-out) calc(var(--i, 0) * 60ms) backwards; }
   .m-live .facts > .m-sep { animation: m-shove .5s var(--m-out); }
   :is(.m-live, .m-watch) .fact { position: relative; transition: background-color .25s; }
@@ -1950,6 +1952,10 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   .m-live .fact.m-in { animation: m-in-left .5s var(--m-out), m-slab 1.6s ease-out; }
   .m-live .fact.flash .verdict { animation: m-stamp .45s var(--m-out); }
   .m-live .fact.flash { animation: m-frame 1.2s ease-out; }
+  /* the verdict lands while the fact is still coming in (a second after it, on the stream): both run on. With the
+     flash alone, the slide-in stopped and started over once the flash was done, a second slide */
+  .m-live .fact.m-in.flash { animation: m-in-left .5s var(--m-out), m-slab 1.6s ease-out, m-frame 1.2s ease-out; }
+  .m-live .fact.m-intro.flash { animation: m-from-left .55s var(--m-out) calc(var(--i, 0) * 60ms) backwards, m-frame 1.2s ease-out; }
   .m-live .fact.flash:has(.verdict[data-v="false"]) { --frame: var(--false); }
   .m-live .fact.flash:has(.verdict[data-v="unverifiable"]) { --frame: var(--unverifiable); }
   .m-live .fact.flash:has(.verdict[data-v="fallacy"]) { --frame: var(--fallacy); }
