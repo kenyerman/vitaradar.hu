@@ -122,7 +122,8 @@ function compactFacts(list) {
     const to = li.offsetHeight;
     if (!open) li.dataset.open = "true";  // closing: the details stay while they fade and the row folds
     li.style.overflow = "hidden";
-    const a = li.animate([{ height: `${from}px` }, { height: `${to}px` }], { duration: 340, easing: ease });
+    // fill: kept at its end height until it is done below, or a closed row showed its details for a frame
+    const a = li.animate([{ height: `${from}px` }, { height: `${to}px` }], { duration: 340, easing: ease, fill: "forwards" });
     const fades = details(li).map((d, i) => d.animate([{ opacity: open ? 0 : 1 }, { opacity: open ? 1 : 0 }],
       open ? { duration: 260, delay: 60 + i * 50, easing: "ease-out", fill: "backwards" }
         : { duration: 180, easing: "ease-out", fill: "forwards" }));
@@ -130,9 +131,10 @@ function compactFacts(list) {
     a.finished.then(() => {
       if (runs.get(li)?.a !== a) return;
       runs.delete(li);
+      if (!open) delete li.dataset.open;
+      a.cancel();
       fades.forEach((f) => f.cancel());
       li.style.overflow = "";
-      if (!open) delete li.dataset.open;
     }, () => {});
   };
   const isOpen = (li) => li.dataset.open === "true" && runs.get(li)?.kind !== "close";
@@ -445,28 +447,96 @@ function gameTags(box) {
 }
 
 // Phones, replay page: a tap on a speech (or Enter / Space on it) opens its facts under it (js/watch.js puts them there,
-// the same cards as in the facts list), one speech at a time, and closes them again; its time button plays it from its
-// start, as on wider screens.
+// the same cards as in the facts list), one speech at a time, and closes them again. Its time button plays it from its
+// start, as on wider screens, and opens its facts too. As the facts rows do (compactFacts), a speech grows or folds
+// smoothly, its facts fading in or out; the speech tapped keeps its place while one open above it folds, and moves up
+// in the same motion just enough to show its facts (its own row never off the top). No motion: at once.
 function openingSpeeches(list) {
   if (!list) return;
+  const calm = matchMedia("(prefers-reduced-motion: reduce)");
+  const motion = () => PHONE.matches && !calm.matches;
+  const ease = "cubic-bezier(.22, 1, .36, 1)", DURATION = 380;
+  const runs = new WeakMap();  // li -> its running open or close: { kind, a, fade }
   const mark = (li) => {
     li.tabIndex = PHONE.matches ? 0 : -1;
-    if (PHONE.matches) li.setAttribute("aria-expanded", String(li.classList.contains("open")));
+    if (PHONE.matches) li.setAttribute("aria-expanded", String(li.classList.contains("open") && runs.get(li)?.kind !== "close"));
     else li.removeAttribute("aria-expanded");
   };
-  const toggle = (li) => {
-    const open = !li.classList.contains("open");
-    for (const o of list.querySelectorAll(":scope > li.open")) { o.classList.remove("open"); mark(o); }
+  const stop = (li) => {
+    const r = runs.get(li);
+    if (!r) return;
+    runs.delete(li);
+    r.a.cancel();
+    r.fade?.cancel();
+    li.style.overflow = "";
+  };
+  const isOpen = (li) => li.classList.contains("open") && runs.get(li)?.kind !== "close";
+  // the speech's height goes from what it is now to its height open or closed; returns that height
+  const resize = (li, open) => {
+    const from = li.offsetHeight;
+    stop(li);
     if (open) {
       li.dispatchEvent(new CustomEvent("speech-open", { bubbles: true }));  // js/watch.js fills it the first time
       li.classList.add("open");
+    } else li.classList.remove("open");
+    const to = li.offsetHeight;
+    if (motion() && from !== to) {
+      if (!open) li.classList.add("open");  // closing: the facts stay while they fade and the speech folds
+      li.style.overflow = "hidden";
+      // fill: kept at its end height until it is done below, or a folded speech showed all its facts for a frame
+      const a = li.animate([{ height: `${from}px` }, { height: `${to}px` }], { duration: DURATION, easing: ease, fill: "forwards" });
+      const facts = li.querySelector(":scope > .speech-facts");
+      const fade = facts?.animate([{ opacity: open ? 0 : 1 }, { opacity: open ? 1 : 0 }],
+        open ? { duration: 300, delay: 60, easing: "ease-out", fill: "backwards" } : { duration: 200, easing: "ease-out", fill: "forwards" });
+      runs.set(li, { kind: open ? "open" : "close", a, fade });
+      a.finished.then(() => {
+        if (runs.get(li)?.a !== a) return;
+        runs.delete(li);
+        if (!open) li.classList.remove("open");
+        a.cancel();
+        fade?.cancel();
+        li.style.overflow = "";
+        mark(li);
+      }, () => {});
     }
     mark(li);
+    return to;
+  };
+  // the speech in its panel: from where it was (top, from the panel's top) up by just enough to show it `height` tall,
+  // while the speeches around it change. In the panel's own terms: the panel itself moves when the speaker strip above
+  // it fills in. Not scrollIntoView, which on iOS also scrolls the page and takes the header off the top.
+  const follow = (li, top, height) => {
+    const box = li.closest(".below");
+    if (!box) return;
+    const room = box.clientHeight, bottom = top + height;
+    const by = top < 0 ? top : bottom > room ? Math.min(bottom - room, top) : 0;
+    const at = () => li.getBoundingClientRect().top - box.getBoundingClientRect().top;
+    const place = (k) => { const dy = at() - (top - by * k); if (Math.abs(dy) >= 0.5) box.scrollTop += dy; };
+    if (!motion()) { place(1); return; }
+    place(0);  // this frame too: where it was
+    const t0 = performance.now();
+    const step = (now) => {
+      const p = Math.min(1, (now - t0) / DURATION);
+      place(1 - (1 - p) ** 4);  // close to the height's own easing
+      if (p < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  };
+  // The speech tapped opens before the one open folds: measuring the fold shortens the list for a moment, and with
+  // nothing open below the panel then scrolled back to its top, and the speech tapped jumped down for a frame.
+  const toggle = (li, keep = false) => {
+    const open = keep || !isOpen(li);
+    const box = li.closest(".below");
+    const top = li.getBoundingClientRect().top - (box ? box.getBoundingClientRect().top : 0);
+    const height = !open ? 0 : isOpen(li) ? li.offsetHeight : resize(li, true);
+    for (const o of list.querySelectorAll(":scope > li.open")) if (o !== li && isOpen(o)) resize(o, false);
+    if (!open) { resize(li, false); return; }
+    follow(li, top, height);
   };
   list.addEventListener("click", (e) => {
-    if (!PHONE.matches || e.target.closest(".t-btn, .speech-facts")) return;
+    if (!PHONE.matches || e.target.closest(".speech-facts")) return;
     const li = e.target.closest("#speakers > li");
-    if (li) toggle(li);
+    if (li) toggle(li, !!e.target.closest(".t-btn"));  // the time button plays it (js/watch.js) and leaves it open
   });
   list.addEventListener("keydown", (e) => {
     if (!PHONE.matches || (e.key !== "Enter" && e.key !== " ") || !e.target.matches("#speakers > li")) return;
@@ -479,8 +549,8 @@ function openingSpeeches(list) {
 }
 
 // Phones, replay page (as the live page): a compact row on top of the pinned block (back to the archive, the date
-// and the time, the link to this moment as an icon), the video and the speaker strip, two tabs (the facts, the
-// speakers) and the AI notice with the "all facts" switch. The tab names show how many there are.
+// and the time, the link to this moment as an icon), the video and the speaker strip, two tabs (the speakers, open
+// first, and the facts) and the AI notice with the "all facts" switch. The tab names show how many there are.
 function replayParts(top, moves) {
   const head = el("div", "m-whead");
   const text = el("div", "m-whead-text");
@@ -536,7 +606,7 @@ function replayParts(top, moves) {
     select(next.b.dataset.tab);
     next.b.focus();
   });
-  select("feed");
+  select("speakers");
 
   // the counts: "[118/272]" (js/watch.js) as "118/272", the speeches' number; the date without its "// "
   const count = document.getElementById("fact-count"), list = document.getElementById("speakers");

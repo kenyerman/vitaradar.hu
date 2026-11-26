@@ -1389,6 +1389,10 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   /* the replay page: the same pinned player and strip, below the title (it pins once the title has scrolled away) */
   .m-watch .m-top .player { aspect-ratio: 16 / 9; }
   .m-watch .fact.now { scroll-margin-bottom: 16px; }
+  /* the fact playing, or just started from its time (js/watch.js), in the facts and under its speech: the wide
+     screens' green frame has no border to draw on here, so a tint (over an opened fact's too) and its time in green */
+  .m-watch .fact.now { background: rgba(61, 240, 130, .08); }
+  .m-watch .fact.now .t-btn:not(:disabled) { color: var(--green); }
 }
 
 /* ------------------------------------------------------------------ phones: the new look
@@ -1545,6 +1549,10 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   .m-watch .m-ai #show-all { flex: none; min-height: 26px; padding: 0 8px; gap: 6px; font-size: 0; letter-spacing: 1px; }
   .m-watch .m-ai #show-all::before { width: 8px; height: 8px; }
   .m-watch .m-ai #show-all::after { content: "Összes"; font-size: 10px; }  /* short on screen; its name stays "összes állítás" */
+  /* Felszólalók, the first tab, shows facts too (a speech's, all of them): the notice stays, the switch is for the
+     facts list (hidden, not gone, so the panel below keeps its place between the tabs) */
+  body.m-watch[data-m-tab="speakers"] .m-ai { display: flex; }
+  body.m-watch[data-m-tab="speakers"] .m-ai #show-all { visibility: hidden; }
   /* the panels */
   .m-watch[data-m-tab="feed"] .speaker-col, .m-watch[data-m-tab="speakers"] .facts-col { display: none; }
   .m-watch .speaker-col { display: block; }

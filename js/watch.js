@@ -75,7 +75,11 @@ function factItem(f) {
   at.type = "button";
   at.disabled = c.video_s == null;
   at.title = c.video_s == null ? "ez az állítás a felvétel vége után hangzott el" : "ugrás ehhez a pillanathoz";
-  at.addEventListener("click", () => seek(c.video_s));
+  at.addEventListener("click", () => {
+    picked = { f, since: Date.now() };
+    seek(c.video_s);
+    renderFacts(media.currentTime);
+  });
   const who = el("span", "fact-who");
   const a = el("a", null, speech.name);
   a.href = mpHref(speech.mp_id);
@@ -100,7 +104,8 @@ function fillSpeech(li) {
   if (!list || list.children.length || !facts.length) return;
   const mine = facts.filter((f) => f.speech.id === li.dataset.id)
     .sort((x, y) => (x.c.video_s ?? Infinity) - (y.c.video_s ?? Infinity));
-  list.append(...mine.map(factItem));
+  list.append(...mine.map((f) => (f.sli = factItem(f))));  // f.sli: its card here, marked with f.li (renderFacts)
+  current?.sli?.classList.add("now");
   if (!mine.length) list.append(el("li", "empty", "ebben a felszólalásban nem volt ellenőrizhető állítás"));
 }
 
@@ -112,10 +117,7 @@ function showSpeechAt(t) {
   const li = s && [...$("speakers").children].find((x) => x.dataset.id === s.speech_id);
   if (!li) return;
   document.getElementById("m-tab-speakers")?.click();
-  li.click();
-  // to the top of its panel; not scrollIntoView, which on iOS also scrolls the page and takes the header off the top
-  const box = li.classList.contains("open") && li.closest(".below");
-  if (box) box.scrollTop += li.getBoundingClientRect().top - box.getBoundingClientRect().top;
+  li.click();  // opens it and brings it into view (js/mobile.js)
 }
 
 function speakerAt(t) {
@@ -156,10 +158,14 @@ function renderSpeaker(t) {
   const sk = s ? s.speech_id : null;
   if (sk === shownSpeech) return;
   shownSpeech = sk;
-  document.querySelectorAll(".speaker-list li").forEach((li) => li.classList.toggle("now", li.dataset.id === sk));
+  // the speeches only: an opened speech's facts under it have their own mark (renderFacts)
+  document.querySelectorAll(".speaker-list > li").forEach((li) => li.classList.toggle("now", li.dataset.id === sk));
 }
 
 let current = null;
+// A fact started with its time button ({f, since}): the player takes a moment to report the new time, and facts said
+// in the same second would otherwise mark the first of them.
+let picked = null;
 function renderFacts(t) {
   let now = null, shown = 0;
   for (const f of facts) {  // newest first: the first one already said is the latest
@@ -169,10 +175,14 @@ function renderFacts(t) {
     if (!f.li.hidden) shown += 1;
     if (said && !now) now = f;
   }
-  if (now !== current) {
-    if (current) current.li.classList.remove("now");
+  if (picked) {  // started from its time: marked while the player gets there, and while the video is at its moment
+    if (Date.now() - picked.since < 1500 || (now && now.c.video_s === picked.f.c.video_s)) now = picked.f;
+    else picked = null;
+  }
+  if (now !== current) {  // the fact playing: in the facts list, and under its speech (Felszólalók)
+    for (const x of [current?.li, current?.sli]) x?.classList.remove("now");
     current = now;
-    if (current) current.li.classList.add("now");
+    for (const x of [current?.li, current?.sli]) x?.classList.add("now");
   }
   $("fact-count").textContent = facts.length
     ? `[${String(shown).padStart(2, "0")}${shown < facts.length ? `/${String(facts.length).padStart(2, "0")}` : ""}]` : "";
