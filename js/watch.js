@@ -6,12 +6,13 @@
 // click on a fact's time jumps there, the latest fact said is highlighted, and the speaker card follows the video:
 // whoever had the floor, the chair included (the archive's floor turns; runs archived before them have only the
 // fact-checked speeches, so their card is empty while the chair speaks).
+// A fallacy said in the same sentence as a checked claim shows on that claim's card, as on the live page.
 // ?t= opens the video at that second (the MP page's fact links).
 
-import { doc, getDoc, onSnapshot, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { db, el, badge, sourceList, setPhoto, hms, huDate, mpHref, watchLiveNav } from "./common.js?v=202611251640";
-import { mountAccount } from "./account.js?v=202611251640";
-import { factSocial } from "./social.js?v=202611251640";
+import { doc, onSnapshot, collection, query, where } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { db, getDoc, getDocs, el, factBadge, FACT_VERDICTS, LABEL, sourceList, setPhoto, hms, huDate, mpHref, watchLiveNav } from "./common.js?v=202611260057";
+import { mountAccount } from "./account.js?v=202611260057";
+import { factSocial } from "./social.js?v=202611260057";
 import { watchHref } from "./links.js?v=202611241021";
 import { cdnReady, cdnUrl, cdnXhr } from "./cdn.js?v=202611251640";
 import { scrollHint } from "./scrollhint.js?v=202611241021";
@@ -27,7 +28,7 @@ const session = params.get("s") || "";
 const startAt = Math.max(0, parseFloat(params.get("t") || "0") || 0);
 const video = $("video");
 let media = video;  // the <video>, or the YouTube player behind the same calls (ytplayer.js)
-let facts = [];      // {c, speech, li}, newest first (those past the end of the video at the top)
+let facts = [];      // {c, speech, fallacy, li}, newest first (those past the end of the video at the top)
 let speakers = [];   // archive doc's speeches: {mp_id, name, party, start_s, end_s}
 let turns = [];      // archive doc's floor turns: {speaker_id, name, party, role, color, photo, chair, start_s, end_s}
 const mps = new Map();  // mp id -> mps doc (photo, colour, role)
@@ -47,11 +48,28 @@ function seek(t, play = true) {
   if (play) media.play().catch(() => {});
 }
 
+// The fallacies said in the same sentence as a checked claim: {claim id -> the claim's `fallacy` ({id, name,
+// explanation})}. The archive keeps such a fallacy as a fact of its own; the run's claims (sessions/{session}/claims,
+// as the live page reads them) link it to its claim. Empty when the run kept no claims, and the fallacy stays a card.
+async function fallacyLinks() {
+  try {
+    const snap = await getDocs(query(collection(db, "sessions", session, "claims"), where("fallacy.id", "!=", null)));
+    return new Map(snap.docs.map((d) => [d.data().id || d.id, d.data().fallacy]));
+  } catch (e) {
+    console.warn("fallacies:", e);
+    return new Map();
+  }
+}
+
+// a fact's card; with its fallacy (f.fallacy) as on the live page (common.js factBadge): a decided fact keeps its
+// verdict and names the fallacy, an opinion or an unverifiable statement shows the fallacy, the reasoning under the
+// explanation. The card has it from the start: the two are said within seconds of each other.
 function factItem(f) {
-  const { c, speech } = f;
+  const { c, speech, fallacy } = f;
   const v = c.kind === "fallacy" ? "fallacy" : c.verdict || "pending";
+  const withFallacy = Boolean(fallacy) && v !== "pending";
   const li = el("li", "fact");
-  li.dataset.verdict = v;
+  li.dataset.verdict = withFallacy && !FACT_VERDICTS.has(v) ? "fallacy" : v;
   const top = el("div", "fact-top");
   const at = el("button", "t-btn", c.video_s == null ? "nincs a videóban" : `▶ ${hms(c.video_s)}`);
   at.type = "button";
@@ -62,10 +80,13 @@ function factItem(f) {
   const a = el("a", null, speech.name);
   a.href = mpHref(speech.mp_id);
   who.append(a);
-  top.append(at, badge(v, c.kind), who);
+  top.append(at, factBadge({ ...c, fallacy }, v, withFallacy), who);
   li.append(top, el("p", "fact-bullet", c.bullet || c.claim));
   if (c.claim && c.claim !== c.bullet) li.append(el("p", "fact-claim", c.claim));
   if (c.explanation) li.append(el("p", "fact-expl", c.explanation));
+  if (withFallacy) {
+    li.append(el("p", "fact-fallacy", `» ${LABEL.fallacy.toLowerCase()} (${fallacy.name}): ${fallacy.explanation || ""}`));
+  }
   li.append(sourceList(c.sources));
   if (c.id && v !== "pending") li.append(factSocial(session, c.id));  // votes and comments, as on the MP page
   return li;
@@ -172,9 +193,10 @@ function shareUrl() {
 
 async function load() {
   if (!session) { $("w-title").textContent = "Ismeretlen adás"; note("nincs ilyen adás"); return; }
-  const [aSnap, spSnap] = await Promise.all([
+  const [aSnap, spSnap, links] = await Promise.all([
     getDoc(doc(db, "archive", session)),
     getDocs(query(collection(db, "speeches"), where("session", "==", session))),
+    fallacyLinks(),
   ]);
   const a = aSnap.data();
   if (!a) { $("w-title").textContent = "Nincs ilyen adás"; note("ez az adás nincs az archívumban"); return; }
@@ -190,6 +212,18 @@ async function load() {
   speakers = (a.speakers || []).filter((s) => s.start_s != null);
   turns = (a.turns || []).filter((u) => u.start_s != null).sort((x, y) => x.start_s - y.start_s);
 
+  // the facts, newest first (those said after the end of the video at the very top); a fallacy said with a claim is
+  // on the claim's card, not on one of its own (when the archive has both)
+  const speeches = spSnap.docs.map((d) => d.data());
+  const all = speeches.flatMap((sp) => (sp.claims || []).map((c) => ({ c, speech: sp, fallacy: links.get(c.id) })));
+  const ids = new Set(all.map((f) => f.c.id));
+  for (const f of all) if (f.fallacy && !ids.has(f.fallacy.id)) f.fallacy = null;
+  const folded = new Set(all.filter((f) => f.fallacy).map((f) => f.fallacy.id));
+  const foldedIn = new Map();  // speech id -> how many of its facts are on another card
+  for (const f of all) if (folded.has(f.c.id)) foldedIn.set(f.speech.id, (foldedIn.get(f.speech.id) || 0) + 1);
+  const at = (f) => f.c.video_s ?? Number.MAX_SAFE_INTEGER;
+  facts = all.filter((f) => !folded.has(f.c.id)).sort((x, y) => at(y) - at(x));
+
   // the speeches list: who spoke when, a click on the time jumps there
   $("speakers").replaceChildren(...speakers.map((s) => {
     const li = el("li");
@@ -197,16 +231,11 @@ async function load() {
     const b = el("button", "t-btn", `▶ ${hms(s.start_s)}`);
     b.type = "button";
     b.addEventListener("click", () => seek(s.start_s));
-    li.append(b, el("span", null, s.name), el("span", "count", `${s.claims} állítás`), el("ol", "speech-facts"));
+    const n = (s.claims || 0) - (foldedIn.get(s.speech_id) || 0);
+    li.append(b, el("span", null, s.name), el("span", "count", `${n} állítás`), el("ol", "speech-facts"));
     return li;
   }));
   $("speakers").addEventListener("speech-open", (e) => fillSpeech(e.target));
-
-  // the facts, newest first (those said after the end of the video at the very top)
-  const speeches = spSnap.docs.map((d) => d.data());
-  const at = (f) => f.c.video_s ?? Number.MAX_SAFE_INTEGER;
-  facts = speeches.flatMap((sp) => (sp.claims || []).map((c) => ({ c, speech: sp })))
-    .sort((x, y) => at(y) - at(x));
   for (const f of facts) f.li = factItem(f);
   $("facts").replaceChildren(...facts.map((f) => f.li));
   for (const li of $("speakers").querySelectorAll(":scope > li.open")) fillSpeech(li);  // opened before the facts came
