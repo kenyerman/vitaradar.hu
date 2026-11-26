@@ -10,9 +10,9 @@
 // ?t= opens the video at that second (the MP page's fact links).
 
 import { doc, onSnapshot, collection, query, where } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { db, getDoc, getDocs, el, factBadge, LABEL, sourceList, setPhoto, hms, huDate, mpHref, watchLiveNav } from "./common.js?v=202611262130";
-import { mountAccount } from "./account.js?v=202611262130";
-import { factSocial } from "./social.js?v=202611262130";
+import { db, getDoc, getDocs, el, factBadge, LABEL, sourceList, setPhoto, hms, huDate, mpHref, watchLiveNav } from "./common.js?v=202611262215";
+import { mountAccount } from "./account.js?v=202611262215";
+import { factSocial } from "./social.js?v=202611262215";
 import { watchHref } from "./links.js?v=202611241021";
 import { cdnReady, cdnUrl, cdnXhr } from "./cdn.js?v=202611260345";
 import { scrollHint } from "./scrollhint.js?v=202611241021";
@@ -62,7 +62,8 @@ async function fallacyLinks() {
 }
 
 // a fact's card; with its fallacy (f.fallacy) as on the live page (common.js factBadge): the card is the fallacy's,
-// whatever the fact's verdict, with the reasoning under the fact's explanation. The card has it from the start: the two are said within seconds of each other.
+// whatever the fact's verdict, with the reasoning under the fact's explanation. The card has it from the start: the
+// two are said within seconds of each other.
 function factItem(f) {
   const { c, speech, fallacy } = f;
   const v = c.kind === "fallacy" ? "fallacy" : c.verdict || "pending";

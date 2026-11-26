@@ -186,10 +186,11 @@ function compactFacts(list) {
         talk.setAttribute("aria-label", `${m[1]} hozzászólás`);
       } else if (talk) talk.remove();
       const v = li.querySelector(".verdict");
-      if (!v) continue;
-      const t = v.textContent;
-      if (PHONE.matches && t.startsWith("[ ") && t.endsWith(" ]")) v.textContent = t.slice(2, -2);
-      else if (!PHONE.matches && !t.startsWith("[")) v.textContent = `[ ${t} ]`;
+      // the [ ] are at the ends of the badge's first and last text (a pending badge has its loading sign between)
+      const a = v && v.firstChild, z = v && v.lastChild;
+      if (!a || a.nodeType !== Node.TEXT_NODE || z.nodeType !== Node.TEXT_NODE) continue;
+      if (PHONE.matches && a.data.startsWith("[ ") && z.data.endsWith(" ]")) { a.data = a.data.slice(2); z.data = z.data.slice(0, -2); }
+      else if (!PHONE.matches && !a.data.startsWith("[")) { a.data = `[ ${a.data}`; z.data += " ]"; }
     }
   };
   const later = () => { if (!queued) { queued = true; requestAnimationFrame(tidy); } };
