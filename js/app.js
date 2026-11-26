@@ -7,12 +7,12 @@
 
 import { doc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { defaultStream } from "./config.js?v=202611241021";
-import { db, el, factBadge, FACT_VERDICTS, LABEL, sourceList, setPhoto, mpHref, setLiveNav } from "./common.js?v=202611260345";
-import { mountAccount } from "./account.js?v=202611260345";
-import { factSocial } from "./social.js?v=202611260345";
-import { mountChat } from "./chat.js?v=202611260345";
+import { db, el, factBadge, FACT_VERDICTS, LABEL, sourceList, setPhoto, mpHref, setLiveNav } from "./common.js?v=202611262015";
+import { mountAccount } from "./account.js?v=202611262015";
+import { factSocial } from "./social.js?v=202611262015";
+import { mountChat } from "./chat.js?v=202611262015";
 import { scrollHint } from "./scrollhint.js?v=202611241021";
-import { mountGame } from "./game.js?v=202611261958";
+import { mountGame } from "./game.js?v=202611262015";
 import { cdnReady, cdnUrl, cdnXhr } from "./cdn.js?v=202611260345";
 import { useTwitch, mountTwitch, twitchNow } from "./twitch.js?v=202611241408";
 

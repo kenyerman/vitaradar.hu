@@ -46,12 +46,20 @@ export function huDate(iso) {
   return d.toLocaleDateString("hu-HU", { year: "numeric", month: "long", day: "numeric" });
 }
 
-// A verdict badge like the stream's: [ IGAZ ]
+// A verdict badge like the stream's: [ IGAZ ]. While the check runs, the stream's loading sign sits inside the
+// brackets, "[ ELLENŐRZÉS ▒ ]" (the sign is CSS on an empty span, .v-sign), and a conclusion check keeps its title,
+// "[ KÖVETKEZTETÉS ▒ ]". js/mobile.js drops the [ ] on phones from the text at either end.
 export function badge(verdict, kind) {
   const v = kind === "fallacy" ? "fallacy" : verdict || "pending";
   const b = el("span", "verdict");
   b.dataset.v = v;
-  b.textContent = `[ ${kind === "conclusion" && v !== "pending" ? "KÖVETKEZTETÉS: " : ""}${LABEL[v] || v} ]`;
+  if (v === "pending") {
+    const sign = el("span", "v-sign");
+    sign.setAttribute("aria-hidden", "true");
+    b.append(`[ ${kind === "conclusion" ? "KÖVETKEZTETÉS" : LABEL.pending} `, sign, " ]");
+    return b;
+  }
+  b.textContent = `[ ${kind === "conclusion" ? "KÖVETKEZTETÉS: " : ""}${LABEL[v] || v} ]`;
   return b;
 }
 
