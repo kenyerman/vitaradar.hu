@@ -188,7 +188,7 @@ class ChallengeView {
       return;
     }
     const right = Boolean(pick && pick.choice === r.answer);
-    status.dataset.right = String(right);
+    if (pick) status.dataset.right = String(right);  // no answer: neither right nor wrong (it showed in the wrong colour)
     status.textContent = !pick ? `A helyes válasz: ${label(ch, r.answer)}.`
       : right ? "Eltaláltad!" : `Nem talált. A helyes válasz: ${label(ch, r.answer)}.`;
     if (pick) {
@@ -387,7 +387,7 @@ class VoteView {
     const choice = pick && pick.choice, rightOutcome = choice === r.outcome;
     const rightBand = Boolean(pick && pick.band != null && pick.band === r.band);
     const pts = (rightOutcome ? v.points || 0 : 0) + (rightBand ? v.band_points || 0 : 0);
-    status.dataset.right = String(Boolean(choice) && rightOutcome);
+    if (choice) status.dataset.right = String(rightOutcome);  // no prediction: neither right nor wrong
     status.textContent = !choice ? `${past}: ${counts}.`
       : rightOutcome ? `Eltaláltad! ${past}: ${counts}.` : `Nem talált. ${past}: ${counts}.`;
     if (choice && pick.sent && account.registered) {
