@@ -12,8 +12,8 @@
 // unscored, and are asked to sign in.
 
 import { collection, doc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { db, el } from "./common.js?v=202611260057";
-import { account, onAccount, api, needAccount, toast } from "./account.js?v=202611260057";
+import { db, el } from "./common.js?v=202611260345";
+import { account, onAccount, api, needAccount, toast } from "./account.js?v=202611260345";
 
 const TRUTH = { true: "IGAZ", false: "HAMIS" };
 const MASKED = "Hibás érvelés?";
@@ -581,6 +581,7 @@ export function mountGame({ now: streamNow }) {
   const voteView = new VoteView(dock);
   let session = null, unsub = [];
   const challenges = new Map(), tips = new Map(), votes = new Map(), seen = new Map(), looked = new Set();
+  let lastNow = null;  // the last frame seen on screen, for mask() while the stream's clock is unknown
 
   function follow(s) {
     if (s === session) return;
@@ -598,6 +599,7 @@ export function mountGame({ now: streamNow }) {
 
   function tick() {
     const now = streamNow();
+    if (now != null) lastNow = now;
     if (now == null || !session) { pop.hide(); tipView.hide(); voteView.hide(); delete dock.dataset.played; return; }
     // how many games this broadcast has had so far: "challenges tips votes" (the phones' Játék tab shows it)
     const so = (games) => [...games.values()].filter((g) => g.opens_at <= now).length;
@@ -651,10 +653,16 @@ export function mountGame({ now: streamNow }) {
   }
   setInterval(tick, 200);
 
-  // A fact that is part of a challenge shows as still being checked (a fallacy without its name) until its reveal.
+  // A fact that is part of a challenge shows as still being checked (a fallacy without its name) until its reveal on
+  // this viewer's video. With no frame on screen (the broadcast has ended, Twitch waits for a tap, the video is
+  // paused), the reveal goes by the last frame seen or by the wall clock less MAX_BEHIND_MS, whichever is later: a
+  // player that far behind has shown it by then. Otherwise every challenged fact stays "being checked" for good once
+  // the stream stops. Nothing playable is given away: the publisher writes the answer into the fact only after
+  // answers have closed for everyone (`closes_wall`).
   function mask(c, now) {
     const at = c.challenge && c.challenge.reveal_at;
-    if (!at || (now != null && now >= at)) return c;
+    const seenAt = now ?? Math.max(lastNow ?? 0, Date.now() - MAX_BEHIND_MS);
+    if (!at || seenAt >= at) return c;
     const fallacy = c.kind === "fallacy";
     return { ...c, kind: fallacy ? "claim" : c.kind, bullet: fallacy ? MASKED : c.bullet,
       verdict: "pending", verdict_at: null, explanation: "", sources: [] };

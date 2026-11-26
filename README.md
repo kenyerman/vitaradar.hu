@@ -46,6 +46,8 @@ parliament's stream ──► fact-check pipeline (GPU VM) ──► HLS video p
 - **Accounts** (`js/account.js`): Google sign-in only; a profile (name, nick, picture) after a one-time registration,
   16+ only. E-mail and birth date are visible to their owner only. The sign-in popup runs on `auth.vitaradar.hu`
   (Firebase Hosting, connected to the project, DNS a CNAME at DotRoll), so Google's account chooser names our domain.
+  "Fiók törlése" on one's own profile deletes the account with everything it left (the user API's `/account/delete`),
+  after the user typed TÖRLÉS and, if their last sign-in is over 5 minutes old, signed in again with Google.
 - **Votes and comments** (`js/social.js`): thumbs up/down on every fact check and comment; comments (250 characters,
   replies two levels deep) for registered users, who can delete their own, flag others' and block users. Every
   write goes through the backend's user API, which checks rate limits and decides whether a comment is published.

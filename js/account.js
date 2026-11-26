@@ -1,14 +1,17 @@
-// Accounts: Google sign-in, registration (16+), profile and profile picture, and calls to the user API.
+// Accounts: Google sign-in, registration (16+), profile and profile picture, deleting the account, and calls to the
+// user API.
 //
 // The server decides everything that matters (age, nick uniqueness, rate limits, moderation): this module only
 // asks. Everything a user typed is put on the page with textContent, never as HTML.
 
-import { onAuthStateChanged, getIdToken } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import {
+  onAuthStateChanged, getIdToken, getIdTokenResult, reauthenticateWithPopup, GoogleAuthProvider, browserPopupRedirectResolver,
+} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { auth, db, appCheckHeaders, signInWithGoogle, signOut } from "./firebase.js?v=202611260057";
+import { auth, db, appCheckHeaders, signInWithGoogle, signOut } from "./firebase.js?v=202611260345";
 import { apiUrl, avatarUrl, photoPrefix } from "./config.js?v=202611241021";
-import { el, initials, huDate } from "./common.js?v=202611260057";
-import { cdnReady, cdnUrl } from "./cdn.js?v=202611260057";
+import { el, initials, huDate } from "./common.js?v=202611260345";
+import { cdnReady, cdnUrl } from "./cdn.js?v=202611260345";
 import { profileHref } from "./links.js?v=202611241021";
 
 export const account = {
@@ -148,6 +151,7 @@ export function dialog(title, body, actions, { onClose } = {}) {
   const bar = el("div", "dlg-actions");
   for (const a of actions) {
     const b = el("button", a.primary ? "btn" : "btn ghost", a.label);
+    if (a.danger) b.classList.add("danger");
     b.type = a.submit ? "submit" : "button";
     b.value = a.value || "";
     if (a.onClick) b.addEventListener("click", (e) => { e.preventDefault(); a.onClick(e); });
@@ -306,7 +310,8 @@ function privacyBox() {
 }
 
 // The profile editor of one's own profile page (profile.html): picture, full name and nick; the e-mail address and the
-// birth date shown but fixed; who sees what on the profile; the blocked users, each with "feloldás"; and sign-out.
+// birth date shown but fixed; who sees what on the profile; the blocked users, each with "feloldás"; sign-out; and,
+// apart at the bottom, deleting the account.
 // Saving goes through the API (/profile, /privacy and the picture service), which validates everything again.
 // Returns {el, destroy}.
 export function profileEditor() {
@@ -357,9 +362,15 @@ export function profileEditor() {
   const save = el("button", "btn", "Mentés");
   save.type = "submit";
   bar.append(out, save);
+  const remove = el("button", "btn danger small", "Fiók törlése");
+  remove.type = "button";
+  remove.addEventListener("click", () => deleteAccount());
+  const removeBox = el("div", "fld prof-delete");
+  removeBox.append(el("span", "fld-label", "Fiók törlése"),
+    el("span", "fld-hint", "A fiókodat és minden adatodat véglegesen töröljük. Előtte még megkérdezzük."), remove);
   form.append(pic, field("Profilkép", file, "JPEG, PNG vagy WEBP, legfeljebb 2 MB."),
     field("Teljes név", name), field("Becenév", nick, "3–40 karakter: betű, szám, pont, kötőjel, aláhúzás. Ezt látják mások."),
-    email, born, privacyBox(), blockedBox, err, saved, bar);
+    email, born, privacyBox(), blockedBox, err, saved, bar, removeBox);
   const dlg = {  // the same calls as a dialog's, so the flows below stay as they were
     form,
     error: (msg) => { err.textContent = msg || ""; err.hidden = !msg; if (msg) saved.textContent = ""; },
@@ -406,6 +417,88 @@ export function profileEditor() {
     }
   });
   return { el: form, destroy: stopBlocks };
+}
+
+// ------------------------------------------------------------------ deleting the account
+// Everything goes, server side (the API's /account/delete), which wants the typed word and a sign-in from the last 10
+// minutes. So the dialog asks for both: Google's sign-in window again when the last sign-in is over 5 minutes old.
+const DELETE_WORD = "TÖRLÉS";
+const RECENT_SIGNIN_MS = 5 * 60 * 1000;
+const fold = (s) => String(s || "").trim().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+const DELETED = [
+  "a profilodat: a nevedet, a becenevedet, a profilképedet, az e-mail címedet és a születési dátumodat",
+  "a hozzászólásaidat (ha valaki válaszolt rájuk, a helyükön egy üres helyőrző marad)",
+  "a szavazataidat (a számlálókból is levonjuk őket)",
+  "a játékokban adott válaszaidat és tippjeidet, a pontjaidat",
+  "a jelentéseidet, a letiltásaidat, a chatüzeneteidet és az elutasított hozzászólásaidat",
+  "a belépésedet a vitaradar.hu-ra (a Google-fiókod megmarad)",
+];
+const REAUTH_ERRORS = {
+  "auth/popup-closed-by-user": "A belépés megszakadt. A törléshez lépj be újra.",
+  "auth/cancelled-popup-request": "A belépés megszakadt. A törléshez lépj be újra.",
+  "auth/popup-blocked": "A böngésző nem engedte megnyitni a belépés ablakát. Engedélyezd, és próbáld újra.",
+  "auth/user-mismatch": "Azzal a Google-fiókkal lépj be, amelyikkel regisztráltál.",
+};
+
+async function signedInLately(user) {
+  try { return Date.now() - new Date((await getIdTokenResult(user)).authTime).getTime() < RECENT_SIGNIN_MS; }
+  catch { return false; }
+}
+
+// Asks first (what goes, the typed word, a new sign-in if needed), then deletes everything and signs out.
+export async function deleteAccount() {
+  const user = account.user;
+  if (!user) return;
+  let fresh = await signedInLately(user);
+  const word = input("text", { name: "confirm", autocomplete: "off", autocapitalize: "characters", spellcheck: "false" });
+  const list = el("ul", "dlg-list");
+  for (const t of DELETED) list.append(el("li", null, t));
+  const again = el("p", "dlg-text", "Biztonsági okból a törlés előtt még egyszer be kell lépned a Google-fiókoddal.");
+  again.hidden = fresh;
+  const dlg = dialog("Fiók törlése", [
+    el("p", "dlg-text", "A fiókoddal együtt minden adatodat véglegesen töröljük:"), list,
+    el("p", "dlg-text", "Ez nem vonható vissza. Később újra regisztrálhatsz, de üres profillal."),
+    again, field(`A megerősítéshez írd be: ${DELETE_WORD}`, word),
+  ], [
+    { label: "Mégse", onClick: () => dlg.close() },
+    { label: "Végleges törlés", primary: true, danger: true, submit: true },
+  ]);
+  const go = dlg.form.querySelector('button[type="submit"]');
+  const typed = () => fold(word.value) === fold(DELETE_WORD);
+  const ready = () => { go.disabled = !typed(); };
+  word.addEventListener("input", ready);
+  ready();
+  word.focus();
+  dlg.form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!typed()) return;
+    dlg.busy(true);
+    dlg.error("");
+    try {
+      if (!fresh) {  // first, straight from the click: browsers open the sign-in window only then
+        const provider = new GoogleAuthProvider();
+        if (user.email) provider.setCustomParameters({ login_hint: user.email });
+        await reauthenticateWithPopup(user, provider, browserPopupRedirectResolver);
+        fresh = true;
+        again.hidden = true;
+      }
+      await getIdToken(user, true);
+      for (let call = 1; ; call++) {  // a long history may take more than one call; each goes on where the last stopped
+        const r = await api("/account/delete", { confirm: word.value });
+        if (r.deleted) break;
+        if (!r.more || call >= 20) throw new ApiError("server", "Nem sikerült mindent törölni, próbáld újra.");
+      }
+      dlg.close();
+      try { await signOut(); } catch { /* the account is gone already */ }
+      toast("A fiókodat és minden adatodat töröltük.");
+    } catch (err) {
+      if (err.code === "recent_signin") { fresh = false; again.hidden = false; }
+      const code = String(err.code || "");
+      dlg.error(REAUTH_ERRORS[code] || (code.startsWith("auth/") ? `Nem sikerült belépni (${code}).` : err.message));
+      dlg.busy(false);
+      ready();
+    }
+  });
 }
 
 // Blocks a user after asking: their comments and chat messages disappear for this user.

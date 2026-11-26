@@ -10,11 +10,11 @@
 // ?t= opens the video at that second (the MP page's fact links).
 
 import { doc, onSnapshot, collection, query, where } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { db, getDoc, getDocs, el, factBadge, FACT_VERDICTS, LABEL, sourceList, setPhoto, hms, huDate, mpHref, watchLiveNav } from "./common.js?v=202611260057";
-import { mountAccount } from "./account.js?v=202611260057";
-import { factSocial } from "./social.js?v=202611260057";
+import { db, getDoc, getDocs, el, factBadge, FACT_VERDICTS, LABEL, sourceList, setPhoto, hms, huDate, mpHref, watchLiveNav } from "./common.js?v=202611260345";
+import { mountAccount } from "./account.js?v=202611260345";
+import { factSocial } from "./social.js?v=202611260345";
 import { watchHref } from "./links.js?v=202611241021";
-import { cdnReady, cdnUrl, cdnXhr } from "./cdn.js?v=202611260057";
+import { cdnReady, cdnUrl, cdnXhr } from "./cdn.js?v=202611260345";
 import { scrollHint } from "./scrollhint.js?v=202611241021";
 import { setPageMeta } from "./meta.js?v=202611241124";
 import { youtubeMedia } from "./ytplayer.js?v=202611241433";
