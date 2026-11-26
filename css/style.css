@@ -521,7 +521,6 @@ details[open] > summary .lvl-title::before { content: "▾ "; }
 .fld.check input { accent-color: var(--green); margin-top: 3px; }
 input[type="date"].field { color-scheme: dark; }
 input[type="file"].field { padding: 7px; font-size: 12px; }
-.profile-pic { display: flex; justify-content: center; align-items: center; min-height: 96px; }
 /* above the menu (70) and the user card (60): a note can come from a button in either */
 .toasts { position: fixed; z-index: 80; left: 50%; bottom: 20px; translate: -50% 0; display: grid; gap: 8px;
   width: min(420px, calc(100vw - 32px)); pointer-events: none; }
@@ -662,8 +661,8 @@ body:has(.game-dock > :not([hidden])) .scroll-hint { display: none; }
 .cmt.cmt-focus { outline: 1px solid var(--green); outline-offset: 4px; box-shadow: var(--glow); }
 .cmt.cmt-focus > .cmt-text { animation: flash 1.6s ease-out; }
 
-/* the profile page (profile.html, js/profile.js): the head with the stats, one's own editor, the games and the
-   comments, each with a link to where it happened; what the owner hides from others is marked "csak te látod" */
+/* the profile page (profile.html, js/profile.js): the head with the stats (one's own with ✎ for the editor), the games
+   and the comments, each with a link to where it happened; what the owner hides from others is marked "csak te látod" */
 .prof { display: grid; gap: 18px; }
 .prof-gate { display: grid; gap: 12px; justify-items: start; max-width: 560px; padding: 22px; }
 .prof-gate p { margin: 0; }
@@ -676,12 +675,6 @@ body:has(.game-dock > :not([hidden])) .scroll-hint { display: none; }
 .prof-you, .prof-since { color: var(--muted); font-size: 12px; }
 .prof-name { color: #eafff0; font-size: 14px; overflow-wrap: anywhere; }
 .prof-who .btn { margin-top: 8px; }
-.prof-edit > summary { cursor: pointer; padding: 12px 18px; color: var(--green); font-size: 13px; letter-spacing: 1.2px;
-  text-transform: uppercase; }
-.prof-edit > summary:focus-visible { outline: 1px solid var(--green); outline-offset: -1px; }
-.prof-edit[open] > summary { border-bottom: 1px solid var(--line-dim); }
-.prof-form { display: grid; gap: 12px; max-width: 520px; padding: 16px 18px 18px; }
-.prof-form .profile-pic { justify-content: flex-start; }
 .prof-saved { margin: 0; color: var(--true); font-size: 13px; }
 .prof-saved:empty { display: none; }
 .pc-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
@@ -704,9 +697,64 @@ body:has(.game-dock > :not([hidden])) .scroll-hint { display: none; }
 .prof-privacy { margin: 0; padding: 0; border: 0; min-width: 0; gap: 8px; }
 .prof-privacy > legend { padding: 0; margin-bottom: 8px; }
 .prof-privacy .fld.check { font-size: 13px; color: var(--text); }
-.prof-delete { justify-items: start; gap: 6px; margin-top: 6px; padding-top: 14px; border-top: 1px solid var(--line); }
 .prof-privacy .fld.check > span { display: grid; gap: 2px; }
 .prof-saved.is-error { color: var(--false); }
+/* one's own profile editor (js/account.js openProfileEditor): a dialog on wider screens, a sheet from the bottom on
+   phones (below). The picture beside the fields; the rows that open who sees what and the blocked users; apart, the
+   way out. Mégse and Mentés at the foot here, at the top on phones. */
+.prof-sheet { width: min(640px, calc(100vw - 32px)); max-height: calc(100vh - 32px); }
+.sheet-form { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; max-height: calc(100vh - 34px); }
+.sheet-head { display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 0 18px; border-bottom: 1px solid var(--line-dim); }
+.sheet-title { flex: 1; min-width: 0; margin: 0; color: var(--green); font-size: 15px; letter-spacing: 1.2px; text-transform: uppercase; }
+.sheet-grab, .sheet-cancel, .sheet-save { display: none; }
+.sheet-back, .sheet-cancel, .sheet-x { padding: 8px 0; border: 0; background: none; color: var(--green); font: inherit; font-size: 14px;
+  cursor: pointer; }
+.sheet-x { color: var(--muted); font-size: 24px; line-height: 1; }
+.prof-sheet:focus { outline: none; }
+:is(.sheet-cancel, .sheet-back, .sheet-x, .sheet-row):focus-visible { outline: 1px solid var(--green); outline-offset: -1px; }
+.sheet-x:hover { color: var(--green); }
+.prof-sheet[data-view="main"] .sheet-back { display: none; }
+.sheet-body { overflow: auto; overscroll-behavior: contain; }
+.sheet-view { display: none; }
+.prof-sheet[data-view="main"] .sheet-main, .prof-sheet[data-view="privacy"] .sheet-privacy,
+.prof-sheet[data-view="blocked"] .sheet-blocked { display: grid; gap: 14px; padding: 18px; }
+.sheet-top { display: grid; grid-template-columns: 140px minmax(0, 1fr); gap: 22px; }
+.sheet-pic { display: grid; gap: 12px; justify-items: start; align-content: start; }
+.sheet-pic .avatar { --size: 110px !important; }
+.sheet-pic-side { display: grid; gap: 8px; justify-items: start; }
+.sheet-choose { position: relative; cursor: pointer; }
+.sheet-choose:focus-within { outline: 1px solid var(--green); outline-offset: 2px; }
+.sheet-file { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; pointer-events: none; }
+.sheet-fields { display: grid; gap: 14px; align-content: start; min-width: 0; }
+.sheet-fieldfoot { display: flex; justify-content: space-between; gap: 10px; }
+.sheet-count { flex: none; color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.sheet-mine { display: grid; gap: 4px; padding: 10px 12px; background: rgba(0, 255, 65, .04); color: var(--muted); font-size: 12px; }
+.sheet-mine p { margin: 0; overflow-wrap: anywhere; }
+.sheet-mine b { color: var(--text); font-weight: 500; }
+.prof-sheet .dlg-error { margin: 0; }
+.sheet-rows { display: grid; margin: 0 -18px; border-top: 1px solid var(--line-dim); }
+.sheet-leave { margin-top: 8px; }
+.sheet-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 46px; padding: 0 18px; border: 0;
+  border-bottom: 1px solid var(--line-dim); background: none; color: var(--text); font: inherit; font-size: 14px; text-align: left; cursor: pointer; }
+.sheet-row:hover, .sheet-row:focus-visible { background: rgba(0, 255, 65, .06); outline: none; }
+.sheet-row-v { flex: none; color: var(--muted); font-size: 13px; }
+.sheet-row-v:not(:empty)::after { content: " \203A"; }
+.sheet-del { color: var(--false); }
+.sheet-intro { margin: 0; color: var(--muted); font-size: 13px; }
+.prof-sheet .blocked-list { max-height: none; }
+.sheet-foot { display: flex; justify-content: flex-end; gap: 8px; padding: 14px 18px; border-top: 1px solid var(--line-dim); }
+.prof-sheet:not([data-view="main"]) .sheet-foot { display: none; }
+.prof-sheet .btn:disabled { cursor: default; }
+/* who sees what: a switch each (the knob is a gradient: no pseudo-element on an input) */
+.prof-sheet .prof-privacy > legend { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.prof-sheet .prof-privacy .fld.check { grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 14px; padding: 10px 0;
+  border-bottom: 1px solid var(--line-dim); cursor: pointer; }
+.prof-sheet .prof-privacy .fld.check input { order: 2; flex: none; appearance: none; -webkit-appearance: none; width: 44px; height: 26px;
+  min-width: 0; min-height: 0; margin: 0; padding: 0; border: 0; border-radius: 13px; box-shadow: none;
+  background: radial-gradient(circle at 13px 50%, var(--muted) 9px, transparent 9.5px) #2a332f; cursor: pointer; }
+.prof-sheet .prof-privacy .fld.check input:checked { background: radial-gradient(circle at 31px 50%, #021108 9px, transparent 9.5px) var(--green); }
+.prof-sheet .prof-privacy .fld.check input:focus-visible { outline: 1px solid var(--green); outline-offset: 2px; }
+.prof-sheet .prof-privacy .fld.check input:disabled { opacity: .6; cursor: wait; }
 /* a game in the history: what was asked, the player's answer, the right one, the points */
 .pg-tag { color: var(--green); font-size: 11px; letter-spacing: .8px; text-transform: uppercase; white-space: nowrap; }
 .pg-tag::before { content: "[ "; }
@@ -1877,6 +1925,7 @@ body.m-watch[data-m-tab="speakers"] .m-ai #show-all { visibility: hidden; }
 .prof-who :is(.prof-name, .prof-since) { display: inline; color: var(--muted); font: 400 11.5px/1.4 var(--sans); }
 .prof-who > p:is(.prof-name, .prof-since) { display: block; }
 .prof-who .btn { margin-top: 6px; }
+.prof-edit-text { display: none; }  /* ✎ in the corner at every width (the phones' design) */
 .prof-head > .avatar { border: 0; }
 .prof-edit-btn { grid-column: 3; grid-row: 1; display: grid; place-items: center; width: 40px; height: 40px; padding: 0; border: 0;
   background: #16231d; color: #9fb2a8; cursor: pointer; }
@@ -1891,7 +1940,6 @@ body.m-watch[data-m-tab="speakers"] .m-ai #show-all { visibility: hidden; }
 .prof-tile b.c-true { color: var(--green); }
 .prof-tile-sub { color: var(--muted); font: 400 11.5px/1.2 var(--sans); }
 .prof-tile-sub:empty { display: none; }
-.prof-edit:not([open]) { display: none; }  /* ✎ opens it */
 /* the two lists as tabs */
 .prof-tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 18px -16px 0;
   border-top: 1px solid rgba(61, 240, 130, .1); border-bottom: 1px solid rgba(61, 240, 130, .14); }
@@ -1902,7 +1950,6 @@ body.m-watch[data-m-tab="speakers"] .m-ai #show-all { visibility: hidden; }
 .prof-tab-n { color: var(--muted); font-weight: 600; letter-spacing: .4px; }
 .prof-tab[aria-selected="true"] .prof-tab-n { color: var(--green); }
 #prof { gap: 0; }  /* the page's box: the spacing is the parts' own */
-#prof > div:has(> .prof-edit[open]) { margin-top: 14px; }
 .prof[data-tab="games"] > [data-kind="comments"], .prof[data-tab="comments"] > [data-kind="games"] { display: none; }
 .prof .prof-list > .section-head h2 { display: none; }  /* the tab names it; "csak te látod" stays */
 .prof .prof-list > .section-head:not(:has(.prof-private:not([hidden]))) { display: none; }
@@ -1915,6 +1962,33 @@ body.m-watch[data-m-tab="speakers"] .m-ai #show-all { visibility: hidden; }
 .prof .pg-tag { font: 700 10px/1 var(--display); letter-spacing: 1.2px; }
 .prof .pc-meta { font-size: 11.5px; }
 .prof .pc-more { margin: 12px 0 0; }
+@media (max-width: 860px) {  /* the profile editor: a sheet from the bottom on phones (js/account.js openProfileEditor) */
+  .prof-sheet { inset: calc(var(--sheet-top, 0px) + 44px) 0 auto; width: 100%; max-width: none; height: calc(var(--sheet-h, 100dvh) - 44px);
+    max-height: none; margin: 0; border: 0; border-top: 1px solid var(--line); border-radius: 14px 14px 0 0; background: #0b130f; }
+  .sheet-form { height: 100%; max-height: none; }
+  .sheet-head { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 8px; min-height: 58px;
+    padding: 10px 16px 0; border-color: rgba(61, 240, 130, .14); }
+  .sheet-grab { display: block; position: absolute; top: 6px; left: 50%; width: 36px; height: 4px; margin-left: -18px; border-radius: 2px;
+    background: #3a403d; }
+  .sheet-cancel, .sheet-back { display: block; grid-column: 1; grid-row: 1; justify-self: start; font: 500 15px/1 var(--sans); }
+  .sheet-title { grid-column: 2; grid-row: 1; color: #e9f2ed; font: 700 13px/1 var(--display); letter-spacing: 1.2px; white-space: nowrap; }
+  .sheet-save { display: inline-flex; grid-column: 3; grid-row: 1; justify-self: end; }
+  .sheet-x, .sheet-foot { display: none !important; }
+  .prof-sheet:not([data-view="main"]) :is(.sheet-cancel, .sheet-save) { display: none; }
+  .prof-sheet[data-view="main"] .sheet-back { display: none; }
+  .prof-sheet[data-view] .sheet-view { padding: 16px; }
+  .prof-sheet[data-view="main"] .sheet-main, .prof-sheet[data-view="privacy"] .sheet-privacy,
+  .prof-sheet[data-view="blocked"] .sheet-blocked { padding: 16px 16px calc(24px + env(safe-area-inset-bottom, 0px)); }
+  .sheet-top { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .sheet-pic { grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 14px; }
+  .sheet-pic .avatar { --size: 72px !important; }
+  .sheet-mine { background: #111b16; }
+  .sheet-rows { margin: 0 -16px; border-color: rgba(61, 240, 130, .08); }
+  .sheet-row { min-height: 48px; padding: 0 16px; border-color: rgba(61, 240, 130, .08); color: #e9f2ed; font: 400 14px/1.3 var(--sans); }
+  .sheet-del { color: #ff8a80; }
+  .sheet-intro { font-family: var(--sans); }
+  .prof-sheet .prof-privacy .fld.check { border-color: rgba(61, 240, 130, .08); font-family: var(--sans); }
+}
 
 /* ------------------------------------------------------------------ an MP's page (the phones' design, every width)
    Only what tells the story: the photo, name and party, the counts (a row per verdict) and the summary line, then the
@@ -2011,6 +2085,8 @@ html:not([data-loaded]) #mps:empty { background-image: url("data:image/svg+xml,%
   @keyframes m-fade { from { opacity: 0; } }
   @keyframes m-shove { from { transform: translate(-12px, -12px); box-shadow: 12px 12px 0 var(--green); } }
   @keyframes m-up { from { transform: translateY(100%); } }
+  .prof-sheet[open] { animation: m-up .38s var(--m-out); }
+  .prof-sheet[open]::backdrop { animation: m-fade .3s ease-out; }
   @keyframes m-from-left { from { opacity: 0; transform: translateX(-32px); } }
   @keyframes m-in-left { from { transform: translateX(-100%); } }
   @keyframes m-slab { 0%, 45% { background-color: rgba(61, 240, 130, .22); } }

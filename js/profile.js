@@ -14,16 +14,16 @@
 //
 // The page is by uid, not by nick: a nick can change, a uid doesn't, and the nick list stays unreadable for browsers.
 // Only registered users can read profiles and comments (Firestore rules); everyone else gets a prompt. Your own profile
-// has the editor (js/account.js profileEditor: picture, name, nick, who sees what, blocked users, sign-out).
+// has ✎ for the editor (js/account.js openProfileEditor: picture, name, nick, who sees what, blocked users, sign-out).
 
 import {
   doc, onSnapshot, collection, query, where, orderBy, limit, startAfter,
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { db, getDoc, getDocs, el, badge, huDate, watchLiveNav, mpHref } from "./common.js?v=202611262121";
 import {
-  account, onAccount, onBlocks, isBlocked, avatar, profileEditor, mountAccount, signIn, openRegister, blockUser, api, toast,
-} from "./account.js?v=202611262121";
-import { linkify } from "./social.js?v=202611262121";
+  account, onAccount, onBlocks, isBlocked, avatar, openProfileEditor, mountAccount, signIn, openRegister, blockUser, api, toast,
+} from "./account.js?v=202611262059";
+import { linkify } from "./social.js?v=202611262059";
 import { watchHref, profileHref, withComment } from "./links.js?v=202611241021";
 
 watchLiveNav();
@@ -451,7 +451,6 @@ let blockedSig = "";  // the blocked users when the profile was drawn: a change 
 function close() {
   if (!shown) return;
   shown.stop();
-  if (shown.editor) shown.editor.destroy();
   shown = null;
 }
 
@@ -499,6 +498,12 @@ function drawHead(v) {
   if (v.createdAt) {
     who.append(el("p", "prof-since", `tag ${new Date(v.createdAt).toLocaleDateString("hu-HU", { year: "numeric", month: "long", day: "numeric" })} óta`));
   }
+  if (own) {  // wider screens: a button under the name (phones: ✎ in the corner, below)
+    const b = el("button", "btn ghost small prof-edit-text", "✎ Profil szerkesztése");
+    b.type = "button";
+    b.addEventListener("click", () => openProfileEditor());
+    who.append(b);
+  }
   if (!own) {
     const blocked = isBlocked(uid);
     const b = el("button", "btn ghost small", blocked ? "letiltás feloldása" : "letiltás");
@@ -522,17 +527,12 @@ function drawHead(v) {
     side = el("p", "prof-side prof-side-note", "A pontjait és a statisztikáit nem teszi közzé.");
   }
   const parts = [avatar(v.photo && v.photo["256"], v.nick, 96), who, side];
-  if (own) {  // phones: the editor opens from the head (css hides its folded bar there)
+  if (own) {  // phones: ✎ in the corner of the head opens the editor
     const edit = el("button", "prof-edit-btn");
     edit.type = "button";
     edit.title = "Profil szerkesztése";
     edit.setAttribute("aria-label", edit.title);
-    edit.addEventListener("click", () => {
-      const det = shown.editBox.querySelector(".prof-edit");
-      if (!det) return;
-      det.open = !det.open;
-      if (det.open) det.scrollIntoView({ block: "start", behavior: "smooth" });
-    });
+    edit.addEventListener("click", () => openProfileEditor());
     parts.push(edit);
   }
   headBox.replaceChildren(...parts);
@@ -543,7 +543,7 @@ function draw(v) {
   drawHead(v);
   drawSections(v);
   shown.tabs.counts(v.stats);
-  shown.editBox.hidden = shown.sectionBox.hidden = shown.tabs.el.hidden = false;  // shown with the head, so nothing moves (CLS)
+  shown.sectionBox.hidden = shown.tabs.el.hidden = false;  // shown with the head, so nothing moves (CLS)
 }
 
 function show(uid, own) {
@@ -553,21 +553,11 @@ function show(uid, own) {
   const me = document.querySelector(".nav-profile");
   if (me) { if (own) me.setAttribute("aria-current", "page"); else me.removeAttribute("aria-current"); }
   const headBox = el("section", "prof-head panel");
-  const editBox = el("div");
   const sectionBox = el("div", "prof");
   const tabs = listTabs(sectionBox, own);
-  editBox.hidden = sectionBox.hidden = tabs.el.hidden = true;
-  box.replaceChildren(headBox, editBox, tabs.el, sectionBox);
-  shown = { uid, own, headBox, editBox, sectionBox, tabs, sections: null, sig: null, editor: null, last: null, stop: () => {} };
-
-  if (own) {  // the editor, folded until opened
-    const det = el("details", "prof-edit panel");
-    det.append(el("summary", null, "Profil szerkesztése"));
-    const ed = profileEditor();
-    det.append(ed.el);
-    editBox.append(det);
-    shown.editor = ed;
-  }
+  sectionBox.hidden = tabs.el.hidden = true;
+  box.replaceChildren(headBox, tabs.el, sectionBox);
+  shown = { uid, own, headBox, sectionBox, tabs, sections: null, sig: null, last: null, stop: () => {} };
 
   const unavailable = () => { close(); gate("Profil", "Ez a profil nem érhető el."); };
   const mine = shown;
