@@ -7,14 +7,14 @@
 
 import { doc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { defaultStream } from "./config.js?v=202611241021";
-import { db, el, factBadge, LABEL, sourceList, setPhoto, mpHref, setLiveNav } from "./common.js?v=202611262215";
-import { mountAccount } from "./account.js?v=202611262215";
-import { factSocial } from "./social.js?v=202611262215";
-import { mountChat } from "./chat.js?v=202611262215";
+import { db, el, factBadge, LABEL, sourceList, setPhoto, mpHref, setLiveNav } from "./common.js?v=202611262350";
+import { mountAccount } from "./account.js?v=202611262350";
+import { factSocial } from "./social.js?v=202611262350";
+import { mountChat } from "./chat.js?v=202611270030";
 import { scrollHint } from "./scrollhint.js?v=202611241021";
-import { mountGame } from "./game.js?v=202611262215";
+import { mountGame } from "./game.js?v=202611270012";
 import { cdnReady, cdnUrl, cdnXhr } from "./cdn.js?v=202611260345";
-import { useTwitch, mountTwitch, twitchNow } from "./twitch.js?v=202611262305";
+import { useTwitch, mountTwitch, twitchNow } from "./twitch.js?v=202611270110";
 
 const TWITCH = useTwitch();  // the stream from twitch.tv/vitaradar; ?player=cdn: our own CDN (supporters)
 if (!TWITCH) cdnReady();  // the stream is on cdn.vitaradar.hu, which needs its cookie: get it before the player asks
@@ -26,9 +26,9 @@ const els = {
   speaker: $("speaker"), img: $("speaker-img"),
   initials: $("speaker-initials"), name: $("speaker-name"), party: $("speaker-party"), role: $("speaker-role"),
   more: $("speaker-more"),
+  sum: $("speech-sum"), sumTally: $("speech-tally"), latest: $("latest"), latestRows: $("latest-rows"),
 };
 const MAX_SHOWN = 200;
-const PHONE = matchMedia("(max-width: 860px)");  // phones: the feed's speaker dividers (js/mobile.js lays the page out)
 
 mountAccount();
 mountChat($("stage"));
@@ -215,7 +215,6 @@ function render() {
     .map((c) => game.mask(c, now))  // a challenge's fact stays "being checked" until the game is over
     .sort((a, b) => b.show_at - a.show_at)
     .slice(0, MAX_SHOWN);
-  const phone = PHONE.matches;
 
   const keep = new Set(visible.map((c) => c.id));
   for (const [id, s] of shown) if (!keep.has(id)) { s.li.remove(); shown.delete(id); }
@@ -229,16 +228,22 @@ function render() {
   const usedSeps = new Set();
   let turnKey = null;
   const tally = { true: 0, partly_true: 0, misleading: 0, false: 0, opinion: 0, promise: 0, unverifiable: 0, fallacy: 0 };
+  const speech = Object.fromEntries(Object.keys(tally).map((k) => [k, 0]));  // the speech under way: its own balance (the
+  // strip under the player on wider screens, the row under the speaker on phones)
+  const cur = turnAt(now ?? Infinity);
+  let lastFalse = null, lastFallacy = null;  // the newest of each, for the strip
   for (const c of visible) {
-    if (phone) {  // phones: a divider above each speaker's facts (newest first, as everywhere)
-      const t = turnAt(c.show_at);
-      const key = t ? `${t.speaker_id}|${t.start_at}` : null;
-      if (key && key !== turnKey) { place(separator(key, t)); usedSeps.add(key); }
-      turnKey = key;
-    }
+    const turn = turnAt(c.show_at);  // a divider above each speaker's facts
+    const tk = turn ? `${turn.speaker_id}|${turn.start_at}` : null;
+    if (tk && tk !== turnKey) { place(separator(tk, turn)); usedSeps.add(tk); }
+    turnKey = tk;
     const v = verdictOf(c, now);
-    if (v !== "pending" && fallacyShown(c, now)) tally.fallacy += 1;  // a claim with its sentence's fallacy: one fallacy
-    else if (v in tally) tally[v] += 1;
+    // a claim with its sentence's fallacy is the fallacy's card: one fallacy, in the tallies and the strip's latest rows
+    const k = v !== "pending" && fallacyShown(c, now) ? "fallacy" : v;
+    if (k in tally) tally[k] += 1;
+    if (cur && turn === cur && k in speech) speech[k] += 1;
+    if (k === "false" && (!lastFalse || c.show_at > lastFalse.show_at)) lastFalse = c;
+    if (k === "fallacy" && (!lastFallacy || c.show_at > lastFallacy.show_at)) lastFallacy = c;
     let s = shown.get(c.id);
     if (!s) {
       s = { li: buildFact(c), verdict: null };
@@ -255,15 +260,74 @@ function render() {
     }
     place(s.li);
   }
-  for (const [key, li] of seps) if (!usedSeps.has(key)) { li.remove(); if (!phone) seps.delete(key); }
+  for (const [key, li] of seps) if (!usedSeps.has(key)) li.remove();
   els.empty.hidden = visible.length > 0;
   els.count.textContent = visible.length ? `[${String(visible.length).padStart(2, "0")}]` : "";
   for (const k of Object.keys(tally)) $(`n-${k}`).textContent = String(tally[k]);
+  renderStrip(cur ? speech : null, [lastFalse, lastFallacy], now);
+  for (const k of Object.keys(speech)) $(`s-${k}`).textContent = String(speech[k]);  // phones: under the speaker
 
   renderSpeaker(now);
 }
 
-// the speaker turn under way at ms (stream clock), and the divider that opens it in the phone feed
+// Wider screens, the strip under the player (js/mobile.js puts it there): the speech under way, counted from the
+// facts since its speaker began (every verdict, as the sitting's tally), and the latest false
+// claim and fallacy of the sitting, each a click away in the facts. Written only when something changed.
+const STRIP_ORDER = ["true", "partly_true", "misleading", "false", "opinion", "promise", "unverifiable", "fallacy"];
+const STRIP_NAMES = { true: "Igaz", partly_true: "Részben igaz", misleading: "Félrevezető", false: "Hamis",
+  opinion: "Vélemény", promise: "Ígéret", unverifiable: "Nem ellenőrizhető", fallacy: "Hibás érvelés" };
+const STRIP_SHORT = { unverifiable: "N. e.", fallacy: "H. é." };  // a narrow strip's labels (css), as the MP pages'
+let stripSum = null, stripLatest = null;
+function renderStrip(speech, latest, now) {
+  if (!els.sum || !els.latest) return;
+  const sum = speech ? STRIP_ORDER.map((k) => `${k}:${speech[k]}`).join(" ") : "";  // every verdict, 0s too
+  if (sum !== stripSum) {
+    stripSum = sum;
+    els.sum.hidden = !speech;
+    els.sumTally.replaceChildren(...(speech ? STRIP_ORDER : []).map((k) => {
+      const d = el("div");
+      const dt = el("dt", null);
+      dt.append(el("span", "st-full", STRIP_NAMES[k]));
+      if (STRIP_SHORT[k]) { dt.append(el("span", "st-short", STRIP_SHORT[k])); dt.title = STRIP_NAMES[k]; }
+      d.append(dt, el("dd", `c-${k}`, String(speech[k])));  // the term first (a <dl>); css shows the figure first
+      return d;
+    }));
+  }
+  const rows = latest.filter(Boolean);
+  const key = rows.map((c) => `${c.id}|${c.bullet || c.claim}`).join(" ");
+  if (key === stripLatest) return;
+  stripLatest = key;
+  els.latest.hidden = !rows.length;
+  els.latestRows.replaceChildren(...rows.map((c, i) => {
+    const b = el("button", "latest-row");
+    b.type = "button";
+    b.dataset.id = c.id;
+    const v = i === 0 && c === latest[0] ? "false" : "fallacy";
+    const tag = el("span", "verdict", LABEL[v]);
+    tag.dataset.v = v;
+    b.append(tag, el("time", null, clock(c.show_at)), el("span", "latest-text", c.bullet || c.claim));
+    b.setAttribute("aria-label", `${LABEL[v].toLowerCase()}, ${clock(c.show_at)}: ${c.bullet || c.claim}`);
+    return b;
+  }));
+}
+// a click on one of them: the facts' tab, and that fact at the top of its panel, then opened there (js/mobile.js opens
+// it and keeps it in place while one open above it folds). Scrolled to only after opening, it showed just its first
+// line at the panel's foot, or, with a fact above it open, stayed off the panel until clicked again.
+els.latestRows?.addEventListener("click", (e) => {
+  const b = e.target.closest(".latest-row");
+  const s = b && shown.get(b.dataset.id);
+  if (!s) return;
+  $("m-tab-feed")?.click();
+  const box = s.li.closest(".below");  // not scrollIntoView, which can move the page too
+  if (box) {
+    const gap = parseFloat(getComputedStyle(s.li).scrollMarginTop) || 0;
+    box.scrollTop += s.li.getBoundingClientRect().top - box.getBoundingClientRect().top - gap;
+  }
+  // aria-expanded: open or opening (data-open stays on a closing fact until it has folded)
+  if (s.li.getAttribute("aria-expanded") !== "true") s.li.click();  // js/mobile.js opens it
+});
+
+// the speaker turn under way at ms (stream clock), and the divider that opens it in the feed
 function turnAt(ms) {
   let t = null;
   for (const x of turns) if (x.start_at <= ms) t = x; else break;

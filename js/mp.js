@@ -3,9 +3,9 @@
 import { doc, collection, query, where } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { searchUrl } from "./config.js?v=202611241021";
 import { appCheckHeaders } from "./firebase.js?v=202611260345";
-import { db, getDoc, getDocs, el, factBadge, LABEL, sourceList, setPhoto, hms, huDate, watchLiveNav } from "./common.js?v=202611262215";
-import { mountAccount } from "./account.js?v=202611262215";
-import { factSocial } from "./social.js?v=202611262215";
+import { db, getDoc, getDocs, el, factBadge, LABEL, sourceList, setPhoto, hms, huDate, watchLiveNav } from "./common.js?v=202611262350";
+import { mountAccount } from "./account.js?v=202611262350";
+import { factSocial } from "./social.js?v=202611262350";
 import { calendar } from "./calendar.js?v=202611241021";
 import { watchHref } from "./links.js?v=202611241021";
 import { setPageMeta } from "./meta.js?v=202611241124";
@@ -360,9 +360,8 @@ $("search").addEventListener("submit", async (ev) => {
     for (const h of data.hits) {
       const li = el("li", "hit panel");
       const top = el("div", "hit-top");
-      const a = el("a", null, `${huDate(h.date)} · T+${hms(h.at_s)}`);
-      a.href = `#speech-${h.speech_id}`;
-      top.append(el("span", "hit-score", `${Math.round(h.score * 100)}% egyezés`), a);
+      // when it was said (the days with their speeches are the replay rows now; ▶ opens it in the replay)
+      top.append(el("span", "hit-score", `${Math.round(h.score * 100)}% egyezés`), el("span", null, `${huDate(h.date)} · T+${hms(h.at_s)}`));
       const at = h.video_s ?? h.at_s;  // the passage's moment in the archive's video
       if (h.session && at != null) {
         const w = el("a", "fact-time", `▶ ${hms(at)}`);

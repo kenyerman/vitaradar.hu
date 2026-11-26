@@ -34,21 +34,21 @@
   <script>try{if(sessionStorage.getItem("vr-intro"))document.documentElement.dataset.intro="seen";else sessionStorage.setItem("vr-intro","1")}catch(e){}</script>
   <!-- arriving from another page with a page transition (css: phones, motion): the page does not also play its own opening; back slides the other way -->
   <script>addEventListener("pagereveal",function(e){if(!e.viewTransition)return;var r=document.documentElement;r.classList.add("m-vt");try{if(navigation.activation.navigationType==="traverse")r.classList.add("m-vt-back")}catch(x){}})</script>
-  <script>try{document.documentElement.dataset.acct=localStorage.getItem("vr-acct")||"out"}catch(e){}</script>
+  <script>try{document.documentElement.dataset.acct=localStorage.getItem("vr-acct")||"out";document.documentElement.dataset.live=localStorage.getItem("vr-live")||"off"}catch(e){}</script>
   <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js">
   <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check.js">
   <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js">
   <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js">
   <link rel="modulepreload" href="js/firebase.js?v=202611260345">
   <link rel="modulepreload" href="js/config.js?v=202611241021">
-  <link rel="modulepreload" href="js/common.js?v=202611262215">
-  <link rel="modulepreload" href="js/account.js?v=202611262215">
+  <link rel="modulepreload" href="js/common.js?v=202611262350">
+  <link rel="modulepreload" href="js/account.js?v=202611262350">
   <link rel="modulepreload" href="js/cdn.js?v=202611260345">
   <link rel="modulepreload" href="js/consent.js?v=202611241021">
   <link rel="modulepreload" href="js/presence.js?v=202611260345">
   <link rel="modulepreload" href="js/menu.js?v=202611241206">
   <link rel="modulepreload" href="js/meta.js?v=202611241124">
-  <link rel="stylesheet" href="css/style.css?v=202611262143">
+  <link rel="stylesheet" href="css/style.css?v=202611262311">
 </head>
 <body class="m-site">  <!-- the page's kind, for the phone layout from the first paint (css, js/mobile.js) -->
   <canvas id="rain" aria-hidden="true"></canvas>
@@ -163,7 +163,7 @@
     </div>
   </footer>
 
-  <script type="module" src="js/mp.js?v=202611262215"></script>
+  <script type="module" src="js/mp.js?v=202611262350"></script>
 
   <script type="module" src="js/shell.js?v=202611260345"></script>
 </body>
