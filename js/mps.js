@@ -12,7 +12,7 @@ const filter = document.getElementById("filter");
 const sort = dropdown(document.getElementById("sort"), {
   label: "Rendezés", value: "claims", onChange: () => render(),
   options: [
-    { value: "claims", label: "legtöbb állítás" }, { value: "false", label: "legtöbb hamis" },
+    { value: "claims", label: "legtöbb állítás" }, { value: "false_share", label: "legmagasabb hamis arány" },
     { value: "true_share", label: "legmagasabb igaz arány" }, { value: "recent", label: "legutóbb felszólalt" },
     { value: "name", label: "név szerint" },
   ],
@@ -96,7 +96,7 @@ function render() {
       if (hasData(a) !== hasData(b)) return hasData(a) ? -1 : 1;  // those we have data on first
       if (by === "name") return a.name.localeCompare(b.name, "hu");
       if (by === "recent") return (b.last_date || "").localeCompare(a.last_date || "");
-      if (by === "false") return ((b.totals || {}).false || 0) - ((a.totals || {}).false || 0);
+      if (by === "false_share") return (b.false_share ?? -1) - (a.false_share ?? -1);
       if (by === "true_share") return (b.true_share ?? -1) - (a.true_share ?? -1);
       return (b.claims || 0) - (a.claims || 0);
     });
