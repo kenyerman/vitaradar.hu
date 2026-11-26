@@ -141,6 +141,7 @@ class ChallengeView {
     }
     b.replaceChildren(head, el("h3", "game-q", ch.question || ""), statement, who, quote, bar(), opts,
       el("p", "game-status"), el("div", "game-after"));
+    this.bodyKey = null;  // the status and the result empty again: the next update writes them
   }
 
   async choose(option) {
@@ -178,6 +179,11 @@ class ChallengeView {
       btn.style.setProperty("--share", r && r.total ? `${(100 * n) / total}%` : "0%");
     }
     const status = b.querySelector(".game-status"), after = b.querySelector(".game-after");
+    // the rest changes only with these: written anew on every tick (five a second), the "+N pont" line started its
+    // animation again each time and shook
+    const key = `${ch.id}|${open}|${r ? JSON.stringify(r) : "-"}|${pick ? `${pick.choice}|${pick.sent}|${pick.error}` : "-"}|${account.registered}|${Boolean(account.user)}`;
+    if (key === this.bodyKey) return;
+    this.bodyKey = key;
     after.replaceChildren();
     delete status.dataset.right;
     if (!r) {
