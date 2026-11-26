@@ -2,7 +2,7 @@
 
 import { collection } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { db, getDocs, el, hms, huDate, watchLiveNav } from "./common.js?v=202611262215";
-import { mountAccount } from "./account.js?v=202611262059";
+import { mountAccount } from "./account.js?v=202611262139";
 import { watchHref } from "./links.js?v=202611241021";
 import { cdnReady, cdnUrl } from "./cdn.js?v=202611260345";
 

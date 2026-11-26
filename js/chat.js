@@ -7,9 +7,9 @@
 
 import { collection, doc, query, orderBy, limit, onSnapshot, writeBatch, serverTimestamp, Timestamp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { db, el } from "./common.js?v=202611262215";
-import { account, onAccount, onBlocks, isBlocked, avatar, toast, blockUser } from "./account.js?v=202611262059";
-import { userCard } from "./usercard.js?v=202611262059";
-import { linkify, locked, LOREM, LOREM_NICKS } from "./social.js?v=202611262059";
+import { account, onAccount, onBlocks, isBlocked, avatar, toast, blockUser } from "./account.js?v=202611262139";
+import { userCard } from "./usercard.js?v=202611262139";
+import { linkify, locked, LOREM, LOREM_NICKS } from "./social.js?v=202611262139";
 
 const MAX = 300;
 const GAP = 2000;            // ms between two messages (the rules allow one every 2 s)

@@ -22,8 +22,8 @@ import {
 import { db, getDoc, getDocs, el, badge, huDate, watchLiveNav, mpHref } from "./common.js?v=202611262215";
 import {
   account, onAccount, onBlocks, isBlocked, avatar, openProfileEditor, mountAccount, signIn, openRegister, blockUser, api, toast,
-} from "./account.js?v=202611262059";
-import { linkify } from "./social.js?v=202611262059";
+} from "./account.js?v=202611262139";
+import { linkify } from "./social.js?v=202611262139";
 import { watchHref, profileHref, withComment } from "./links.js?v=202611241021";
 
 watchLiveNav();
