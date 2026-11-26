@@ -53,7 +53,7 @@
   <link rel="modulepreload" href="js/consent.js?v=202611241021">
   <link rel="modulepreload" href="js/presence.js?v=202611270330">
   <link rel="modulepreload" href="js/menu.js?v=202611241206">
-  <link rel="stylesheet" href="css/style.css?v=202611270330">
+  <link rel="stylesheet" href="css/style.css?v=202611270103">
 </head>
 <body class="m-site">  <!-- the page's kind, for the phone layout from the first paint (css, js/mobile.js) -->
   <canvas id="rain" aria-hidden="true"></canvas>
@@ -80,15 +80,19 @@
     </div>
   </header>
 
-  <main class="wrap">
+  <main class="wrap mp-page">
     <h1 class="page-title">Képviselők</h1>
     <p class="page-sub">// az Országgyűlés minden képviselője, és amit ellenőriztünk a felszólalásaikból: állítások, minősítések, felszólalások</p>
+    <!-- wider screens (css, js/mps.js): the parties side by side, chips for one party, the table's head -->
+    <section id="mp-parties" class="mp-parties" aria-label="A pártok" hidden></section>
     <div class="toolbar">
       <input id="filter" class="field" type="search" placeholder="> név vagy párt…" aria-label="Szűrés név vagy párt szerint">
+      <div id="party" class="mp-chips" role="group" aria-label="Szűrés párt szerint" hidden></div>
       <div id="sort" class="dd"><button type="button" class="dd-button" disabled aria-label="Rendezés"><span class="dd-value">legtöbb állítás</span><span class="dd-caret" aria-hidden="true">▾</span></button></div>  <!-- js/dropdown.js replaces it; here for the toolbar's layout -->
       <button id="only-data" class="btn toggle" type="button" aria-pressed="false">csak akikről van adat</button>
     </div>
     <p id="mps-count" class="count-line"></p>
+    <div id="mps-head" class="mp-thead" hidden></div>
     <ol id="mps" class="mp-grid"></ol>
     <p id="mps-empty" class="empty" hidden>még nincs adat</p>
   </main>
@@ -133,7 +137,7 @@
     </div>
   </footer>
 
-  <script type="module" src="js/mps.js?v=202611270330"></script>
+  <script type="module" src="js/mps.js?v=202611270046"></script>
 
   <script type="module" src="js/shell.js?v=202611260345"></script>
   <script type="module" src="js/pwa.js?v=202611270330"></script>  <!-- the app: offline page, install sheet on phones -->
