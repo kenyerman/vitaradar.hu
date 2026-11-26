@@ -128,6 +128,7 @@ class ChallengeView {
 
   build(session, ch) {
     this.session = session;
+    this.bodyKey = null;  // its status and what is below it are new and empty
     const b = this.box;
     b.dataset.kind = ch.kind;
     const head = el("div", "game-head");
@@ -193,9 +194,14 @@ class ChallengeView {
       btn.style.setProperty("--share", r && r.total ? `${(100 * n) / total}%` : "0%");
     }
     const status = b.querySelector(".game-status"), after = b.querySelector(".game-after");
+    showWait(status, ch, lock, now, !r && !open && !(pick && pick.error));  // on every tick, the text below only on a change
+    // (a sign-in button built anew on every tick is new content to iOS Safari: a tap during which one came was taken
+    // for a hover and sent no click, so the Chat tab, or an answer, did nothing)
+    const key = `${ch.id}|${open}|${Boolean(r)}|${pick ? `${pick.choice}|${pick.sent}|${pick.error}` : "-"}|${account.registered}|${Boolean(account.user)}`;
+    if (key === this.bodyKey) return;
+    this.bodyKey = key;
     after.replaceChildren();
     delete status.dataset.right;
-    showWait(status, ch, lock, now, !r && !open && !(pick && pick.error));
     if (!r) {
       if (pick && pick.error) status.textContent = pick.error;
       else if (open) status.textContent = pick ? "Válasz rögzítve. Várjuk a többieket…" : "Válassz, mielőtt lejár az idő!";
