@@ -699,6 +699,21 @@ function keyboardFit() {
   const lock = swipeLock();
   let full = vv.height;  // the screen without the keyboard
   let fingers = 0, settle = 0;  // touches on the screen; the wait for the page to stop after them
+  // The row a tap opened while the keyboard was up (a fact under the comment box, a speech) is brought into view when
+  // the keyboard goes: the header and the video come back over its panel, and it was left below the panel's foot. Once
+  // the row above it has folded (compactFacts keeps the row in place until then).
+  let tapped = null, tappedAt = 0;
+  addEventListener("click", (e) => { tapped = e.target; tappedAt = performance.now(); }, true);
+  const keepTapped = () => {
+    const row = performance.now() - tappedAt < 1000 && tapped?.closest?.("li.fact, #speakers > li");
+    const box = row && row.closest(".below");
+    if (!box) return;
+    setTimeout(() => {
+      if (!row.isConnected || fingers) return;  // the reader has moved on
+      const r = row.getBoundingClientRect(), b = box.getBoundingClientRect();
+      if (r.top > b.bottom - 48) box.scrollTop += Math.round(r.top - b.top);  // only a row pushed below the foot
+    }, 450);
+  };
   const later = () => { clearTimeout(settle); settle = setTimeout(() => { settle = 0; fit(); }, 150); };
   // only the phone layout of the live and replay pages keeps the window still (the panels scroll); a wide screen, and
   // a page that scrolls as a whole, are left alone: putting their scroll back sent every click to the page's top
@@ -714,7 +729,7 @@ function keyboardFit() {
       const atEnd = chat && chat.scrollHeight - chat.scrollTop - chat.clientHeight < 40;
       document.body.classList.toggle("m-typing", on);
       lock(on);
-      if (!on) root.style.removeProperty("--m-kb-h");
+      if (!on) { root.style.removeProperty("--m-kb-h"); keepTapped(); }
       // writing in the chat: its newest messages over the field; after it, they stay if they were in view
       if (on && document.activeElement.closest(".m-chat-slot")) chatToEnd();
       else if (atEnd) chat.scrollTop = chat.scrollHeight;
