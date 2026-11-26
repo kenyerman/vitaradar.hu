@@ -1093,7 +1093,7 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
 /* ------------------------------------------------------------------ phones (js/mobile.js)
    The player stays pinned under the header with a compact strip under it (the speaker, the sitting's tally, the chat
    button), so the video never scrolls away and nothing covers it. Everything here is for phones only. */
-.m-top, .m-chat-slot, .m-game-slot, .m-new, .m-onair, .m-logo { display: none; }
+.m-top, .m-chat-slot, .m-game-slot, .m-new, .m-game-note, .m-onair, .m-logo { display: none; }
 .nav a.nav-imp { display: none; }  /* the impresszum is in the footer there; the phone menu shows it */
 .m-sep { display: none; }
 @media (max-width: 860px) {
@@ -1269,6 +1269,17 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
     min-height: 44px; padding: 0 18px; background: var(--green); border: 0; color: #000; font: 700 13px/1 var(--mono);
     letter-spacing: .6px; white-space: nowrap; cursor: pointer; box-shadow: 0 8px 24px rgba(0, 0, 0, .6); }
   .m-new[hidden] { display: none; }
+  /* a game open while the facts are shown: a note at the foot of the screen (js/mobile.js), centred without a
+     transform, so its entrance can move it */
+  .m-game-note { display: inline-flex; align-items: center; gap: 8px; position: fixed; z-index: 30; left: 0; right: 0;
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px)); width: max-content; max-width: calc(100% - 32px); margin: 0 auto;
+    min-height: 44px; padding: 0 18px; background: var(--panel-solid); border: 1px solid var(--green); color: var(--green);
+    font: 700 13px/1 var(--display); letter-spacing: 1.2px; text-transform: uppercase; white-space: nowrap; cursor: pointer;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .6); }
+  html[data-consent="open"] .m-game-note { bottom: calc(var(--consent-h, 0px) + 12px); }  /* above the cookie bar (js/consent.js) */
+  .m-game-note::before { content: ""; flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
+  .m-game-note:focus-visible { outline: 1px solid var(--green); outline-offset: 3px; }
+  .m-game-note[hidden], body.m-typing .m-game-note { display: none; }
 
   /* the tabs under the pinned block: Állítások, Chat, Játék (js/mobile.js) */
   .m-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--line-dim);
@@ -2000,6 +2011,7 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   @keyframes m-fade { from { opacity: 0; } }
   @keyframes m-shove { from { transform: translate(-12px, -12px); box-shadow: 12px 12px 0 var(--green); } }
   @keyframes m-up { from { transform: translateY(100%); } }
+  @keyframes m-rise { from { transform: translateY(24px); } }
   @keyframes m-from-left { from { opacity: 0; transform: translateX(-32px); } }
   @keyframes m-in-left { from { transform: translateX(-100%); } }
   @keyframes m-slab { 0%, 45% { background-color: rgba(61, 240, 130, .22); } }
@@ -2103,6 +2115,8 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   .m-strip .speaker.m-swap :is(.speaker-party, .speaker-role) { animation: m-fade .35s ease-out .4s backwards; }
   /* the "Élő" tag and the other live dots stay still: the red says it, and the logo beside it moves already */
   .m-new:not([hidden]) { animation: m-fade .2s ease-out, m-shove .5s var(--m-out); }
+  .m-game-note:not([hidden]) { animation: m-fade .2s ease-out, m-rise .4s var(--m-out); }  /* up from the foot */
+  .m-game-note::before { animation: blink 1s steps(1) infinite; }
 
   .replay-day[open] > .replay-list { animation: m-page .35s var(--m-out); }  /* a day's speeches come down into view */
   /* the lists on the other pages: the cards come in one after the other, with the hard shadow sliding away */
