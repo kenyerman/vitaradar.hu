@@ -4,7 +4,7 @@ import { collection } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-
 import { db, getDocs, el, hms, huDate, watchLiveNav } from "./common.js?v=202611260057";
 import { mountAccount } from "./account.js?v=202611260057";
 import { watchHref } from "./links.js?v=202611241021";
-import { cdnReady, cdnUrl } from "./cdn.js?v=202611251640";
+import { cdnReady, cdnUrl } from "./cdn.js?v=202611260057";
 
 watchLiveNav();
 mountAccount();

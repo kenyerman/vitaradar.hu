@@ -14,7 +14,7 @@ import { db, getDoc, getDocs, el, factBadge, FACT_VERDICTS, LABEL, sourceList, s
 import { mountAccount } from "./account.js?v=202611260057";
 import { factSocial } from "./social.js?v=202611260057";
 import { watchHref } from "./links.js?v=202611241021";
-import { cdnReady, cdnUrl, cdnXhr } from "./cdn.js?v=202611251640";
+import { cdnReady, cdnUrl, cdnXhr } from "./cdn.js?v=202611260057";
 import { scrollHint } from "./scrollhint.js?v=202611241021";
 import { setPageMeta } from "./meta.js?v=202611241124";
 import { youtubeMedia } from "./ytplayer.js?v=202611241433";
