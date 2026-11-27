@@ -14,7 +14,7 @@
 
 import { consented, onConsentChange } from "./consent.js?v=202611291700";
 
-const KEY = "";  // the PostHog project's public API key (phc_…); empty: nothing loads
+const KEY = "phc_mKCAjNbiNTeNQAzBmVdsghRFZc4v48pDf3E5xSPfKayX";  // the PostHog project's public API key (phc_…); empty: nothing loads
 const POSTHOG = "1.447.15";
 const SRC = `https://cdn.jsdelivr.net/npm/posthog-js@${POSTHOG}/dist/module.js`;
 
