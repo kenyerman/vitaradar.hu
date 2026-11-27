@@ -394,10 +394,60 @@ function open(view, asked = false) {
   document.body.append(d);
   d.addEventListener("click", onClick);
   d.addEventListener("cancel", (e) => { e.preventDefault(); if (sheet === d) close("dismiss"); });
+  draggable(d);
   d.showModal();
   if (v !== "main") { const t = d.querySelector(".is-title"); if (t) t.focus({ preventScroll: true }); }
   since = asked ? 0 : Date.now();
   guard = setInterval(() => { if (gameOpen()) close(asked ? "final" : "game"); }, 1000);  // a game started: it goes
+}
+
+// Pulled down, the sheet follows the finger (from its grab, its rows, anywhere it has not been scrolled down) and the
+// page behind it lightens; let go past a third of its height, or flicked down, it closes as Folytatás does ("dismiss":
+// not again on this page), otherwise it slides back. Up it does not move: it is as tall as it is. A tap is still a tap.
+function draggable(d) {
+  let t = null;  // { x, y, live, dy, track }
+  d.addEventListener("touchstart", (e) => {
+    const p = e.touches[0];
+    t = e.touches.length === 1 && sheet === d ? { x: p.clientX, y: p.clientY, live: false, dy: 0, track: [] } : null;
+  }, { passive: true });
+  d.addEventListener("touchmove", (e) => {
+    if (!t) return;
+    const p = e.touches[0], dx = p.clientX - t.x, dy = p.clientY - t.y;
+    if (!t.live) {
+      if (sheet !== d || d.scrollTop > 0 || dy < -4) { t = null; return; }  // its own scroll, or closing already
+      if (dy < 8 || dy < Math.abs(dx)) { if (Math.abs(dx) > 16) t = null; return; }
+      t.live = true;
+      t.y = p.clientY;  // it follows from here: no jump by the distance it took to tell a drag
+      for (const a of d.getAnimations()) a.finish();  // still coming up: there at once
+    }
+    if (e.cancelable) e.preventDefault();
+    t.dy = Math.max(0, p.clientY - t.y);
+    d.style.transform = t.dy ? `translateY(${t.dy}px)` : "";
+    d.style.setProperty("--is-dim", String(Math.max(0, 1 - t.dy / d.offsetHeight)));
+    t.track.push([e.timeStamp, t.dy]);
+    if (t.track.length > 6) t.track.shift();
+  }, { passive: false });
+  const lift = (e) => {
+    const s = t;
+    t = null;
+    if (!s || !s.live || sheet !== d) return;
+    // a flick decides by its way (none when the finger had stopped before it lifted); a slow pull by how far it went
+    const last = s.track[s.track.length - 1];
+    const recent = s.track.filter(([ts]) => ts >= last[0] - 100);
+    const [t0, y0] = recent[0], [t1, y1] = recent[recent.length - 1];
+    const v = t1 > t0 && e.timeStamp - last[0] < 80 ? (y1 - y0) / (t1 - t0) : 0;  // px per ms, down positive
+    if (v > 0.35 || (v > -0.35 && s.dy > d.offsetHeight / 3)) { close("dismiss"); return; }  // down from where it is
+    const from = s.dy;
+    d.style.transform = "";
+    d.style.removeProperty("--is-dim");
+    if (from && !STILL.matches) {
+      const back = { duration: 240, easing: "cubic-bezier(.22, 1, .36, 1)" };
+      d.animate([{ transform: `translateY(${from}px)` }, { transform: "none" }], back);
+      d.animate([{ "--is-dim": String(Math.max(0, 1 - from / d.offsetHeight)) }, { "--is-dim": "1" }], back);
+    }
+  };
+  d.addEventListener("touchend", lift, { passive: true });
+  d.addEventListener("touchcancel", lift, { passive: true });
 }
 
 function onClick(e) {

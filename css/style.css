@@ -2762,7 +2762,10 @@ html[data-live="off"] .nav-live[data-live="loading"] .live-off { visibility: vis
 .install-sheet { position: fixed; inset: auto 0 0; width: 100%; max-width: 520px; max-height: calc(100dvh - 24px); margin: 0 auto;
   padding: 0; border: 0; border-top: 1px solid var(--line); border-radius: 14px 14px 0 0; background: #0b130f; color: var(--text);
   overflow: auto; overscroll-behavior: contain; font-family: var(--sans); }
-.install-sheet::backdrop { background: rgba(0, 0, 0, .6); }
+/* pulled down, the page behind lightens with it (js/pwa.js sets --is-dim, 1 to 0; the backdrop inherits it) */
+@property --is-dim { syntax: "<number>"; inherits: true; initial-value: 1; }
+.install-sheet::backdrop { background: rgba(0, 0, 0, .6); opacity: var(--is-dim, 1); }
+.install-sheet { touch-action: pan-y; }  /* its own scroll, and the pull down (js/pwa.js), never a page zoom */
 html:has(.install-sheet[open]) { overflow: hidden; }  /* the page behind does not scroll under a finger on the dim part */
 .is-body { position: relative; padding: 22px 16px calc(16px + env(safe-area-inset-bottom, 0px)); }
 .is-grab { position: absolute; top: 6px; left: 50%; width: 36px; height: 4px; margin-left: -18px; border-radius: 2px; background: #3a403d; }
