@@ -534,6 +534,15 @@ input[type="file"].field { padding: 7px; font-size: 12px; }
 .vote.down[aria-pressed="true"] { color: var(--false); border-color: var(--false); background: rgba(255, 59, 59, .1); box-shadow: 0 0 8px rgba(255, 59, 59, .3); }
 .talk { margin-left: auto; color: var(--muted); font-size: 12px; }
 .talk::before { content: "// "; }
+/* the share button (js/share.js), at the end of the votes row: the votes' look, an icon only; on touch screens it
+   takes taps 44 px around it without looking any bigger */
+.share-btn { position: relative; display: inline-flex; align-items: center; justify-content: center; background: transparent;
+  border: 1px solid var(--line-dim); color: var(--muted); padding: 5px 8px; cursor: pointer; }
+.share-btn svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.share-btn:hover, .share-btn:focus-visible, .share-btn:active { color: var(--green); border-color: var(--line); outline: none; }
+@media (pointer: coarse) { .share-btn::after { content: ""; position: absolute; inset: -9px -6px; } }
+/* the fact a link opened (?f=, js/share.js) */
+.fact.fact-focus { outline: 1px solid var(--green); outline-offset: 3px; box-shadow: var(--glow); }
 .thread { margin-top: 10px; display: grid; gap: 10px; }
 .thread > .empty { margin: 0; font-size: 12px; }
 .gate { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 13px; color: var(--muted); border: 1px dashed var(--line); padding: 10px 12px; }
@@ -1336,6 +1345,10 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
 :is(.m-live, .m-watch) .vote { border: 0; padding: 6px 8px; min-height: 44px; }
 :is(.m-live, .m-watch) .vote.up svg { color: var(--true); }
 :is(.m-live, .m-watch) .vote.down svg { color: var(--false); }
+:is(.m-live, .m-watch) .share-btn { border: 0; min-width: 44px; min-height: 44px; margin-right: -8px; }
+:is(.m-live, .m-watch) .share-btn::after { content: none; }
+:is(.m-live, .m-watch) .share-btn svg { width: 16px; height: 16px; }
+:is(.m-live, .m-watch) .fact.fact-focus { outline-offset: -1px; box-shadow: inset 0 0 18px rgba(0, 255, 65, .1); }
 /* the live feed, newest first: a divider above each speaker's facts (so the rows leave out the name), and a button
    that counts the facts that came in above while the reader was further down */
 .m-live .fact-who { display: none; }
@@ -2868,3 +2881,53 @@ html:has(.install-sheet[open]) { overflow: hidden; }  /* the page behind does no
 @media (max-width: 860px) and (prefers-reduced-motion: no-preference) {
   .m-audio[data-playing="true"] .m-audio-dot { animation: blink 1s steps(1) infinite; }
 }
+
+/* ------------------------------------------------------------------ the iPhone guide (js/pwa.js guide())
+   Safari 26's five taps beside a small picture of each screen, drawn in iOS's own light grey and blue, the place to tap
+   ringed in green; the step shown is lit in the list. The page ends right above Safari 26's bar (seen in iOS 26.5),
+   so a green arrow at the sheet's bottom right points down at the real ••• under it. */
+.ig { display: grid; grid-template-columns: 128px 1fr; gap: 14px; align-items: center; margin: 10px 0 16px; }
+.ig-screen { position: relative; width: 128px; height: 176px; overflow: hidden; border-radius: 16px; background: #111b16;
+  box-shadow: inset 0 0 0 1.5px #2a3530; }
+.ig-f { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: flex-end; padding: 8px; opacity: 0;
+  transition: opacity .35s ease; }
+.ig-screen[data-step="1"] .ig-f1, .ig-screen[data-step="2"] .ig-f2, .ig-screen[data-step="3"] .ig-f3,
+.ig-screen[data-step="4"] .ig-f4, .ig-screen[data-step="5"] .ig-f5 { opacity: 1; }
+.ig-bar { display: flex; align-items: center; gap: 4px; }
+.ig-c { display: grid; place-items: center; flex: none; width: 22px; height: 22px; border-radius: 50%; background: #e9ecea; color: #1c1c1e;
+  font: 700 9px/1 var(--sans); letter-spacing: .5px; }
+.ig-url { flex: 1; min-width: 0; height: 22px; overflow: hidden; border-radius: 11px; background: #e9ecea; color: #1c1c1e;
+  font: 600 8px/22px var(--sans); text-align: center; white-space: nowrap; }
+.ig-pop { align-self: flex-end; display: grid; width: 98px; margin-bottom: 6px; padding: 4px 0; border-radius: 12px; background: #2c2c2e; }
+.ig-f2 .ig-bar { opacity: .5; }
+.ig-row { display: flex; align-items: center; gap: 5px; height: 20px; padding: 0 8px; color: #f2f2f7; font: 600 8.5px/1 var(--sans);
+  white-space: nowrap; }
+.ig-row svg { flex: none; width: 11px; height: 11px; }
+.ig-ghost::after { content: ""; width: 60%; height: 5px; border-radius: 3px; background: rgba(255, 255, 255, .22); }
+.ig-sheet { display: grid; gap: 6px; margin: 0 -4px -4px; padding: 8px 6px; border-radius: 14px 14px 10px 10px; background: #d9dcdb; }
+.ig-sheet .ig-row { border-radius: 6px; background: #f2f3f2; color: #1c1c1e; }
+.ig-sheet .ig-ghost::after { background: rgba(0, 0, 0, .18); }
+.ig-apps, .ig-acts { display: flex; justify-content: space-between; }
+.ig-apps i { width: 22px; height: 22px; border-radius: 6px; background: #f6f7f6; }
+.ig-acts i { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: #c5c9c7; color: #1c1c1e; }
+.ig-acts svg { width: 12px; height: 12px; }
+.ig-f5 { justify-content: flex-start; }
+.ig-add { position: absolute; inset: 0; display: grid; align-content: start; gap: 12px; padding: 8px; background: #f2f2f7; }
+.ig-head { display: flex; align-items: center; justify-content: space-between; }
+.ig-ok { padding: 5px 7px; border-radius: 11px; background: #0a84ff; color: #fff; font: 700 8px/1 var(--sans); }
+.ig-app { display: flex; align-items: center; gap: 6px; color: #1c1c1e; font: 600 9px/1 var(--sans); }
+.ig-app .is-app { width: 26px; height: 26px; border-radius: 6px; }
+.ig-hit { outline: 2px solid var(--green); outline-offset: 1px; animation: ig-pulse 1.2s ease-in-out infinite; }
+@keyframes ig-pulse { 50% { outline-offset: 3px; outline-color: rgba(61, 240, 130, .45); } }
+.ig-steps { gap: 7px; margin: 0; font-size: 13.5px; }
+.ig-steps li { color: var(--muted); cursor: pointer; transition: color .2s; }
+.ig-steps li b { color: inherit; }
+.ig-steps li.is-on { color: #e9f2ed; }
+.ig-steps li.is-on b { color: var(--green); }
+.install-sheet:has(.ig) .is-body { padding-bottom: 52px; }
+.ig-point { position: absolute; right: 44px; bottom: 6px; width: 28px; height: 34px; color: var(--green);
+  animation: ig-bob 1s ease-in-out infinite; }
+.install-sheet .ig-point svg { display: block; width: 28px; height: 34px; stroke-width: 3; }
+@keyframes ig-bob { 50% { transform: translateY(6px); } }
+@media (max-width: 359px) { .ig { grid-template-columns: 1fr; } .ig-screen { margin: 0 auto; } }
+@media (prefers-reduced-motion: reduce) { .ig-f { transition: none; } .ig-hit, .ig-point { animation: none; } }

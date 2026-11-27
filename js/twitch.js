@@ -1,5 +1,4 @@
-// The live stream from twitch.tv/vitaradar: the site's main player. Our own CDN stream (cdn.js, hls.js) is the
-// opt-in for supporters (?player=cdn until supporter access exists).
+// The live stream from twitch.tv/vitaradar: the live page's player.
 //
 // The player loads with the page (the owner's choice); Twitch's own cookies come with it (impresszum.html#sutik).
 //
@@ -32,7 +31,6 @@
 // mute. The new player starts by itself where nothing covers it (above); otherwise it waits with Twitch's play
 // button instead of the error. A first player still waiting for its click is left alone.
 //
-//   useTwitch()              Twitch is the player here (anything but ?player=cdn)
 //   mountTwitch(box)         the player into box, once
 //   twitchNow()              the date (ms) of the frame on screen, on the stream's clock; null before playback
 //   "vr-playing" event       on window, detail true / false: the player plays, or has stopped (js/mobile.js says so
@@ -63,10 +61,6 @@ let played = false;  // this player has played
 let auto = false;    // this player starts by itself (a rebuilt one); the first one waits for the viewer's click
 let rebuilds = 0, lastRebuild = 0, playingSince = 0;
 let lastTime = null, lastMove = 0, deadSince = 0;
-
-export function useTwitch() {
-  return params.get("player") !== "cdn";
-}
 
 function loadEmbed() {
   if (window.Twitch && window.Twitch.Player) return Promise.resolve(window.Twitch);

@@ -7,15 +7,16 @@
 // whoever had the floor, the chair included (the archive's floor turns; runs archived before them have only the
 // fact-checked speeches, so their card is empty while the chair speaks).
 // A fallacy said in the same sentence as a checked claim shows on that claim's card, as on the live page.
-// ?t= opens the video at that second (the MP page's fact links).
+// ?t= opens the video at that second (the MP page's fact links); ?f=<claim id> opens that fact (a shared link,
+// js/share.js): at its moment, the video waiting for a tap, the card opened and framed.
 
 import { doc, onSnapshot, collection, query, where } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { db, getDoc, getDocs, el, factBadge, LABEL, sourceList, setPhoto, hms, huDate, mpHref, watchLiveNav, loadFailed } from "./common.js?v=202611270600";
-import { loadScript } from "./net.js?v=202611270600";
 import { mountAccount } from "./account.js?v=202611270600";
 import { factSocial } from "./social.js?v=202611270600";
+import { addShare, FOCUS, revealFact, liveUrl } from "./share.js?v=202611272100";
 import { watchHref } from "./links.js?v=202611241021";
-import { cdnReady, cdnUrl, cdnXhr } from "./cdn.js?v=202611270600";
+import { cdnReady, cdnUrl } from "./cdn.js?v=202611270600";
 import { scrollHint } from "./scrollhint.js?v=202611241021";
 import { setPageMeta } from "./meta.js?v=202611241124";
 import { youtubeMedia } from "./ytplayer.js?v=202611271300";
@@ -26,14 +27,15 @@ scrollHint(document.querySelector(".below"), document.querySelector(".player"));
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
 const session = params.get("s") || "";
-const startAt = Math.max(0, parseFloat(params.get("t") || "0") || 0);
+let startAt = Math.max(0, parseFloat(params.get("t") || "0") || 0);  // or the linked fact's moment (load)
 const video = $("video");
-let media = video;  // the <video>, or the YouTube player behind the same calls (ytplayer.js)
+let media = video;  // the YouTube player behind a <video>'s calls (ytplayer.js); until it comes, the poster's <video>
 let facts = [];      // {c, speech, fallacy, li}, newest first (those past the end of the video at the top)
 let speakers = [];   // archive doc's speeches: {mp_id, name, party, start_s, end_s}
 let turns = [];      // archive doc's floor turns: {speaker_id, name, party, role, color, photo, chair, start_s, end_s}
 const mps = new Map();  // mp id -> mps doc (photo, colour, role)
 let showAll = false;  // the "összes állítás" toggle
+let focus = null;     // the fact a link opened (?f=, js/share.js): shown whatever the video's time, and framed
 
 function note(text) {
   $("player-note").hidden = !text;
@@ -93,7 +95,8 @@ function factItem(f) {
     li.append(el("p", "fact-fallacy", `» ${LABEL.fallacy.toLowerCase()} (${fallacy.name}): ${fallacy.explanation || ""}`));
   }
   li.append(sourceList(c.sources));
-  if (c.id && v !== "pending") li.append(factSocial(session, c.id));  // votes and comments, as on the MP page
+  // votes and comments, as on the MP page, and the share button
+  if (c.id && v !== "pending") li.append(addShare(factSocial(session, c.id), session, c.id));
   return li;
 }
 
@@ -172,7 +175,7 @@ function renderFacts(t) {
   for (const f of facts) {  // newest first: the first one already said is the latest
     const said = f.c.video_s != null && f.c.video_s <= t + 0.5;
     f.li.classList.toggle("future", !said);
-    f.li.hidden = !said && !showAll;
+    f.li.hidden = !said && !showAll && f !== focus;
     if (!f.li.hidden) shown += 1;
     if (said && !now) now = f;
   }
@@ -210,6 +213,10 @@ async function load() {
     fallacyLinks(),
   ]);
   const a = aSnap.data();
+  if (!a && FOCUS && FOCUS.session === session) {  // a link to a fact of the sitting on air: the live page has it
+    const cur = await getDoc(doc(db, "live", "current")).then((d) => d.data(), () => null);
+    if (cur && cur.session === session) { location.replace(liveUrl(session, FOCUS.claim)); return; }
+  }
   if (!a) { $("w-title").textContent = "Nincs ilyen adás"; note("ez az adás nincs az archívumban"); return; }
   setPageMeta({
     title: `Ülés visszanézése: ${huDate(a.date)} – Vitaradar`,
@@ -249,9 +256,17 @@ async function load() {
   $("speakers").addEventListener("speech-open", (e) => fillSpeech(e.target));
   for (const f of facts) f.li = factItem(f);
   $("facts").replaceChildren(...facts.map((f) => f.li));
+  // a link to a fact: the video waits at its moment (unless ?t= says another); a fallacy said with a claim is on the
+  // claim's card
+  if (FOCUS && (!FOCUS.session || FOCUS.session === session)) {
+    focus = facts.find((f) => f.c.id === FOCUS.claim) || facts.find((f) => f.fallacy && f.fallacy.id === FOCUS.claim) || null;
+    // (up to the next whole second: YouTube starts there, and the fact counts as said from its own second on)
+    if (focus && !params.has("t") && focus.c.video_s != null) startAt = Math.ceil(focus.c.video_s);
+  }
   for (const li of $("speakers").querySelectorAll(":scope > li.open")) fillSpeech(li);  // opened before the facts came
   showSpeechAt(startAt);
   renderFacts(startAt);  // the speaker card waits for the MPs' photos (play() ticks)
+  if (focus) revealFact(focus.li);
 
   // the MPs' photos and roles for the speaker card
   await Promise.all([...new Set(speakers.map((s) => s.mp_id))].map(async (id) => {
@@ -259,20 +274,10 @@ async function load() {
   }));
 
   // The recording plays from YouTube (pfc uploads every archived run there). Until it is up, the poster and every
-  // fact; the player comes as soon as the upload lands. ?yt=<id> plays a given YouTube video (testing); ?player=cdn
-  // our own archive on cdn.vitaradar.hu (which serves only images for now).
-  const yt = params.get("yt") || (params.get("player") === "cdn" ? null : a.youtube);
-  if (yt) {
-    await mountYoutube(yt);
-    return;
-  }
-  if (params.get("player") !== "cdn") {
-    waitForUpload(a);
-    return;
-  }
-  wire(video);
-  await Promise.all([loadHls(), cdnReady()]);  // the recording is on cdn.vitaradar.hu, which needs its cookie
-  play(cdnUrl(a.video));
+  // fact; the player comes as soon as the upload lands. ?yt=<id> plays a given YouTube video (testing).
+  const yt = params.get("yt") || a.youtube;
+  if (yt) await mountYoutube(yt);
+  else waitForUpload(a);
 }
 
 async function mountYoutube(id) {
@@ -282,13 +287,12 @@ async function mountYoutube(id) {
   note(null);
   $("player-note").classList.remove("over-poster");
   tick();
-  if (startAt) media.play();  // a link to a moment plays from there (as the CDN player below)
+  if (startAt && !focus) media.play();  // a link to a moment plays from there; one to a fact waits for a tap
 }
 
 // Not on YouTube yet: the poster, every fact listed (none is "said" before the video plays), and the player once the
 // upload lands (archive/{session}.youtube is written when YouTube has processed the video).
 function waitForUpload(a) {
-  video.controls = false;
   if (a.poster) cdnReady().then(() => { video.poster = cdnUrl(a.poster); }).catch(() => {});
   note("a felvétel feltöltése folyamatban, hamarosan itt visszanézhető");
   $("player-note").classList.add("over-poster");
@@ -303,34 +307,10 @@ function waitForUpload(a) {
   }, () => {});
 }
 
-// hls.js (about 100 KB) only for ?player=cdn; Safari plays HLS itself
-const HLS_JS = "https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js";
-function loadHls() {
-  if (window.Hls) return Promise.resolve();
-  return loadScript(HLS_JS).catch((e) => console.warn(e));  // without it Safari can still play it itself
-}
-
 function wire(m) {
   m.addEventListener("timeupdate", tick);
   m.addEventListener("seeked", tick);
   m.addEventListener("pause", () => history.replaceState(null, "", watchHref(session, media.currentTime)));
-}
-
-function play(url) {
-  const start = () => { if (startAt) video.currentTime = startAt; tick(); };
-  if (window.Hls && Hls.isSupported()) {
-    const hls = new Hls({ startPosition: startAt || -1, xhrSetup: cdnXhr });
-    hls.loadSource(url);
-    hls.attachMedia(video);
-    hls.on(Hls.Events.MANIFEST_PARSED, () => { note(null); start(); if (startAt) video.play().catch(() => {}); });
-    hls.on(Hls.Events.ERROR, (_, e) => { if (e.fatal) note("a felvétel most nem érhető el"); });
-  } else if (video.canPlayType("application/vnd.apple.mpegurl")) {  // Safari plays HLS itself
-    video.src = url;
-    video.addEventListener("loadedmetadata", () => { note(null); start(); }, { once: true });
-    video.addEventListener("error", () => note("a felvétel most nem érhető el"), { once: true });
-  } else {
-    note("ez a böngésző nem tudja lejátszani a felvételt");
-  }
 }
 
 $("copy-link").addEventListener("click", async () => {

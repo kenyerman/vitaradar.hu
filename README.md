@@ -4,9 +4,9 @@ The public website of Vitaradar: the Hungarian Parliament's live stream with aut
 each claim appears with its verdict (true, false, unverifiable, fallacy) the moment it is said in the video, and the
 current speaker's photo is shown beside them.
 
-Plain HTML, CSS and JavaScript, no build step, hosted on GitHub Pages. Two libraries load from public CDNs:
-[hls.js](https://github.com/video-dev/hls.js) for the video and the
-[Firebase web SDK](https://firebase.google.com/docs/web/setup) for the live feed.
+Plain HTML, CSS and JavaScript, no build step, hosted on GitHub Pages. The
+[Firebase web SDK](https://firebase.google.com/docs/web/setup) loads from Google's CDN for the live feed. The live
+video is Twitch's embedded player (twitch.tv/vitaradar), and replays are YouTube's.
 
 ## Pages
 
@@ -24,20 +24,22 @@ Plain HTML, CSS and JavaScript, no build step, hosted on GitHub Pages. Two libra
 ## How it works
 
 ```
-parliament's stream ──► fact-check pipeline (GPU VM) ──► HLS video pieces ──► Cloud Storage ──► the player
+parliament's stream ──► fact-check pipeline (GPU VM) ──► HLS video pieces ──► Twitch relay ──► Twitch's player
                                    │
                                    ├──► Firestore: live facts + speaker turns ──► live page (live updates)
                                    └──► Firestore: speeches, MP totals, passage vectors ──► MP pages, search
 ```
 
-- **Video:** an HLS stream (`live/current.hls_url`), a fixed broadcast delay behind the sitting.
+- **Video:** the pipeline's HLS stream, a fixed broadcast delay behind the sitting. A relay sends its pieces to
+  twitch.tv/vitaradar unchanged, and the live page shows Twitch's player. After a sitting, the pipeline uploads the
+  archived run to YouTube, and the replay page plays it from there.
 - **Live facts and speakers:** Firestore documents the pipeline writes as it goes:
   - `live/current`: the running session, the stream address, whether it is live;
   - `sessions/{session}/claims/{id}`: one fact each, with `show_at` / `verdict_at`;
   - `sessions/{session}/state/floor`: the speaker turns, with `start_at`.
 - **In sync with the picture:** every time is on the stream's own clock (the playlist's
-  `EXT-X-PROGRAM-DATE-TIME`). The page compares it with the date of the frame on screen, so a fact appears when the
-  viewer's video reaches it, not when the server found it.
+  `EXT-X-PROGRAM-DATE-TIME`). The page compares it with the date of the frame on screen (Twitch's player hides it:
+  `js/twitch.js` estimates it), so a fact appears when the viewer's video reaches it, not when the server found it.
 - **MP history:** when a run ends, the pipeline groups it into speeches (one MP's consecutive turns, the chair's
   remarks left out) and writes `speeches/{id}` (claims, verdicts, transcript) and `mps/{id}` (totals).
 - **Search:** each speech is cut into ~120-word passages, embedded with Vertex AI's multilingual model
