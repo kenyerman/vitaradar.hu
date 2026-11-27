@@ -19,11 +19,11 @@
 import {
   doc, onSnapshot, collection, query, where, orderBy, limit, startAfter,
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { db, getDoc, getDocs, el, badge, huDate, watchLiveNav, mpHref } from "./common.js?v=202611270330";
+import { db, getDoc, getDocs, el, badge, huDate, watchLiveNav, mpHref } from "./common.js?v=202611270600";
 import {
   account, onAccount, onBlocks, isBlocked, avatar, openProfileEditor, mountAccount, signIn, openRegister, blockUser, api, toast,
-} from "./account.js?v=202611270330";
-import { linkify } from "./social.js?v=202611270330";
+} from "./account.js?v=202611270600";
+import { linkify } from "./social.js?v=202611270600";
 import { watchHref, profileHref, withComment } from "./links.js?v=202611241021";
 
 watchLiveNav();
@@ -214,6 +214,7 @@ function pagedList({ title, more: moreLabel, empty, failed, fetchPage, render, n
       if (mine !== gen) return;
       list.append(...items);
       cursor = page.next;
+      more.textContent = moreLabel;
       more.hidden = !page.next;
       msg.hidden = list.children.length > 0;
       msg.textContent = empty;
@@ -222,6 +223,8 @@ function pagedList({ title, more: moreLabel, empty, failed, fetchPage, render, n
       if (mine !== gen) return;
       msg.hidden = false;
       msg.textContent = failed;
+      more.textContent = "Újrapróbálás";  // the same page again
+      more.hidden = false;
     } finally {
       busy = false;
       more.disabled = false;
@@ -594,6 +597,11 @@ onAccount((a) => {
     close();
     gate("Profil", wanted ? "Ez a profil nem érhető el. Lépj be, és megnézheted a felhasználók profilját."
       : "Lépj be, és itt látod a profilodat, a játékaidat és a hozzászólásaidat.", "Belépés", signIn);
+    return;
+  }
+  if (a.failed) {  // signed in, but the account did not load (js/account.js)
+    close();
+    gate("Profil", "A fiókodat most nem sikerült betölteni.", "Újrapróbálás", () => location.reload());
     return;
   }
   if (!a.registered) {

@@ -7,8 +7,8 @@
 
 import { collection } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { dropdown } from "./dropdown.js?v=202611241021";
-import { db, getDocs, el, setPhoto, mpHref, watchLiveNav } from "./common.js?v=202611270330";
-import { mountAccount } from "./account.js?v=202611270330";
+import { db, getDocs, el, setPhoto, mpHref, watchLiveNav, loadFailed } from "./common.js?v=202611270600";
+import { mountAccount } from "./account.js?v=202611270600";
 
 watchLiveNav();
 mountAccount();
@@ -270,4 +270,4 @@ getDocs(collection(db, "mps")).then((snap) => {
   mps = snap.docs.map((d) => d.data());
   parties();
   render();
-}).catch((e) => { empty.hidden = false; empty.textContent = "az adatok most nem tölthetők be"; console.warn(e); });
+}).catch((e) => { loadFailed(empty, "az adatok most nem tölthetők be"); console.warn(e); });
