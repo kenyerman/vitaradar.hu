@@ -144,11 +144,17 @@ function loading() {
 
 // Phones: a tap outside the field being typed in closes the keyboard (iOS keeps it up until another field takes the
 // focus). Not a swipe: that scrolls the chat with the keyboard up. Not a tap in the field's own form: its button sends.
-// The keyboard goes once the tap has done its own work, so what it pressed does not move away first.
+// The keyboard goes once the tap has done its own work, so what it pressed does not move away first: after its click.
+// iOS sends a tap's mousedown and click some 50 ms after the finger lifts; closing the keyboard before that (it was a
+// timeout of 0 after pointerup) brought the header and the video back and folded an empty comment box mid-tap, iOS
+// saw the page change under the finger and sent no click, and a tap on the next fact below did nothing. Nor does the
+// tap's mousedown move the focus (a fact's row can take it): that took it from the field there and then, with the
+// same result. A tap on something with nothing to click gets no click at all: then the keyboard goes a little later.
 const FIELD = "input:not([type=checkbox], [type=radio], [type=button], [type=submit], [type=range]), textarea, [contenteditable=true]";
+const CLICK_WAIT = 350;  // ms after the finger lifts
 
 function tapToClose() {
-  let down = null;
+  let down = null, pending = null;
   addEventListener("pointerdown", (e) => { down = e.isPrimary ? { x: e.clientX, y: e.clientY } : null; }, { capture: true, passive: true });
   addEventListener("pointercancel", () => { down = null; }, { capture: true, passive: true });  // a swipe
   addEventListener("pointerup", (e) => {
@@ -158,7 +164,21 @@ function tapToClose() {
     if (!from || !PHONE.matches || !field?.matches?.(FIELD)) return;
     if (Math.hypot(e.clientX - from.x, e.clientY - from.y) > 10) return;
     if ((field.closest("form") || field).contains(e.target) || e.target.closest?.(FIELD)) return;
-    setTimeout(() => { if (document.activeElement === field) field.blur(); }, 0);
+    pending?.();
+    let timer = 0;
+    const close = () => {
+      pending = null;
+      clearTimeout(timer);
+      removeEventListener("click", clicked, true);
+      removeEventListener("mousedown", keep, true);
+      if (document.activeElement === field) field.blur();
+    };
+    const clicked = () => setTimeout(close, 0);  // the click's own handlers first
+    const keep = (m) => { if (!m.target.closest?.("select, label")) m.preventDefault(); };  // the focus stays put
+    pending = close;
+    addEventListener("mousedown", keep, { capture: true, once: true });
+    addEventListener("click", clicked, { capture: true, once: true });
+    timer = setTimeout(close, CLICK_WAIT);
   }, { capture: true, passive: true });
 }
 
