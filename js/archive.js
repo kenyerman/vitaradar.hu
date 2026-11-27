@@ -1,9 +1,10 @@
-// vitaradar.hu archive: the past streams, newest sitting day first, each run a card that opens the replay.
+// vitaradar.hu archive: the past streams, newest sitting day first, each run a row that opens the replay.
 //
-// Phones: the list of days, each run a compact row. Wider screens (css): the same rows in columns (the picture, the
-// time and length, the speakers' photos and names, the claims, the verdicts) and beside them a sidebar: the month's
-// calendar (each sitting day with the bar of its verdicts; a click goes to the day and shows its numbers under the
-// calendar), a filter by MP name and by party, and the totals. The parts only the wider screens show are in the cards from the start, hidden on phones (css).
+// One page at every width, the same parts everywhere; only where they sit changes (css). Each run: the picture, the
+// time and length, the speakers' photos and names, the claims, the bar of the verdicts with true / false / fallacy.
+// With it: the month's calendar (each sitting day with the bar of its verdicts; a click goes to the day and shows its
+// numbers under the calendar), a filter by MP name and by party, and the totals. Wider screens: those beside the days,
+// in a sidebar; phones: above them, the filter first and the calendar behind its button (Naptár).
 
 import { collection } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { db, getDocs, el, hms, huDate, initials, watchLiveNav, loadFailed } from "./common.js?v=202611281400";
@@ -100,13 +101,21 @@ function face(s) {
   return f;
 }
 
-// The photos of the ones with the most claims (in the order they spoke), and how many more spoke
+// The photos of the ones with the most claims (in the order they spoke); how many spoke in all, the names line says
 function faces(sp, n = 7) {
   const box = el("span", "arch-faces");
   const shown = new Set([...sp].sort((x, y) => y.claims - x.claims).slice(0, n));
   box.append(...sp.filter((s) => shown.has(s)).map(face));
-  if (sp.length > n) box.append(el("span", "arch-more", `+${sp.length - n}`));
   return box;
+}
+
+// The first names, and how many more spoke: the "+N" is its own part, so a long line cuts the names, never the count
+function who(names) {
+  const p = el("p", "arch-who");
+  if (!names.length) { p.textContent = "–"; return p; }
+  p.append(el("span", "arch-names", names.slice(0, 4).join(", ")));
+  if (names.length > 4) p.append(el("span", "arch-who-more", `+${names.length - 4}`));
+  return p;
 }
 
 function card(a, i) {  // i: its place in the list (runs.map)
@@ -133,8 +142,7 @@ function card(a, i) {  // i: its place in the list (runs.map)
   const sp = speakers(a);
   const names = [...new Set(sp.map((s) => s.name))];
   const people = el("div", "arch-people");
-  people.append(faces(sp), el("p", "arch-who", names.length
-    ? names.slice(0, 4).join(", ") + (names.length > 4 ? ` +${names.length - 4}` : "") : "–"));
+  people.append(faces(sp), who(names));
   const claims = el("span", "arch-n");
   claims.append(el("b", null, num(a.claims)), "állítás");
   const verdicts = el("div", "arch-verdicts");
@@ -161,13 +169,22 @@ function card(a, i) {  // i: its place in the list (runs.map)
   link.append(poster, body);
   li.append(link);
   li.searchable = sp.map((s) => ({ name: fold(s.name), party: s.party || "" }));  // for the filter
+  li.run = a;  // for the counts of what the filter leaves
   return li;
 }
 
-// ------------------------------------------------------------------ the sidebar (wider screens)
+// ------------------------------------------------------------------ the calendar, the filter, the totals
+// Wider screens: a sidebar beside the days; phones: above them (css).
 const MONTHS = ["január", "február", "március", "április", "május", "június", "július", "augusztus", "szeptember",
   "október", "november", "december"];
 const todayIso = () => new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Budapest" });  // YYYY-MM-DD
+
+// a set of runs: their length, claims and verdicts
+function sums(runs) {
+  return { dur: runs.reduce((n, a) => n + (a.duration_s || 0), 0), claims: runs.reduce((n, a) => n + (a.claims || 0), 0),
+    counts: Object.fromEntries(BAR.map((k) => [k, runs.reduce((n, a) => n + ((a.counts || {})[k] || 0), 0)])) };
+}
+const shownRuns = (day) => day.items.filter((li) => !li.hidden).map((li) => li.run);
 
 function sidebar(dayList, sections) {
   const byDate = new Map(dayList.map((d) => [d.date, d]));
@@ -190,12 +207,16 @@ function sidebar(dayList, sections) {
   pick.setAttribute("aria-live", "polite");
   cal.append(head, grid, pick);
 
+  // the day picked, as the list shows it: with a filter on, only its runs the filter leaves
   function drawPick() {
     const day = byDate.get(selected);
     const h = el("p", "arch-cal-pick-h",
       `${new Date(`${selected}T12:00:00`).toLocaleDateString("hu-HU", { month: "short", day: "numeric" })} · ${weekday(selected)}`);
+    const runs = shownRuns(day);
+    if (!runs.length) { pick.replaceChildren(h, el("p", "arch-cal-pick-meta", "a szűrésnek megfelelő rész nincs ezen a napon")); return; }
+    const t = sums(runs);
     pick.replaceChildren(h, el("p", "arch-cal-pick-meta",
-      `${day.runs.length} rész · ${hms(day.dur)} · ${num(day.claims)} állítás`), bar(day.counts));
+      `${runs.length} rész · ${hms(t.dur)} · ${num(t.claims)} állítás`), bar(t.counts));
   }
 
   function drawMonth() {
@@ -219,7 +240,7 @@ function sidebar(dayList, sections) {
       b.type = "button";
       b.append(el("span", null, String(d)), bar(day.counts));
       b.setAttribute("aria-pressed", String(iso === selected));
-      if (matching && !matching.has(iso)) b.classList.add("off");
+      if (matching && !matching.has(iso)) { b.classList.add("off"); b.disabled = true; }  // nothing of it in the list
       b.setAttribute("aria-label", `${huDate(iso)}: ${day.runs.length} rész, ${num(day.claims)} állítás`);
       b.dataset.iso = iso;
       b.addEventListener("click", () => {
@@ -262,7 +283,18 @@ function sidebar(dayList, sections) {
     });
     chips.append(b);
   }
-  filter.append(el("h2", "arch-h", "Szűrés"), field, chips);
+  // phones: the calendar behind a button beside the field (wider screens: always shown, no button)
+  const calBtn = el("button", "arch-cal-toggle");
+  calBtn.type = "button";
+  calBtn.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3.5" y="5" width="17" height="15" rx="1.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg><span>Naptár</span>`;
+  cal.id = "arch-cal";
+  calBtn.setAttribute("aria-controls", cal.id);
+  const setCal = (open) => { side.dataset.cal = open ? "open" : "closed"; calBtn.setAttribute("aria-expanded", String(open)); };
+  calBtn.addEventListener("click", () => setCal(side.dataset.cal !== "open"));
+  setCal(false);
+  const find = el("div", "arch-find");
+  find.append(field, calBtn);
+  filter.append(el("h2", "arch-h", "Szűrés"), find, chips);
   field.addEventListener("input", apply);
 
   // the totals: everything, or what the filter leaves
@@ -293,14 +325,15 @@ function sidebar(dayList, sections) {
       }
       sections.get(d.date).hidden = !any;
       if (any && matching) matching.add(d.date);
+      d.line(active ? d.items.filter((li) => !li.hidden).map((li) => li.run) : d.runs);
     }
     none.hidden = items.size > 0;
     totH.textContent = active ? "Találatok" : "Összesen";
     count(items);
     drawMonth();
+    drawPick();
   }
 
-  drawPick();
   apply();
   side.replaceChildren(cal, filter, totals);
   side.hidden = false;
@@ -319,19 +352,22 @@ getDocs(collection(db, "archive")).then((snap) => {
   days.replaceChildren(...dates.map((d) => {
     const sec = el("section", "arch-day");
     const runs = byDay.get(d).sort((x, y) => (x.started_at || 0) - (y.started_at || 0));
-    const claims = runs.reduce((n, a) => n + (a.claims || 0), 0);
-    const dur = runs.reduce((n, a) => n + (a.duration_s || 0), 0);
-    const counts = Object.fromEntries(BAR.map((k) => [k, runs.reduce((n, a) => n + ((a.counts || {})[k] || 0), 0)]));
+    const { claims, dur, counts } = sums(runs);
     const date = el("h2", "arch-date");
-    date.append(el("span", "arch-slashes", "// "), huDate(d), el("span", "arch-wd", weekday(d)));  // phones leave the slashes and the weekday out (css)
-    const line = el("p", "count-line", `${runs.length} rész · összesen ${hms(dur)}`);
-    line.append(el("span", "arch-claims", ` · ${num(claims)} állítás`));  // wider screens
+    date.append(el("span", "arch-slashes", "// "), huDate(d), el("span", "arch-wd", weekday(d)));  // no slashes (css)
+    const line = el("p", "count-line");
+    // the day's parts, length and claims: all of them, or what the filter leaves (apply)
+    const drawLine = (shown) => {
+      const t = sums(shown);
+      line.replaceChildren(`${shown.length} rész · összesen ${hms(t.dur)}`, el("span", "arch-claims", ` · ${num(t.claims)} állítás`));
+    };
+    drawLine(runs);
     sec.append(date, line);
     const grid = el("ol", "arch-grid");
     const items = runs.map(card);
     grid.append(...items);
     sec.append(grid);
-    dayList.push({ date: d, runs, items, claims, dur, counts });
+    dayList.push({ date: d, runs, items, claims, dur, counts, line: drawLine });
     sections.set(d, sec);
     return sec;
   }));

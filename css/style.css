@@ -2080,37 +2080,125 @@ body.m-watch:is([data-m-tab="speakers"], [data-m-tab="transcript"]) .m-ai #show-
 .cal-title { font-family: var(--display); letter-spacing: 1.2px; }
 .cal-day { font-family: var(--display); }
 
-/* ------------------------------------------------------------------ the archive (the phones' design, every width)
-   Compact rows under each day: a small picture with the length, the time, the speakers and the bar of the verdicts,
-   four or so to a screen; the replay page has all the counts. */
-.arch-day { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; gap: 0 12px; margin: 0 0 20px; }
+/* ------------------------------------------------------------------ the archive (one design at every width)
+   The same parts everywhere (js/archive.js): each day's head (date, weekday, parts, length, claims); each run a row
+   with the picture, the time and length, the speakers' photos and names (+N), the claims, the bar of the verdicts
+   with true / false / fallacy; the calendar, the filter by MP and party, the totals. Wider screens: those three in a
+   sidebar beside the days, each row in columns. Phones: the filter above the days with the calendar behind its
+   button and the totals in a line, each row in lines beside its picture. */
 .arch-slashes { display: none; }
+.arch-layout[hidden], .arch-day[hidden], .arch-grid > li[hidden] { display: none; }  /* the filter's */
+.arch-day { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; gap: 0 12px; margin: 0 0 20px;
+  scroll-margin-top: calc(var(--m-hdr, 57px) + 16px); }
 .arch-day > .arch-date { margin: 0; font-size: 13px; }
+.arch-wd { margin-left: 10px; color: var(--muted); font: 600 11.5px/1 var(--display); letter-spacing: 1.2px; }
 .arch-day > .count-line { margin: 0; font-size: 11.5px; white-space: nowrap; }
-.arch-grid { grid-column: 1 / -1; display: block; margin: 8px -16px 0; border-bottom: 1px solid rgba(61, 240, 130, .08); }
+.arch-grid { grid-column: 1 / -1; display: block; border-bottom: 1px solid rgba(61, 240, 130, .08); }
 .arch-grid > li { border-top: 1px solid rgba(61, 240, 130, .08); }
-.arch-card { display: grid; grid-template-columns: 96px minmax(0, 1fr); align-items: center; gap: 12px; padding: 10px 16px;
-  border: 0; background: none; }
+.arch-card { display: grid; align-items: center; border: 0; background: none; }
 .arch-card:active { background: rgba(61, 240, 130, .06); }
-.arch-poster { width: 96px; }
+.arch-card:focus-visible { outline: 1px solid var(--green); outline-offset: -1px; }
 .arch-poster::before { font-size: 14px; opacity: 1; }
-.arch-len { right: 3px; bottom: 3px; padding: 1px 4px; font-size: 9.5px; }
-.arch-wait { left: 3px; top: 3px; bottom: auto; padding: 1px 4px; font-size: 8.5px; }
-.arch-body { display: flex; flex-direction: column; gap: 4px; min-width: 0; padding: 0; }
-.arch-body h3 { margin: 0; font-size: 13px; }
-.arch-who { margin: 0; font-size: 11.5px; }
-.arch-body .bar { margin: 2px 0 0; }
-.arch-body .mp-stats { display: none; }
-.arch-body .empty { margin: 0; font-size: 11.5px; }
-/* what only the wider screens show (below), and the wrappers around a row's parts: no boxes on phones */
-.arch-layout, .arch-list, .arch-when, .arch-people, .arch-verdicts { display: contents; }
-.arch-side, .arch-wd, .arch-claims, .arch-dur, .arch-faces, .arch-n, .arch-mini { display: none; }
-.arch-day[hidden], .arch-grid > li[hidden] { display: none; }  /* the filter's (wider screens) */
+.arch-body { min-width: 0; padding: 0; }
+.arch-when, .arch-people, .arch-verdicts { min-width: 0; }
+.arch-dur { color: var(--muted); font: 400 12px/1 var(--sans); }
+.arch-people { display: grid; gap: 6px; }
+.arch-faces { display: flex; align-items: flex-end; min-width: 0; overflow: hidden; }
+.arch-face { position: relative; flex: none; display: grid; place-items: center; width: 26px; height: 32px; margin-right: 3px;
+  overflow: hidden; background: #16231d; border-bottom: 3px solid var(--party, #5d6f66); }
+.arch-face-ini { color: #c5d3cb; font: 700 10px/1 var(--display); }
+.arch-face img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+.arch-who { display: flex; gap: 6px; min-width: 0; margin: 0; color: #c5d3cb; font-size: 12.5px; white-space: nowrap; }
+.arch-names { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.arch-who-more { flex: none; color: var(--muted); font: 600 12px/1.4 var(--display); letter-spacing: .6px; }  /* never cut */
+.arch-n { color: var(--muted); font: 400 11.5px/1.2 var(--sans); }
+.arch-n b { color: #e9f2ed; font: 700 18px/1.1 var(--display); }
+.arch-body .bar { margin: 0; }
+.arch-mini { display: flex; gap: 10px; margin: 5px 0 0; color: var(--muted); font: 600 10.5px/1 var(--display); letter-spacing: .5px; }
+.arch-mini b { font-weight: 700; text-shadow: none; }
+.arch-body .mp-stats { display: none; }  /* the full list: the replay page has it */
+.arch-body .empty { margin: 0; font-size: 12px; }
+.arch-list > .empty { margin-top: 12px; }
 
-/* ------------------------------------------------------------------ the archive on wider screens
-   A sidebar beside the days: the month's calendar (each sitting day with its verdicts' bar; a click goes to the day),
-   a filter by MP name and by party, the totals. Each run a row in columns: the picture, the time and length, the
-   speakers' photos (the party's colour under each) and names, the claims, the bar with true / false / fallacy. */
+/* the calendar, the filter, the totals */
+.arch-h { margin: 0 0 10px; color: var(--green); font: 700 11px/1 var(--display); letter-spacing: 1.6px; text-transform: uppercase; }
+.arch-cal-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.arch-cal-head .cal-nav { width: 32px; height: 32px; }
+.arch-cal-title { margin: 0; color: #e9f2ed; font: 700 13px/1 var(--display); letter-spacing: 1.4px; text-transform: uppercase; white-space: nowrap; }
+.arch-cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; text-align: center; }
+.arch-cal-wd { padding: 4px 0; color: var(--muted); font: 600 10px/1 var(--display); letter-spacing: .8px; }
+.arch-cal-day { display: grid; align-content: start; justify-items: center; gap: 6px; height: 40px; padding: 7px 0 0; border: 0;
+  background: none; color: #2f4a3b; font: 600 12px/1 var(--display); }
+.arch-cal-day.today { color: #e9f2ed; text-decoration: underline; text-underline-offset: 3px; }
+.arch-cal-day.has { background: #16231d; color: #e9f2ed; font-weight: 700; cursor: pointer; }
+.arch-cal-day .bar { width: calc(100% - 8px); margin: 0; }  /* the day's verdicts */
+.arch-cal-day.has:hover, .arch-cal-day.has:focus-visible { outline: 2px solid var(--line); outline-offset: -2px; }
+.arch-cal-day.has[aria-pressed="true"] { outline: 2px solid #e9f2ed; outline-offset: -2px; }
+.arch-cal-day.has.off { color: #4d6a5a; cursor: default; outline: 0; }  /* the filter leaves nothing of the day: not to pick */
+.arch-cal-day.has.off .bar { opacity: .25; }
+.arch-cal-pick { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line-dim); }
+.arch-cal-pick-h { margin: 0; color: var(--green); font: 700 12px/1.2 var(--display); letter-spacing: 1.2px; text-transform: uppercase; }
+.arch-cal-pick-meta { margin: 5px 0 0; color: #c5d3cb; font: 400 12px/1.3 var(--sans); }
+.arch-cal-pick .bar { margin-top: 8px; }
+.arch-find { display: flex; gap: 8px; }
+.arch-find .field { flex: 1; width: 100%; min-width: 0; }
+.arch-cal-toggle { display: none; }
+.arch-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.arch-chip { flex: none; display: inline-flex; align-items: center; gap: 7px; min-height: 32px; padding: 0 10px; border: 0;
+  background: #16231d; color: #e9f2ed; font: 700 11px/1 var(--display); letter-spacing: 1px; text-transform: uppercase; cursor: pointer; }
+.arch-chip::before { content: ""; flex: none; width: 8px; height: 8px; background: var(--party, var(--muted)); }
+.arch-chip small { color: var(--muted); font-size: 11px; }
+.arch-chip:hover { background: #1d2d26; }
+.arch-chip[aria-pressed="true"] { background: rgba(61, 240, 130, .14); box-shadow: inset 0 0 0 1px var(--green); }
+.arch-chip:focus-visible { outline: 2px solid var(--green); outline-offset: 1px; }
+.arch-totals ul { margin: 0; padding: 0; list-style: none; color: var(--muted); font: 400 12.5px/1.8 var(--sans); }
+.arch-totals b { color: #e9f2ed; font: 700 13px/1 var(--display); }
+
+/* phones: the filter (with the calendar's button) above the days, the calendar under it when opened, the totals in
+   a line; each row in lines beside its picture: the time and length with the claims, the photos, the names, the bar
+   and its counts */
+@media (max-width: 860px) {
+  .arch-side:not([hidden]) { display: flex; flex-direction: column; gap: 10px; margin: 0 0 22px; }
+  .arch-side .arch-h { display: none; }
+  .arch-filter { order: 1; }
+  .arch-cal { order: 2; display: none; padding: 12px; border: 1px solid var(--line-dim); background: var(--panel); }
+  .arch-side[data-cal="open"] .arch-cal { display: block; }
+  .arch-totals { order: 3; }
+  .arch-cal-toggle { display: inline-flex; align-items: center; gap: 7px; flex: none; min-height: 44px; padding: 0 12px;
+    border: 1px solid var(--line); background: #16231d; color: #e9f2ed; font: 700 11px/1 var(--display); letter-spacing: 1px;
+    text-transform: uppercase; cursor: pointer; }
+  .arch-cal-toggle svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
+  .arch-cal-toggle[aria-expanded="true"] { border-color: var(--green); color: var(--green); background: rgba(61, 240, 130, .1); }
+  .arch-find .field { min-height: 44px; }
+  /* the parties in one row, swiped sideways */
+  .arch-chips { flex-wrap: nowrap; overflow-x: auto; margin: 10px -16px 0; padding: 0 16px; scrollbar-width: none; }
+  .arch-chips::-webkit-scrollbar { display: none; }
+  .arch-chip { min-height: 36px; }
+  .arch-totals ul { display: flex; flex-wrap: wrap; gap: 2px 16px; font-size: 12px; line-height: 1.5; }  /* spaced, no dots: a wrapped line never starts with one */
+  /* each day's head: the date and weekday, the numbers under them */
+  .arch-day { grid-template-columns: minmax(0, 1fr); }
+  .arch-day > .count-line { margin-top: 3px; white-space: normal; }
+  .arch-grid { margin: 8px -16px 0; }
+  .arch-card { grid-template-columns: 96px minmax(0, 1fr); align-items: start; gap: 12px; padding: 12px 16px; }
+  .arch-poster { width: 96px; }
+  .arch-len { right: 3px; bottom: 3px; padding: 1px 4px; font-size: 9.5px; }
+  .arch-wait { left: 3px; top: 3px; bottom: auto; padding: 1px 4px; font-size: 8.5px; }
+  .arch-body { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; gap: 6px 10px; }
+  .arch-when { display: flex; align-items: baseline; gap: 8px; }
+  .arch-body h3 { margin: 0; font-size: 13px; }
+  .arch-dur { font-size: 11.5px; }
+  .arch-n { grid-column: 2; grid-row: 1; white-space: nowrap; }
+  .arch-n b { margin-right: 4px; font-size: 13px; }
+  .arch-people, .arch-verdicts { grid-column: 1 / -1; }
+  .arch-people { gap: 5px; }
+  .arch-face { width: 20px; height: 24px; margin-right: 2px; border-bottom-width: 2px; }
+  .arch-face-ini { font-size: 8.5px; }
+  .arch-who { font-size: 11.5px; }
+  .arch-who-more { font-size: 11px; }
+  .arch-mini { gap: 8px; margin-top: 5px; font-size: 10px; }
+}
+
+/* wider screens: the calendar, the filter and the totals in a sidebar beside the days; each run a row in columns */
 @media (min-width: 861px) {
   .arch-layout { display: grid; grid-template-columns: 272px minmax(0, 1fr); align-items: start; gap: 0 36px; margin-top: 22px; }
   .arch-list { display: block; min-width: 0; }
@@ -2120,78 +2208,29 @@ body.m-watch:is([data-m-tab="speakers"], [data-m-tab="transcript"]) .m-ai #show-
   .arch-side:not([hidden]) { max-height: calc(100vh - var(--m-hdr, 57px) - 40px); overflow-y: auto; overscroll-behavior: contain;
     scrollbar-width: thin; }
   .arch-box { padding: 14px; border: 1px solid var(--line-dim); background: var(--panel); }
-  .arch-h { margin: 0 0 10px; color: var(--green); font: 700 11px/1 var(--display); letter-spacing: 1.6px; text-transform: uppercase; }
-  /* the calendar */
-  .arch-cal-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
-  .arch-cal-head .cal-nav { width: 32px; height: 32px; }
-  .arch-cal-title { margin: 0; color: #e9f2ed; font: 700 13px/1 var(--display); letter-spacing: 1.4px; text-transform: uppercase; }
-  .arch-cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; text-align: center; }
-  .arch-cal-wd { padding: 4px 0; color: var(--muted); font: 600 10px/1 var(--display); letter-spacing: .8px; }
-  .arch-cal-day { display: grid; align-content: start; justify-items: center; gap: 6px; height: 40px; padding: 7px 0 0; border: 0;
-    background: none; color: #2f4a3b; font: 600 12px/1 var(--display); }
-  .arch-cal-day.today { color: #e9f2ed; text-decoration: underline; text-underline-offset: 3px; }
-  .arch-cal-day.has { background: #16231d; color: #e9f2ed; font-weight: 700; cursor: pointer; }
-  .arch-cal-day .bar { width: calc(100% - 8px); margin: 0; }  /* the day's verdicts */
-  .arch-cal-day.has:hover, .arch-cal-day.has:focus-visible { outline: 2px solid var(--line); outline-offset: -2px; }
-  .arch-cal-day.has[aria-pressed="true"] { outline: 2px solid #e9f2ed; outline-offset: -2px; }
-  .arch-cal-day.has.off { color: #4d6a5a; }  /* the filter leaves nothing of the day */
-  .arch-cal-day.has.off .bar { opacity: .25; }
-  /* the day picked: its date, its numbers, its bar */
-  .arch-cal-pick { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line-dim); }
-  .arch-cal-pick-h { margin: 0; color: var(--green); font: 700 12px/1.2 var(--display); letter-spacing: 1.2px; text-transform: uppercase; }
-  .arch-cal-pick-meta { margin: 5px 0 0; color: #c5d3cb; font: 400 12px/1.3 var(--sans); }
-  .arch-cal-pick .bar { margin-top: 8px; }
-  /* the filter */
-  .arch-filter .field { width: 100%; }
-  .arch-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
-  .arch-chip { display: inline-flex; align-items: center; gap: 7px; min-height: 32px; padding: 0 10px; border: 0; background: #16231d;
-    color: #e9f2ed; font: 700 11px/1 var(--display); letter-spacing: 1px; text-transform: uppercase; cursor: pointer; }
-  .arch-chip::before { content: ""; flex: none; width: 8px; height: 8px; background: var(--party, var(--muted)); }
-  .arch-chip small { color: var(--muted); font-size: 11px; }
-  .arch-chip:hover { background: #1d2d26; }
-  .arch-chip[aria-pressed="true"] { background: rgba(61, 240, 130, .14); box-shadow: inset 0 0 0 1px var(--green); }
-  .arch-chip:focus-visible { outline: 2px solid var(--green); outline-offset: 1px; }
-  /* the totals */
-  .arch-totals ul { margin: 0; padding: 0; list-style: none; color: var(--muted); font: 400 12.5px/1.8 var(--sans); }
-  .arch-totals b { color: #e9f2ed; font: 700 13px/1 var(--display); }
-  /* the rows: each day's head, the rows in columns */
-  .arch-day { scroll-margin-top: calc(var(--m-hdr, 57px) + 16px); margin: 0 0 24px; }
+  .arch-day { margin: 0 0 24px; }
   .arch-day > .arch-date { font-size: 15px; letter-spacing: 1.3px; }
-  .arch-wd { display: inline; margin-left: 12px; color: var(--muted); font: 600 12px/1 var(--display); letter-spacing: 1.2px; }
+  .arch-wd { margin-left: 12px; font-size: 12px; }
   .arch-day > .count-line { font-size: 12.5px; }
-  .arch-claims { display: inline; }
   .arch-grid { margin: 8px 0 0; }
   .arch-card { grid-template-columns: 136px 118px minmax(0, 1fr) 86px 200px; gap: 18px; padding: 10px 8px; }
   .arch-card:hover { background: rgba(61, 240, 130, .04); }
-  .arch-card:focus-visible { outline: 1px solid var(--green); outline-offset: -1px; }
   .arch-poster { width: 136px; }
   .arch-len { right: 4px; bottom: 4px; padding: 1px 5px; font-size: 11px; }
   .arch-wait { left: 4px; top: 4px; font-size: 9.5px; }
   .arch-body { display: contents; }
-  .arch-when, .arch-people, .arch-verdicts { display: block; min-width: 0; }
-  .arch-body h3 { font-size: 15px; }
-  .arch-dur { display: block; margin-top: 3px; color: var(--muted); font: 400 12px/1 var(--sans); }
-  .arch-people { display: grid; gap: 6px; }
-  .arch-faces { display: flex; align-items: flex-end; min-width: 0; overflow: hidden; }
-  .arch-face { position: relative; flex: none; display: grid; place-items: center; width: 26px; height: 32px; margin-right: 3px;
-    overflow: hidden; background: #16231d; border-bottom: 3px solid var(--party, #5d6f66); }
-  .arch-face-ini { color: #c5d3cb; font: 700 10px/1 var(--display); }
-  .arch-face img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top; }
-  .arch-more { align-self: center; margin-left: 6px; color: var(--muted); font: 600 12px/1 var(--display); letter-spacing: .6px; }
-  .arch-who { font-size: 12.5px; color: #c5d3cb; }
-  .arch-n { display: block; text-align: right; color: var(--muted); font: 400 11.5px/1.2 var(--sans); }
-  .arch-n b { display: block; color: #e9f2ed; font: 700 18px/1.1 var(--display); }
-  .arch-body .bar { margin: 0; }
-  .arch-mini { display: flex; gap: 10px; margin: 5px 0 0; color: var(--muted); font: 600 10.5px/1 var(--display); letter-spacing: .5px; }
-  .arch-mini b { font-weight: 700; text-shadow: none; }
-  .arch-body .empty { font-size: 12px; }
-  .arch-list > .empty { margin-top: 12px; }
+  .arch-when, .arch-people, .arch-verdicts { display: block; }
+  .arch-people { display: grid; }
+  .arch-body h3 { margin: 0 0 3px; font-size: 15px; }
+  .arch-dur { display: block; }
+  .arch-n { display: block; text-align: right; }
+  .arch-n b { display: block; }
 }
 /* narrower (a laptop, a tablet across): the sidebar narrower, and each row in two lines, the verdicts under the
    speakers */
 @media (min-width: 861px) and (max-width: 1199px) {
   .arch-layout { grid-template-columns: 232px minmax(0, 1fr); gap: 0 28px; }
-  .arch-cal-title { font-size: 12px; letter-spacing: 1px; white-space: nowrap; }
+  .arch-cal-title { font-size: 12px; letter-spacing: 1px; }
   .arch-card { grid-template-columns: 120px 104px minmax(0, 1fr) 72px; gap: 8px 16px; }
   .arch-poster { grid-row: 1 / span 2; width: 120px; }
   .arch-when { grid-column: 2; grid-row: 1 / span 2; }
