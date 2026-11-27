@@ -14,7 +14,7 @@ import { mountChat } from "./chat.js?v=202611270600";
 import { scrollHint } from "./scrollhint.js?v=202611241021";
 import { mountGame } from "./game.js?v=202611270600";
 import { cdnReady, cdnUrl, cdnXhr } from "./cdn.js?v=202611270600";
-import { useTwitch, mountTwitch, twitchNow } from "./twitch.js?v=202611270143";
+import { useTwitch, mountTwitch, twitchNow } from "./twitch.js?v=202611271300";
 import { loadScript } from "./net.js?v=202611270600";
 
 const TWITCH = useTwitch();  // the stream from twitch.tv/vitaradar; ?player=cdn: our own CDN (supporters)
