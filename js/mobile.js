@@ -950,7 +950,14 @@ function pullUp(top, player, remeasure) {
   if (!tabs || !strip || !player) return;
   const pull = el("button", "m-pull");  // made once, with the page: nothing clickable appears under a finger (iOS)
   pull.type = "button";
-  tabs.prepend(pull);
+  // A tablist may hold only tabs: the tabs go into a list of their own inside the bar (css: display: contents, so they
+  // stay the bar's grid cells), and the pull button sits beside that list, not in it
+  const list = el("div", "m-tablist");
+  for (const a of ["role", "aria-label"]) {
+    if (tabs.hasAttribute(a)) { list.setAttribute(a, tabs.getAttribute(a)); tabs.removeAttribute(a); }
+  }
+  list.append(...tabs.children);
+  tabs.append(pull, list);
   const line = el("button", "m-audio");
   line.type = "button";
   line.setAttribute("aria-label", "A videó vissza");

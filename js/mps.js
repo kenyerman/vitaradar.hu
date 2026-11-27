@@ -7,7 +7,7 @@
 // the MPs as a table, every count in its own column and a click on a column's head sorts by it.
 
 import { collection } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { dropdown } from "./dropdown.js?v=202611241021";
+import { dropdown } from "./dropdown.js?v=202611291600";
 import { db, getDocs, el, setPhoto, mpHref, watchLiveNav, loadFailed } from "./common.js?v=202611281400";
 import { mountAccount } from "./account.js?v=202611281800";
 
@@ -195,7 +195,8 @@ function marks() {
     b.setAttribute("aria-pressed", String(on));
     b.dataset.dir = on ? (dir === 1 ? "first" : "last") : "";
   }
-  for (const b of document.querySelectorAll("[data-party]")) b.setAttribute("aria-pressed", String(b.dataset.party === (party ?? "*")));
+  // the party cards and chips only: a picture with a party colour has data-party too (common.js setPhoto)
+  for (const b of document.querySelectorAll("button[data-party]")) b.setAttribute("aria-pressed", String(b.dataset.party === (party ?? "*")));
 }
 
 // The parties (side by side on wider screens, a row to swipe on phones), everything their MPs said added up, and the chips. The true and false
@@ -276,4 +277,8 @@ getDocs(collection(db, "mps")).then((snap) => {
   mps = snap.docs.map((d) => d.data());
   parties();
   render();
-}).catch((e) => { loadFailed(empty, "az adatok most nem tölthetők be"); console.warn(e); });
+}).catch((e) => {
+  strip.hidden = chips.hidden = head.hidden = true;  // the room kept for them (css) goes
+  loadFailed(empty, "az adatok most nem tölthetők be");
+  console.warn(e);
+});

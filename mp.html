@@ -52,7 +52,7 @@
   <link rel="modulepreload" href="js/presence.js?v=202611281400">
   <link rel="modulepreload" href="js/menu.js?v=202611241206">
   <link rel="modulepreload" href="js/meta.js?v=202611241124">
-  <link rel="stylesheet" href="css/style.css?v=202611282110">
+  <link rel="stylesheet" href="css/style.css?v=202611291600">
 </head>
 <body class="m-site">  <!-- the page's kind, for the phone layout from the first paint (css, js/mobile.js) -->
   <canvas id="rain" aria-hidden="true"></canvas>
@@ -168,6 +168,7 @@
     </div>
   </footer>
 
+  <script type="module" src="js/consent.js?v=202611241021"></script>  <!-- the cookie bar at once, not after the Firebase scripts the page's own module waits for (common.js imports this same module) -->
   <script type="module" src="js/mp.js?v=202611291437"></script>
 
   <script type="module" src="js/shell.js?v=202611282110"></script>

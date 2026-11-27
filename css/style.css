@@ -1528,6 +1528,7 @@ html[data-consent="open"] .m-game-note { bottom: calc(var(--consent-h, 0px) + 12
 /* the tabs under the pinned block: Állítások, Chat, Játék (js/mobile.js) */
 .m-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--line-dim);
   background: var(--panel-solid); }
+.m-tablist { display: contents; }  /* the tabs' own tablist (js/mobile.js pullUp): its tabs are the bar's grid cells */
 .m-tab { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 0 6px;
   background: transparent; border: 0; color: var(--muted); font: 700 12px/1 var(--mono); letter-spacing: 1.2px;
   text-transform: uppercase; white-space: nowrap; cursor: pointer; }
@@ -2160,6 +2161,9 @@ body.m-watch:is([data-m-tab="speakers"], [data-m-tab="transcript"]) .m-ai #show-
    and its counts */
 @media (max-width: 860px) {
   .arch-side:not([hidden]) { display: flex; flex-direction: column; gap: 10px; margin: 0 0 22px; }
+  /* until js/archive.js fills it: the room the filter (90px) and the totals' line (18px) take then, so the days below
+     do not jump down when they come (CLS); a second totals line on the narrowest phones still moves them 20px */
+  .arch-side:empty { min-height: 118px; }
   .arch-side .arch-h { display: none; }
   .arch-filter { order: 1; }
   .arch-cal { order: 2; display: none; padding: 12px; border: 1px solid var(--line-dim); background: var(--panel); }
@@ -2202,7 +2206,7 @@ body.m-watch:is([data-m-tab="speakers"], [data-m-tab="transcript"]) .m-ai #show-
 /* wider screens: the calendar, the filter and the totals in a sidebar beside the days; each run a row in columns */
 @media (min-width: 861px) {
   .arch-layout { display: grid; grid-template-columns: 272px minmax(0, 1fr); align-items: start; gap: 0 36px; margin-top: 22px; }
-  .arch-list { display: block; min-width: 0; }
+  .arch-list { display: block; min-width: 0; grid-column: 2; }  /* its column from the start: no jump when the sidebar comes */
   .arch-side:not([hidden]) { position: sticky; top: calc(var(--m-hdr, 57px) + 20px); display: grid; gap: 18px; }
   /* taller than the window (a laptop's 768px, the filter's chips): it scrolls by itself, so its foot is in reach
      before the list ends */
@@ -2822,6 +2826,11 @@ html:not([data-loaded]) #mps:empty { background-image: url("data:image/svg+xml,%
 .mp-party-nums .c-false b { color: var(--false); }
 .mp-party-nums .c-fallacy b { color: var(--fallacy); }
 .mp-chips:not([hidden]) { display: flex; flex-wrap: wrap; gap: 6px; }
+/* until js/mps.js has the data: the room the parties (one row of cards at every width) and the chips take then, and
+   the count line's, so the search and the list below do not move when they come (CLS) */
+.mp-parties:empty { min-height: 122px; }
+.mp-chips:empty { min-height: 36px; }
+#mps-count:empty { min-height: 1.55em; }
 .mp-chip { display: inline-flex; align-items: center; gap: 7px; min-height: 36px; margin: 0; padding: 0 10px;
   border: 1px solid transparent; background: #16231d; color: #e9f2ed; font: 700 10.5px/1 var(--display); letter-spacing: 1px;
   text-transform: uppercase; cursor: pointer; }
@@ -2833,6 +2842,7 @@ html:not([data-loaded]) #mps:empty { background-image: url("data:image/svg+xml,%
   letter-spacing: 1.3px; text-transform: uppercase; }
 @media (max-width: 860px) {
   .mp-parties:not([hidden]) { margin: 16px 0 12px; }
+  .mp-parties:empty { min-height: 118px; }
   .mp-parties-h { margin-bottom: 8px; }
   .mp-parties-grid { display: flex; gap: 10px; overflow-x: auto; margin: 0 -16px; padding: 0 16px 2px; scroll-snap-type: x mandatory;
     scroll-padding: 0 16px; overscroll-behavior-x: contain; scrollbar-width: none; }
@@ -2862,6 +2872,7 @@ html:not([data-loaded]) #mps:empty { background-image: url("data:image/svg+xml,%
   .mp-thead:not([hidden]) { display: grid; grid-template-columns: var(--mp-cols); align-items: center; gap: 0 14px; margin: 0 -16px;
     padding: 4px 16px; position: sticky; top: var(--m-hdr, 0px); z-index: 3; background: var(--bg);
     border-bottom: 1px solid var(--line-dim); }
+  .mp-thead:empty { min-height: 41px; }  /* its height before js/mps.js puts the column heads in: the rows below stay put */
   :is(.mp-th, .mp-th-rank, .mp-th-label) { margin: 0; padding: 0; border: 0; background: none; color: var(--muted);
     font: 700 10px/1.2 var(--display); letter-spacing: 1.1px; text-transform: uppercase; white-space: nowrap; }
   .mp-th-rank { justify-self: end; }
@@ -3109,12 +3120,16 @@ html:has(.install-sheet[open]) { overflow: hidden; }  /* the page behind does no
 @media (max-width: 860px) {
   :is(.m-live, .m-watch) .m-top > :is(.m-strip, .m-tabs, .m-ai, .m-audio) { touch-action: none; }  /* the drags are ours */
   :is(.m-live, .m-watch) .m-top > .m-tabs { position: relative; }
-  :is(.m-live, .m-watch) .m-pull { display: grid; place-items: center; position: absolute; z-index: 3; top: -7px; left: 50%;
-    width: 48px; height: 18px; margin-left: -24px; padding: 0; background: var(--panel-solid); border: 1px solid var(--line);
-    border-radius: 9px; cursor: pointer; }
-  .m-pull::before { content: ""; width: 22px; height: 3px; border-radius: 2px; background: rgba(213, 224, 218, .55); }
-  .m-pull::after { content: ""; position: absolute; inset: -14px -12px -6px; }  /* a 44 px tall target, mostly off the tab */
-  .m-pull:focus-visible { outline: 1px solid var(--green); outline-offset: 2px; }
+  /* the button is the whole 72 x 38 target (mostly off the tab); the pill (48 x 18, 7px over the tabs' top line) and its
+     grip are drawn inside it, where they always were */
+  :is(.m-live, .m-watch) .m-pull { display: block; position: absolute; z-index: 3; top: -21px; left: 50%;
+    width: 72px; height: 38px; margin-left: -36px; padding: 0; background: none; border: 0; cursor: pointer; }
+  .m-pull::before { content: ""; box-sizing: border-box; position: absolute; top: 14px; left: 12px; width: 48px; height: 18px;
+    background: var(--panel-solid); border: 1px solid var(--line); border-radius: 9px; }
+  .m-pull::after { content: ""; position: absolute; top: 21.5px; left: 25px; width: 22px; height: 3px; border-radius: 2px;
+    background: rgba(213, 224, 218, .55); }
+  .m-pull:focus-visible { outline: 0; }
+  .m-pull:focus-visible::before { outline: 1px solid var(--green); outline-offset: 2px; }
 
   body.m-pulled .m-top { overflow: hidden; }  /* the video under the panels never shows past their foot */
   body.m-pulled .m-top > :is(.stage, .player) { position: absolute; left: 0; right: 0; top: var(--m-vtop, 0px); z-index: 0; }
