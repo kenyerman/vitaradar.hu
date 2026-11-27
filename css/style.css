@@ -2159,6 +2159,9 @@ body.m-watch:is([data-m-tab="speakers"], [data-m-tab="transcript"]) .m-ai #show-
     max-height: none; margin: 0; border: 0; border-top: 1px solid var(--line); border-radius: 14px 14px 0 0; background: #0b130f;
     touch-action: pan-y; }  /* its body's scroll, and the pull down (js/account.js dragToClose), never a page zoom */
   .prof-sheet::backdrop { opacity: var(--is-dim, 1); }  /* pulled down, the page behind lightens with it */
+  /* the page behind does not scroll under a finger: on the dim strip, or a drag up (or sideways) on the sheet, which it
+     leaves alone, scrolled the long profile under it */
+  html:has(.prof-sheet[open]) { overflow: hidden; }
   .sheet-form { height: 100%; max-height: none; }
   .sheet-head { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 8px; min-height: 58px;
     padding: 10px 16px 0; border-color: rgba(61, 240, 130, .14); }
