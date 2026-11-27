@@ -45,11 +45,11 @@
   <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js">
   <link rel="modulepreload" href="js/firebase.js?v=202611281400">
   <link rel="modulepreload" href="js/config.js?v=202611241021">
-  <link rel="modulepreload" href="js/common.js?v=202611281400">
-  <link rel="modulepreload" href="js/account.js?v=202611281800">
+  <link rel="modulepreload" href="js/common.js?v=202611291700">
+  <link rel="modulepreload" href="js/account.js?v=202611291700">
   <link rel="modulepreload" href="js/cdn.js?v=202611281400">
-  <link rel="modulepreload" href="js/consent.js?v=202611241021">
-  <link rel="modulepreload" href="js/presence.js?v=202611281400">
+  <link rel="modulepreload" href="js/consent.js?v=202611291700">
+  <link rel="modulepreload" href="js/presence.js?v=202611291700">
   <link rel="modulepreload" href="js/menu.js?v=202611241206">
   <link rel="modulepreload" href="js/meta.js?v=202611241124">
   <link rel="modulepreload" href="js/mobile.js?v=202611291600">
@@ -165,9 +165,10 @@
     </div>
   </footer>
   <script type="module" src="js/mobile.js?v=202611291600"></script>  <!-- the phone layout, before the data scripts -->
-  <script type="module" src="js/consent.js?v=202611241021"></script>  <!-- the cookie bar at once, not after the Firebase scripts the page's own module waits for (common.js imports this same module) -->
-  <script type="module" src="js/watch.js?v=202611291437"></script>
+  <script type="module" src="js/consent.js?v=202611291700"></script>  <!-- the cookie bar at once, not after the Firebase scripts the page's own module waits for (common.js imports this same module) -->
+  <script type="module" src="js/watch.js?v=202611291700"></script>
   <script type="module" src="js/shell.js?v=202611282110"></script>
-  <script type="module" src="js/pwa.js?v=202611290100"></script>  <!-- the app: offline page, install sheet on phones -->
+  <script type="module" src="js/pwa.js?v=202611291700"></script>  <!-- the app: offline page, install sheet on phones -->
+  <script type="module" src="js/insights.js?v=202611291700"></script>  <!-- recordings and heatmaps (PostHog EU), only after Elfogadom -->
 </body>
 </html>

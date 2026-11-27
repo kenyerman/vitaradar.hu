@@ -7,7 +7,7 @@
 import { auth, appCheckHeaders } from "./firebase.js?v=202611281400";
 import { fetchT, withTimeout } from "./net.js?v=202611270600";
 import { apiUrl } from "./config.js?v=202611241021";
-import { consented, onConsentChange } from "./consent.js?v=202611241021";
+import { consented, onConsentChange } from "./consent.js?v=202611291700";
 
 const EVERY_MS = 30_000;
 const KEY = "vr-presence-id";

@@ -1,16 +1,17 @@
 // The cookie and storage notice: a small bar fixed to the bottom of every page until the visitor chooses (no layout
 // shift: it sits over the page, and the page gets room at its end while it shows). What the site stores and why is in
-// impresszum.html#sutik. Only one thing waits for consent: the random id that lets the header's "N online" count a
-// visitor once across pages and tabs (presence.js); without consent that id lives in the page's memory only. The rest
-// is strictly necessary: sign-in, the CDN cookie for the video, reCAPTCHA's bot check, and remembering these choices.
+// impresszum.html#sutik. Two things wait for consent: the random id that lets the header's "N online" count a visitor
+// once across pages and tabs (presence.js; without consent it lives in the page's memory only), and the session
+// recordings and heatmaps (insights.js, PostHog EU: nothing of it loads without consent). The rest is strictly
+// necessary: sign-in, the CDN cookie for the video, reCAPTCHA's bot check, and remembering these choices.
 //
 //   consented()           true once the visitor accepted
 //   onConsentChange(fn)   fn(consented()) after every choice, and after "Döntésem módosítása" withdraws it
 //
 // Any [data-consent-reset] button on a page (the impresszum has one) withdraws the choice and shows the bar again.
 
-const KEY = "vr-consent";  // {"v":1,"choice":"all"|"necessary","at":"YYYY-MM-DD"}
-const VERSION = 1;         // raise it when what we ask about changes: everyone is asked again
+const KEY = "vr-consent";  // {"v":2,"choice":"all"|"necessary","at":"YYYY-MM-DD"}
+const VERSION = 2;         // raise it when what we ask about changes: everyone is asked again (2: the recordings)
 
 const listeners = new Set();
 let choice = read();
@@ -45,7 +46,7 @@ function show() {
   bar.setAttribute("aria-label", "Sütik és adattárolás");
   const text = document.createElement("p");
   text.className = "consent-text";
-  text.textContent = "Csak a működéshez szükséges sütiket használunk. Tárolhatunk azonosítót az online számlálóhoz?";
+  text.textContent = "Engeded, hogy névtelen felvételt készítsünk arról, hogyan használod az oldalt (görgetés, kattintás; amit beírsz, a hozzászólások és a nevek nélkül), és azonosítót tároljunk az online számlálóhoz? Nélkülük is minden működik.";
   const actions = document.createElement("div");
   actions.className = "consent-actions";
   for (const [c, label] of [["all", "Elfogadom"], ["necessary", "Elutasítom"]]) {  // same weight: no nudging
