@@ -550,8 +550,8 @@ details[open] > summary .lvl-title::before { content: "▾ "; }
   .imp-store { padding: 0; }
   .imp-store > summary { position: static; display: flex; align-items: center; justify-content: space-between; gap: 12px; width: auto;
     min-height: 48px; cursor: pointer; }
-  .imp-store > summary::after { content: "+"; flex: none; color: var(--green); font: 700 18px/1 var(--mono); }
-  .imp-store[open] > summary::after { content: "\2013"; }
+  .imp-store > summary::after { content: "+" / ""; flex: none; color: var(--green); font: 700 18px/1 var(--mono); }  /* not read out */
+  .imp-store[open] > summary::after { content: "\2013" / ""; }
   .imp-store > p { padding: 0 0 14px; }
 }
 
