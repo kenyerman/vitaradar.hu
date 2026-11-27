@@ -39,6 +39,9 @@ const NAMES = { true: "igaz", partly_true: "részben igaz", misleading: "félrev
   promise: "ígéret", unverifiable: "nem ellenőrizhető", fallacy: "hibás érvelés" };
 const listed = (t) => BAR.filter((k) => BASE.has(k) || t[k] > 0);
 
+// The search ignores accents and the kind of dash ("gulyas" finds Gulyás, "fidesz-kdnp" Fidesz–KDNP), as the archive's
+const fold = (s) => (s || "").normalize("NFD").replace(/\p{Diacritic}/gu, "").replace(/[‐-―−]/g, "-").toLowerCase();
+
 const pct = (x) => x == null ? "–" : `${Math.round(x * 100)}%`;
 const minutes = (s) => `${Math.round((s || 0) / 60)} p`;
 const shortDate = (iso) => iso ? new Date(`${iso}T12:00:00`).toLocaleDateString("hu-HU", { month: "short", day: "numeric" }) : "–";
@@ -119,19 +122,23 @@ function card(m, rank) {
     c.append(el("span", "sr", `${said}: `), hasData(m) ? value(m) : "–");
     cells.append(c);
   }
-  const total = el("p", "mp-total");  // phones: the number of facts on the right (the table is for wider screens)
-  total.append(el("b", null, String(m.claims || 0)), el("span", null, "állítás"));
+  // phones: one number on the right (the table is for wider screens): the number of facts, or what the list is sorted
+  // by, so the order reads ("8%" "hamis arány" when the false share leads)
+  const shown = by !== "claims" && by !== "name" && COLS.find(([key]) => key === by);
+  const total = el("p", shown ? `mp-total mp-total-${by}` : "mp-total");
+  if (shown) total.append(el("b", null, hasData(m) ? shown[3](m) : "–"), el("span", null, shown[2]));
+  else total.append(el("b", null, String(m.claims || 0)), el("span", null, "állítás"));
   a.append(no, thumb, body, cells, total);
   li.append(a);
   return li;
 }
 
 function render() {
-  const q = filter.value.trim().toLowerCase();
+  const q = fold(filter.value.trim());
   const only = onlyData.getAttribute("aria-pressed") === "true";
   const one = WIDE.matches ? party : null;  // the chips are for wider screens only
   const shown = mps
-    .filter((m) => !q || `${m.name} ${m.party} ${m.faction} ${m.role}`.toLowerCase().includes(q))
+    .filter((m) => !q || fold(`${m.name} ${m.party} ${m.faction} ${m.role}`).includes(q))
     .filter((m) => !only || hasData(m))
     .filter((m) => one == null || (m.party || "") === one)
     .sort((a, b) => {

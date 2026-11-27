@@ -2104,6 +2104,11 @@ body.m-watch:is([data-m-tab="speakers"], [data-m-tab="transcript"]) .m-ai #show-
 .mp-total { display: flex; flex-direction: column; align-items: flex-end; margin: 0; }
 .mp-total b { color: #e9f2ed; font: 700 16px/1 var(--display); font-variant-numeric: tabular-nums; }
 .mp-total span { color: var(--muted); font: 400 10px/1.4 var(--sans); }
+/* sorted by something else than the facts: that number, in its column's colour on wider screens (js/mps.js) */
+.mp-total-true_share b { color: var(--true); }
+.mp-total-false_share b { color: var(--false); }
+.mp-total-fallacy b { color: var(--fallacy); }
+.mp-total-recent b { font-size: 14px; }
 
 /* ------------------------------------------------------------------ a profile (the phones' design, every width)
    A short head (the photo, the nick, the name and since when, ✎ for one's own editor), the counts as three tiles
