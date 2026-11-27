@@ -2935,9 +2935,10 @@ html:not([data-loaded]) #mps:empty { background-image: url("data:image/svg+xml,%
 }
 /* ------------------------------------------------------------------ the other pages' footer (wider screens)
    The brand at the left (the chamber icon and the name, the tagline, the Patreon button and where the money goes), the
-   pages, the contact and the maker's pages in three columns beside it; under a line the copyright and the source code,
-   then the recording's source and the note that the AI can be wrong. The live and replay pages keep their one line
-   (above), and phones have none (the menu says what it says, js/shell.js). */
+   pages, the contact and Vitaradar elsewhere (Facebook, GitHub, Patreon, Twitch, YouTube) in three columns beside it;
+   under a line the copyright and the source code, then the recording's source and the note that the AI can be wrong.
+   The live and replay pages keep their one line (above), and phones have none (the menu says what it says,
+   js/shell.js). */
 .footer-top { display: grid; grid-template-columns: minmax(0, 1fr) repeat(3, max-content); gap: 0 48px; padding-bottom: 26px; }
 .footer-brand { display: inline-flex; align-items: center; gap: 10px; color: var(--green); }
 .footer-mark { flex: none; width: 40px; height: 23px; fill: var(--green); }
@@ -2966,8 +2967,8 @@ html:not([data-loaded]) #mps:empty { background-image: url("data:image/svg+xml,%
 .footer-bottom .footer-source:is(:hover, :focus-visible) { color: var(--green); }
 .footer-bottom .footer-note { flex-basis: 100%; }
 /* the live and replay pages' footer (wider screens), in the other pages' look: the page doesn't scroll, so the footer
-   is one line across the bottom instead. In order: the copyright and the recording's source, the contact, the maker's
-   pages; the impresszum (the header drops it below 1200px) and the source code at the right. The brand, the tagline,
+   is one line across the bottom instead. In order: the copyright and the recording's source, the contact, Vitaradar
+   elsewhere; the impresszum (the header drops it below 1200px) and the source code at the right. The brand, the tagline,
    the Patreon button and where the money goes (the header's Támogatás is right above), the other pages (the header has
    them) and the long note stay on the other pages. */
 @media (min-width: 861px) {
@@ -2985,17 +2986,17 @@ html:not([data-loaded]) #mps:empty { background-image: url("data:image/svg+xml,%
   body:is(.m-live, .m-watch) .footer-copy { order: 1; color: var(--green); }
   body:is(.m-live, .m-watch) .footer-note { order: 2; flex-basis: auto; color: var(--muted); }
   body:is(.m-live, .m-watch) .footer-top > :nth-child(3) { order: 3; }  /* the contact */
-  body:is(.m-live, .m-watch) .footer-top > nav[aria-label="A készítő máshol"] { order: 4; }
+  body:is(.m-live, .m-watch) .footer-top > .footer-social { order: 4; }
   body:is(.m-live, .m-watch) .footer-top > nav[aria-label="Oldalak"] { order: 5; margin-left: auto; }
   body:is(.m-live, .m-watch) .footer-source { order: 6; margin-left: 0; color: var(--muted); }
 }
-/* still one line in a narrower window: the labels go, then the maker's pages (the other pages' footers have them) */
-@media (min-width: 861px) and (max-width: 1119px) {
+/* still one line in a narrower window: the labels go, then Vitaradar elsewhere (the other pages' footers have it) */
+@media (min-width: 861px) and (max-width: 1289px) {
   body:is(.m-live, .m-watch) > .site-footer { gap: 0 16px; }
   body:is(.m-live, .m-watch) .site-footer .footer-h { display: none; }
 }
-@media (min-width: 861px) and (max-width: 939px) {
-  body:is(.m-live, .m-watch) .footer-top > nav[aria-label="A készítő máshol"] { display: none; }
+@media (min-width: 861px) and (max-width: 1009px) {
+  body:is(.m-live, .m-watch) .footer-top > .footer-social { display: none; }
 }
 /* the wordmark and the cookie bar's text: the phones' sizes on every width */
 .site-header .brand-name { font-size: 17px; }
