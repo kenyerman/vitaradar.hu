@@ -8,12 +8,12 @@
 
 import { doc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { db, getDoc, el, factBadge, LABEL, sourceList, setPhoto, mpHref, setLiveNav, loadFailed } from "./common.js?v=202611272300";
-import { mountAccount } from "./account.js?v=202611280100";
-import { factSocial } from "./social.js?v=202611280100";
+import { mountAccount } from "./account.js?v=202611271305";
+import { factSocial } from "./social.js?v=202611271305";
 import { addShare, FOCUS, revealFact, replayUrl } from "./share.js?v=202611272100";
-import { mountChat } from "./chat.js?v=202611280100";
+import { mountChat } from "./chat.js?v=202611271305";
 import { scrollHint } from "./scrollhint.js?v=202611241021";
-import { mountGame } from "./game.js?v=202611280100";
+import { mountGame } from "./game.js?v=202611271305";
 import { mountTwitch, twitchNow } from "./twitch.js?v=202611271700";
 
 const $ = (id) => document.getElementById(id);
