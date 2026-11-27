@@ -1282,11 +1282,12 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
     margin: 8px 16px 0; padding: 0 14px; border: 1px solid var(--green); background: none; color: var(--green);
     font: 700 12px/1 var(--display); letter-spacing: 1.4px; text-shadow: none; text-transform: uppercase; }
   .menu-panel > a.nav-support::before { content: "\2665"; color: #ff4d5a; text-shadow: none; }
-  .m-menu-foot { margin: 0; padding: 12px 16px 0; display: flex; flex-direction: column; gap: 6px; color: var(--muted);
+  /* the small text (contact, copyright, source) at the foot of the menu, under the buttons' block: margin-top: auto
+     takes the room between them (none when the menu is taller than the screen) */
+  .m-menu-foot { margin: auto 0 0; padding: 24px 16px 0; display: flex; flex-direction: column; gap: 6px; color: var(--muted);
     font: 400 12px/1.6 var(--sans); }
   .m-menu-foot p { margin: 0; }
   .m-menu-foot a { color: var(--muted); text-decoration: underline; text-underline-offset: 3px; }
-  .m-menu-foot-h { color: #c5d3cb; }
   .site-footer { display: none; }  /* phones: what it holds is in the menu */
   .m-live .support-line { display: none; }  /* the header's heart and the menu's button stand for it */
 }
