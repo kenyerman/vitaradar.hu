@@ -432,7 +432,7 @@ function directView() {
 function mainView() {
   const app = IAB ? `a ${ANDROID ? "böngésződ" : "Safari"} nyílik meg hozzá` : "app a telefonodon";
   return `<section class="is-main">
-      <h2 class="is-title" id="is-view-title">Hol folytatod?</h2>
+      <h2 class="is-title" id="is-view-title">Az appban jobb</h2>
       <ul class="is-rows">
         <li class="is-row"><span class="is-ico">${ICON.browser}</span><span class="is-name">Böngésző<small>ebben a lapban</small></span><button type="button" class="btn ghost is-btn" data-act="browser" autofocus>Folytatás</button></li>
         <li class="is-row"><span class="is-ico">${APP_ICON}</span><span class="is-name is-brand">vitaradar<small>${app}</small></span><button type="button" class="btn is-btn" data-act="install">Telepítés</button></li>
