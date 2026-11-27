@@ -7,14 +7,15 @@
 
 import { doc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { defaultStream } from "./config.js?v=202611241021";
-import { db, el, factBadge, LABEL, sourceList, setPhoto, mpHref, setLiveNav } from "./common.js?v=202611270330";
-import { mountAccount } from "./account.js?v=202611270330";
-import { factSocial } from "./social.js?v=202611270330";
-import { mountChat } from "./chat.js?v=202611270330";
+import { db, el, factBadge, LABEL, sourceList, setPhoto, mpHref, setLiveNav, loadFailed } from "./common.js?v=202611270600";
+import { mountAccount } from "./account.js?v=202611270600";
+import { factSocial } from "./social.js?v=202611270600";
+import { mountChat } from "./chat.js?v=202611270600";
 import { scrollHint } from "./scrollhint.js?v=202611241021";
-import { mountGame } from "./game.js?v=202611270330";
-import { cdnReady, cdnUrl, cdnXhr } from "./cdn.js?v=202611270330";
-import { useTwitch, mountTwitch, twitchNow } from "./twitch.js?v=202611270118";
+import { mountGame } from "./game.js?v=202611270600";
+import { cdnReady, cdnUrl, cdnXhr } from "./cdn.js?v=202611270600";
+import { useTwitch, mountTwitch, twitchNow } from "./twitch.js?v=202611270600";
+import { loadScript } from "./net.js?v=202611270600";
 
 const TWITCH = useTwitch();  // the stream from twitch.tv/vitaradar; ?player=cdn: our own CDN (supporters)
 if (!TWITCH) cdnReady();  // the stream is on cdn.vitaradar.hu, which needs its cookie: get it before the player asks
@@ -44,6 +45,9 @@ let failed = false;  // the stream could not be loaded (not live yet, or not rea
 
 // ------------------------------------------------------------------ live feed (Firestore)
 onSnapshot(doc(db, "live", "current"), (snap) => {
+  // Not the server's answer and nothing known yet (Firestore gave up waiting, js/netwatch.js says so): that is not
+  // "no broadcast", so the page keeps waiting instead of saying there is none.
+  if (snap.metadata.fromCache && !snap.exists()) { if (!live.url) note("kapcsolódás a szerverhez…"); return; }
   const d = snap.data() || {};
   live.active = Boolean(d.active);
   setLiveNav(live.active);  // the header's "Élő adás" link (it stays plain until this first answer)
@@ -56,7 +60,10 @@ onSnapshot(doc(db, "live", "current"), (snap) => {
     return;
   }
   if (url !== live.url || failed) loadStream(url);  // a new stream, or the broadcast (re)started
-}, (err) => console.warn("live feed:", err));
+}, (err) => {  // refused (App Check, the rules): the page gets nothing more; js/netwatch.js offers Újrapróbálás
+  console.warn("live feed:", err);
+  if (!live.url) note("nincs kapcsolat a szerverrel");
+});
 
 function follow(session) {
   unsub.forEach((u) => u());
@@ -86,13 +93,8 @@ const HLS_JS = "https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js";
 let hlsLib = null;
 function loadHls() {
   if (window.Hls) return Promise.resolve(window.Hls);
-  return hlsLib ||= new Promise((resolve) => {
-    const s = document.createElement("script");
-    s.src = HLS_JS;
-    s.onload = () => resolve(window.Hls || null);
-    s.onerror = () => { hlsLib = null; s.remove(); resolve(null); };  // Safari can still play it itself
-    document.head.append(s);
-  });
+  return hlsLib ||= loadScript(HLS_JS).then(() => window.Hls || null,
+    (e) => { console.warn(e); hlsLib = null; return null; });  // Safari can still play it itself
 }
 let loads = 0;
 
@@ -102,7 +104,7 @@ async function loadStream(url) {
   if (TWITCH) {  // Twitch shows its own offline screen; the player stays once it is there
     video.hidden = true;
     note(null);
-    mountTwitch(video.parentElement).catch(() => note("a Twitch lejátszó nem töltődött be"));
+    mountTwitch(video.parentElement).catch((e) => { console.warn(e); loadFailed(els.note, "a Twitch lejátszó nem töltődött be"); });
     return;
   }
   if (hls) { hls.destroy(); hls = null; }

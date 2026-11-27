@@ -10,11 +10,12 @@
 // ?t= opens the video at that second (the MP page's fact links).
 
 import { doc, onSnapshot, collection, query, where } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { db, getDoc, getDocs, el, factBadge, LABEL, sourceList, setPhoto, hms, huDate, mpHref, watchLiveNav } from "./common.js?v=202611270330";
-import { mountAccount } from "./account.js?v=202611270330";
-import { factSocial } from "./social.js?v=202611270330";
+import { db, getDoc, getDocs, el, factBadge, LABEL, sourceList, setPhoto, hms, huDate, mpHref, watchLiveNav, loadFailed } from "./common.js?v=202611270600";
+import { loadScript } from "./net.js?v=202611270600";
+import { mountAccount } from "./account.js?v=202611270600";
+import { factSocial } from "./social.js?v=202611270600";
 import { watchHref } from "./links.js?v=202611241021";
-import { cdnReady, cdnUrl, cdnXhr } from "./cdn.js?v=202611270330";
+import { cdnReady, cdnUrl, cdnXhr } from "./cdn.js?v=202611270600";
 import { scrollHint } from "./scrollhint.js?v=202611241021";
 import { setPageMeta } from "./meta.js?v=202611241124";
 import { youtubeMedia } from "./ytplayer.js?v=202611270118";
@@ -306,12 +307,7 @@ function waitForUpload(a) {
 const HLS_JS = "https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js";
 function loadHls() {
   if (window.Hls) return Promise.resolve();
-  return new Promise((resolve) => {
-    const s = document.createElement("script");
-    s.src = HLS_JS;
-    s.onload = s.onerror = () => resolve();
-    document.head.append(s);
-  });
+  return loadScript(HLS_JS).catch((e) => console.warn(e));  // without it Safari can still play it itself
 }
 
 function wire(m) {
@@ -348,4 +344,4 @@ $("show-all").addEventListener("click", () => {
   renderFacts(media.currentTime);
 });
 
-load().catch((e) => { note("az adás most nem tölthető be"); console.warn(e); });
+load().catch((e) => { loadFailed($("player-note"), "az adás most nem tölthető be"); console.warn(e); });
