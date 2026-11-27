@@ -278,10 +278,12 @@ function arrive() {
   started = Date.now();
   if (IOS) { setTimeout(() => { if (!sheet && offer()) open("steps"); }, 600); return; }
   const t0 = Date.now();
+  // a stored install does not stop it (the app may have been removed since: then the browser offers it again); only
+  // with no offer in 8 s and an install remembered nothing comes
   const look = () => {
-    if (sheet || dismissed || !PHONE.matches || installed()) return;
+    if (sheet || dismissed || !PHONE.matches) return;
     if (bip) open("direct");
-    else if (Date.now() - t0 > 8000) open("android");
+    else if (Date.now() - t0 > 8000) { if (!installed()) open("android"); }
     else setTimeout(look, 300);
   };
   setTimeout(look, 400);
