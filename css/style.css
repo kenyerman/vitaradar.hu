@@ -570,21 +570,20 @@ details[open] > summary .lvl-title::before { content: "▾ "; }
   @keyframes imp-drop { from { opacity: 0; transform: translateY(-6px); } }
   .imp-toc ol::before { transition: transform .45s var(--m-out), width .45s var(--m-out), height .45s var(--m-out); }
   .imp-toc a { transition: color .25s; }
-  html.imp-anim .imp-sec:not(.imp-in) { opacity: 0; }
+  /* a section and each row in it wait out of sight until they are well on the screen (js/impresszum.js adds imp-in);
+     rows that come in together follow one after another (--d) */
+  html.imp-anim :is(.imp-sec, .imp-contact > div, .imp-people > .imp-me, .imp-steps > li, .imp-legend > li, .imp-pledge li,
+    .imp-callout):not(.imp-in) { opacity: 0; }
   .imp-sec.imp-in { animation: m-fade .3s ease-out, m-shove .55s var(--m-out); }
   .imp-sec.imp-in > h2 { animation: m-wipe .55s var(--m-in-out) .1s backwards; }
-  .imp-sec.imp-in :is(.imp-contact > div, .imp-people > .imp-me) {
-    animation: m-page .5s var(--m-out) calc(.12s + var(--i, 0) * 60ms) backwards; }
-  .imp-sec.imp-in .imp-steps > li { animation: m-from-left .5s var(--m-out) calc(.15s + var(--i, 0) * 90ms) backwards; }
-  .imp-sec.imp-in .imp-step-n { animation: m-stamp .4s var(--m-out) calc(.25s + var(--i, 0) * 90ms) backwards; }
+  :is(.imp-contact > div, .imp-people > .imp-me, .imp-callout).imp-in { animation: m-page .5s var(--m-out) var(--d, 0s) backwards; }
+  .imp-steps > li.imp-in { animation: m-from-left .5s var(--m-out) var(--d, 0s) backwards; }
+  .imp-steps > li.imp-in .imp-step-n { animation: m-stamp .4s var(--m-out) calc(var(--d, 0s) + .1s) backwards; }
   .imp-steps > li::before { transform-origin: top; }
-  .imp-sec.imp-in .imp-steps > li::before { animation: imp-grow .45s ease-out calc(.45s + var(--i, 0) * 90ms) backwards; }
-  .imp-steps > li { --i: 0; }
-  .imp-sec.imp-in .imp-legend > li { animation: m-from-left .45s var(--m-out) calc(.1s + var(--i, 0) * 55ms) backwards; }
-  .imp-sec.imp-in .imp-legend .verdict { animation: m-stamp .4s var(--m-out) calc(.3s + var(--i, 0) * 55ms) backwards; }
-  .imp-legend > li { --i: 0; }
-  .imp-sec.imp-in .imp-callout { animation: m-page .5s var(--m-out) .55s backwards; }
-  .imp-sec.imp-in .imp-pledge li { animation: m-from-left .4s var(--m-out) calc(.25s + var(--i, 0) * 70ms) backwards; }
+  .imp-steps > li.imp-in::before { animation: imp-grow .45s ease-out calc(var(--d, 0s) + .3s) backwards; }
+  .imp-legend > li.imp-in { animation: m-from-left .45s var(--m-out) var(--d, 0s) backwards; }
+  .imp-legend > li.imp-in .verdict { animation: m-stamp .4s var(--m-out) calc(var(--d, 0s) + .18s) backwards; }
+  .imp-pledge li.imp-in { animation: m-from-left .4s var(--m-out) var(--d, 0s) backwards; }
   .imp-patreon { position: relative; overflow: hidden; transition: transform .15s var(--m-out), background-color .2s; }
   .imp-patreon::before { display: inline-block; animation: m-heart 3.2s ease-in-out 1s infinite; }
   .imp-patreon::after { content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 40%; pointer-events: none;

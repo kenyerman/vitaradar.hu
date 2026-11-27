@@ -76,24 +76,35 @@ if (sections.length) {
 }
 
 // ------------------------------------------------------------------ sections coming in
-// The sections below the first screen wait out of sight and come in as they are scrolled to; the ones on the first
-// screen are marked in at once, so they come up with the page. Their rows come one after another (--i).
-const groups = [".imp-contact > div", ".imp-people > .imp-me", ".imp-steps > li", ".imp-legend > li", ".imp-pledge li"];
-for (const g of groups) document.querySelectorAll(g).forEach((el, i) => el.style.setProperty("--i", i));
+// Each section, and each row in one, waits out of sight until it is well on the screen (its top above a line 15% up
+// from the bottom), then comes in. Not the section's rows with it: in a tall section the lower rows came in below the
+// screen, and the reader only saw them standing. Rows that come in together follow one after another (--d); one that
+// comes in alone does not wait. Those already that high on the first screen come up with the page.
+const ROWS = ".imp-contact > div, .imp-people > .imp-me, .imp-steps > li, .imp-legend > li, .imp-pledge li, .imp-callout";
+const LINE = 0.85;  // of the screen's height, from the top
+const items = [...document.querySelectorAll(`.imp-sec, ${ROWS}`)];
 
-const all = [...document.querySelectorAll(".imp-sec")];
-if (all.length && "IntersectionObserver" in window && !CALM.matches) {
-  const seen = new IntersectionObserver((entries) => {
-    for (const e of entries) {
-      if (!e.isIntersecting) continue;
-      e.target.classList.add("imp-in");
-      seen.unobserve(e.target);
-    }
-  }, { rootMargin: "0px 0px -8% 0px" });
-  for (const s of all) {
-    if (s.getBoundingClientRect().top < innerHeight) s.classList.add("imp-in");
-    else seen.observe(s);
+function show(batch) {
+  let n = 0;
+  for (const el of batch) {
+    if (!el.matches(".imp-sec")) el.style.setProperty("--d", `${Math.min(n++, 8) * 70}ms`);
+    el.classList.add("imp-in");
   }
+}
+
+if (items.length && "IntersectionObserver" in window && !CALM.matches) {
+  const seen = new IntersectionObserver((entries) => {
+    const batch = entries.filter((e) => e.isIntersecting).map((e) => e.target);
+    batch.sort((a, b) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1));  // page order
+    for (const el of batch) seen.unobserve(el);
+    show(batch);
+  }, { rootMargin: `0px 0px -${Math.round((1 - LINE) * 100)}% 0px` });
+  const now = [];
+  for (const el of items) {
+    if (el.getBoundingClientRect().top < innerHeight * LINE) now.push(el);
+    else seen.observe(el);
+  }
+  show(now);
   root.classList.add("imp-anim");
 }
 
