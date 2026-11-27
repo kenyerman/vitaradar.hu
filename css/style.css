@@ -430,39 +430,171 @@ details[open] > summary .lvl-title::before { content: "▾ "; }
 .footer-row p { margin: 0; }
 .footer-h { margin: 0 0 4px; color: var(--green); letter-spacing: .5px; }
 
-/* impresszum */
-.imp { display: grid; gap: 18px; max-width: 900px; }
-.imp-sec { padding: 18px 20px; }
+/* impresszum: a table of contents beside the sections (js/impresszum.js marks the one in view). Wider screens: the
+   contents stick on the left with the Patreon button under them; phones: they are a bar of chips under the header. */
+.imp-layout { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 36px; align-items: start; }
+.imp-aside { position: sticky; top: 84px; }
+.imp-toc-h { margin: 0 0 10px; color: var(--muted); font: 700 11px/1.2 var(--display); letter-spacing: 1.6px; text-transform: uppercase; }
+.imp-toc ol { list-style: none; margin: 0 0 20px; padding: 0; border-left: 1px solid var(--line); }
+.imp-toc a { display: flex; gap: 12px; align-items: baseline; margin-left: -1px; padding: 9px 0 9px 14px; border-left: 2px solid transparent;
+  color: var(--text); font-size: 14px; text-decoration: none; }
+.imp-toc a:hover { color: var(--green); }
+.imp-toc-n { font: 700 11px/1 var(--mono); color: var(--muted); }
+.imp-toc-short { display: none; }
+.imp-toc a[aria-current] { color: var(--green); border-left-color: var(--green); }
+.imp-toc a[aria-current] .imp-toc-n { color: var(--green); }
+.imp-toc ol { position: relative; }
+.imp-toc ol[data-marker="on"]::before { content: ""; position: absolute; top: 0; left: -1px; width: 2px; height: var(--mk-h);
+  transform: translateY(var(--mk-y)); background: var(--green); pointer-events: none; }
+.imp-toc ol[data-marker="on"] a[aria-current] { border-left-color: transparent; }
+.imp-patreon { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px; margin: 4px 0 14px;
+  border: 1px solid var(--green); color: var(--green); font: 700 11px/1 var(--display); letter-spacing: 1.2px;
+  text-transform: uppercase; white-space: nowrap; text-decoration: none; }
+.imp-patreon::before { content: "\2665"; color: var(--false); font-size: 14px; }
+.imp-patreon:is(:hover, :focus-visible) { background: rgba(61, 240, 130, .08); }
+.imp-aside .imp-patreon { margin: 0; }
+
+.imp { display: grid; gap: 18px; min-width: 0; }
+.imp-sec { padding: 22px 24px; scroll-margin-top: 84px; }
 .imp-sec h2 { margin: 0 0 12px; font-size: 15px; color: var(--green); text-shadow: var(--glow); letter-spacing: .5px; }
 .imp-sec h2::before { content: "// "; color: var(--muted); text-shadow: none; }
 .imp-sec p { margin: 0 0 10px; }
 .imp-sec > :last-child { margin-bottom: 0; }
-.imp-data { display: grid; grid-template-columns: max-content 1fr; gap: 8px 20px; margin: 0; }
-.imp-data dt { color: var(--muted); }
-.imp-data dd { margin: 0; overflow-wrap: anywhere; }
+.imp-h3 { margin: 22px 0 10px; color: var(--muted); font: 700 11px/1.2 var(--display); letter-spacing: 1.6px; text-transform: uppercase; }
 .imp-list { list-style: none; margin: 0 0 14px; padding: 0; display: grid; gap: 12px; }
 .imp-list > li { position: relative; padding-left: 20px; }
 .imp-list > li::before { content: ">"; position: absolute; left: 0; color: var(--green); }
 .imp-list b { color: var(--green-soft); }
-.imp-verdicts { display: grid; grid-template-columns: max-content 1fr; gap: 8px 14px; align-items: center; margin: 10px 0 0; }
-.imp-verdicts dd { margin: 0; color: var(--text); }
-.imp-verdicts .verdict::before { content: "[ "; }
-.imp-verdicts .verdict::after { content: " ]"; }
-.imp-links { display: flex; flex-wrap: wrap; gap: 6px 22px; list-style: none; margin: 12px 0 0; padding: 0; }
-.imp-links a { display: inline-block; padding: 3px 0; }
 .imp-note { color: var(--muted); font-size: 13px; }
-.imp-me { display: grid; grid-template-columns: 150px 1fr; gap: 22px; align-items: start; }
-.imp-photo { width: 150px; aspect-ratio: 3 / 4; border: 1px solid var(--line);  /* the MP portraits' radar frame */
+.imp-callout { margin: 16px 0 0; padding: 12px 14px; border: 1px solid var(--line); border-left: 3px solid var(--unverifiable);
+  background: rgba(255, 194, 61, .05); color: var(--text); font-size: 14px; }
+
+/* contact: each value under its label, three to a row */
+.imp-contact { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px 24px; margin: 0; }
+.imp-contact > div { min-width: 0; }
+.imp-contact dt { margin: 0 0 4px; color: var(--muted); font: 600 10.5px/1.2 var(--display); letter-spacing: 1.2px; text-transform: uppercase; }
+.imp-contact dd { margin: 0; overflow-wrap: anywhere; }
+
+/* the two of us side by side, the photo beside the text */
+.imp-people { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+.imp-me { display: grid; grid-template-columns: 112px 1fr; gap: 16px; align-items: start; }
+.imp-photo { width: 112px; aspect-ratio: 3 / 4; border: 1px solid var(--line);  /* the MP portraits' radar frame */
   --hue: 138; --rings: 13px; --sweep-t: 7s; }
-.imp-me-text > p { margin-top: 0; }
-/* the phones' layout on every width (the pages share the phones' design): each value under its label, the photo above
-   the text */
-.imp-sec { padding: 14px; }
-.imp-data, .imp-verdicts { grid-template-columns: 1fr; gap: 2px; }
-.imp-data dd, .imp-verdicts dd { margin-bottom: 10px; }
-.imp-me { grid-template-columns: 1fr; gap: 14px; }
-.imp-me + .imp-me { margin-top: 18px; padding-top: 18px; border-top: 1px dashed var(--line-dim); }  /* the next one of us */
-.imp-photo { width: 132px; }
+.imp-me-text > p { margin: 0; font-size: 14px; }
+.imp-links { display: flex; flex-wrap: wrap; gap: 4px 16px; list-style: none; margin: 10px 0 0; padding: 0; font-size: 13px; }
+.imp-links a { display: inline-block; padding: 3px 0; }
+
+/* how it works: the numbered steps on a line */
+.imp-steps { list-style: none; margin: 0; padding: 0; display: grid; }
+.imp-steps > li { position: relative; display: grid; grid-template-columns: 36px 1fr; gap: 12px; padding: 0 0 16px; }
+.imp-steps > li:not(:last-child)::before { content: ""; position: absolute; left: 13px; top: 30px; bottom: 2px; width: 1px; background: var(--line); }
+.imp-step-n { display: grid; place-items: center; width: 28px; height: 28px; border: 1px solid var(--green); background: var(--bg);
+  color: var(--green); font: 700 11px/1 var(--mono); }
+.imp-steps b { color: var(--green-soft); }
+.imp-steps p { margin: 4px 0 0; }
+
+/* the verdicts: a legend, each with its colour down the side */
+.imp-legend { list-style: none; margin: 12px 0 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.imp-legend > li { display: grid; grid-template-columns: 150px 1fr; align-items: start; gap: 12px; padding: 12px 14px;
+  background: rgba(255, 255, 255, .02); border-left: 3px solid var(--vc, var(--line)); }
+.imp-legend > li[data-v="true"] { --vc: var(--true); }
+.imp-legend > li[data-v="partly_true"] { --vc: var(--partly_true); }
+.imp-legend > li[data-v="misleading"] { --vc: var(--misleading); }
+.imp-legend > li[data-v="false"] { --vc: var(--false); }
+.imp-legend > li[data-v="opinion"] { --vc: var(--opinion); }
+.imp-legend > li[data-v="promise"] { --vc: var(--promise); }
+.imp-legend > li[data-v="unverifiable"] { --vc: var(--unverifiable); }
+.imp-legend > li[data-v="fallacy"] { --vc: var(--fallacy); }
+.imp-legend .verdict { justify-self: start; }
+.imp-legend p { margin: 0; font-size: 14px; line-height: 1.45; }
+
+/* support: what we promise, framed */
+.imp-pledge { margin: 16px 0; padding: 14px 16px 2px; border: 1px solid var(--line); background: rgba(61, 240, 130, .04); }
+.imp-pledge > p { margin: 0 0 10px; color: var(--green); font: 700 11px/1.2 var(--display); letter-spacing: 1.6px; text-transform: uppercase; }
+
+/* storage: wider screens show every item open, its name in its own column (js/impresszum.js keeps them open there);
+   phones fold them to their names, the first one open */
+.imp-stores { margin: 14px 0; border-top: 1px solid var(--line-dim); }
+.imp-store { position: relative; padding: 12px 0 12px 208px; border-bottom: 1px solid var(--line-dim); }
+.imp-store > summary { position: absolute; left: 0; top: 12px; width: 190px; color: var(--green-soft); font-weight: 600;
+  list-style: none; cursor: default; }
+.imp-store > summary::-webkit-details-marker { display: none; }
+.imp-store > p { margin: 0; font-size: 14px; line-height: 1.5; }
+@media (min-width: 861px) and (max-width: 1099px) {  /* narrower windows: one of us, one verdict a row */
+  .imp-layout { grid-template-columns: 200px minmax(0, 1fr); gap: 24px; }
+  .imp-people, .imp-legend { grid-template-columns: 1fr; }
+  .imp-contact { grid-template-columns: 1fr 1fr; }
+  .imp-store { padding-left: 168px; }
+  .imp-store > summary { width: 150px; }
+}
+@media (prefers-reduced-motion: no-preference) { html:has(.imp-layout) { scroll-behavior: smooth; } }
+@media (max-width: 860px) {
+  .imp-layout { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .imp-aside { top: var(--m-hdr, 56px); z-index: 5; margin: 0 -16px 14px; padding: 10px 0; background: var(--bg);
+    border-bottom: 1px solid var(--line-dim); }
+  .imp-aside .imp-patreon, .imp-toc-h, .imp-toc-n, .imp-toc-long { display: none; }
+  .imp-toc-short { display: inline; }
+  .imp-toc ol { display: flex; gap: 8px; margin: 0; padding: 0 16px; border: 0; overflow-x: auto; overscroll-behavior-x: contain;
+    scrollbar-width: none; }
+  .imp-toc ol::-webkit-scrollbar { display: none; }
+  .imp-toc li { flex: none; }
+  .imp-toc a { align-items: center; min-height: 36px; margin: 0; padding: 0 12px; border: 1px solid var(--line);
+    font: 700 11px/1 var(--display); letter-spacing: 1.2px; text-transform: uppercase; }
+  .imp-toc a[aria-current] { border-color: var(--green); background: rgba(61, 240, 130, .06); }
+  .imp-toc ol[data-marker="on"]::before { left: 0; width: var(--mk-w); height: var(--mk-h); transform: translateX(var(--mk-x));
+    box-sizing: border-box; border: 1px solid var(--green); background: rgba(61, 240, 130, .06); }
+  .imp-toc ol[data-marker="on"] a[aria-current] { border-color: var(--line); background: none; }
+  .imp { gap: 14px; }
+  .imp-sec { padding: 16px 14px; scroll-margin-top: calc(var(--m-hdr, 56px) + 70px); }
+  .imp-contact { grid-template-columns: 1fr 1fr; gap: 14px 16px; }
+  .imp-people { grid-template-columns: 1fr; gap: 18px; }
+  .imp-me { grid-template-columns: 84px 1fr; gap: 14px; }
+  .imp-me + .imp-me { padding-top: 18px; border-top: 1px dashed var(--line-dim); }  /* the next one of us */
+  .imp-photo { width: 84px; }
+  .imp-legend { grid-template-columns: 1fr; gap: 6px; }
+  .imp-legend > li { grid-template-columns: 128px 1fr; gap: 10px; padding: 10px 12px; }
+  .imp-legend p { font-size: 13.5px; }
+  .imp-store { padding: 0; }
+  .imp-store > summary { position: static; display: flex; align-items: center; justify-content: space-between; gap: 12px; width: auto;
+    min-height: 48px; cursor: pointer; }
+  .imp-store > summary::after { content: "+" / ""; flex: none; color: var(--green); font: 700 18px/1 var(--mono); }  /* not read out */
+  .imp-store[open] > summary::after { content: "\2013" / ""; }
+  .imp-store > p { padding: 0 0 14px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  /* the impresszum's motion, in the site's words: the contents' marker glides to the section being read; a section
+     further down comes in as it is scrolled to, with the green offset shadow sliding away and its heading wiping in;
+     its rows follow one after another: the steps slide in and their line draws down, each verdict lands like a stamp;
+     the Patreon heart beats as the menu's does, and a light sweeps across the button once */
+  @keyframes imp-grow { from { transform: scaleY(0); } }
+  @keyframes imp-drop { from { opacity: 0; transform: translateY(-6px); } }
+  .imp-toc ol::before { transition: transform .45s var(--m-out), width .45s var(--m-out), height .45s var(--m-out); }
+  .imp-toc a { transition: color .25s; }
+  /* a section and each row in it wait out of sight until they are well on the screen (js/impresszum.js adds imp-in);
+     rows that come in together follow one after another (--d) */
+  html.imp-anim :is(.imp-sec, .imp-contact > div, .imp-people > .imp-me, .imp-steps > li, .imp-legend > li, .imp-pledge li,
+    .imp-callout):not(.imp-in) { opacity: 0; }
+  .imp-sec.imp-in { animation: m-fade .3s ease-out, m-shove .55s var(--m-out); }
+  .imp-sec.imp-in > h2 { animation: m-wipe .55s var(--m-in-out) .1s backwards; }
+  :is(.imp-contact > div, .imp-people > .imp-me, .imp-callout).imp-in { animation: m-page .5s var(--m-out) var(--d, 0s) backwards; }
+  .imp-steps > li.imp-in { animation: m-from-left .5s var(--m-out) var(--d, 0s) backwards; }
+  .imp-steps > li.imp-in .imp-step-n { animation: m-stamp .4s var(--m-out) calc(var(--d, 0s) + .1s) backwards; }
+  .imp-steps > li::before { transform-origin: top; }
+  .imp-steps > li.imp-in::before { animation: imp-grow .45s ease-out calc(var(--d, 0s) + .3s) backwards; }
+  .imp-legend > li.imp-in { animation: m-from-left .45s var(--m-out) var(--d, 0s) backwards; }
+  .imp-legend > li.imp-in .verdict { animation: m-stamp .4s var(--m-out) calc(var(--d, 0s) + .18s) backwards; }
+  .imp-pledge li.imp-in { animation: m-from-left .4s var(--m-out) var(--d, 0s) backwards; }
+  .imp-patreon { position: relative; overflow: hidden; transition: transform .15s var(--m-out), background-color .2s; }
+  .imp-patreon::before { display: inline-block; animation: m-heart 3.2s ease-in-out 1s infinite; }
+  .imp-patreon::after { content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 40%; pointer-events: none;
+    background: linear-gradient(100deg, transparent, rgba(61, 240, 130, .28), transparent); transform: translateX(-100%); }
+  .imp-aside .imp-patreon::after, .imp-sec.imp-in .imp-patreon::after { animation: m-shine .9s var(--m-in-out) .9s backwards; }
+  .imp-patreon:active { transform: scale(.97); }
+}
+@media (prefers-reduced-motion: no-preference) and (max-width: 860px) {
+  .imp-store[open] > p { animation: imp-drop .3s var(--m-out); }  /* an item opened: its text drops in */
+  .imp-store[open] > summary::after { display: inline-block; animation: m-stamp .3s var(--m-out); }
+}
 
 /* narrow screens */
 @media (max-width: 860px) {
@@ -1124,7 +1256,6 @@ a.fact-time { display: inline-block; padding-top: 4px; padding-bottom: 4px; marg
   :root[data-consent="open"] .game-dock { bottom: calc(8px + var(--consent-h, 0px)); }
 }
 .imp-sec code { font: inherit; color: var(--green-soft); overflow-wrap: anywhere; }
-#sutik, #tamogatas { scroll-margin-top: 88px; }  /* the banner's Részletek link lands below the sticky header */
 
 /* support on Patreon: plain links (no Patreon script or cookie on the site), marked with the logo's red dot as a heart */
 .nav a.nav-support { color: var(--green); border-color: var(--line); background: rgba(0, 255, 65, .06); }
@@ -1740,7 +1871,6 @@ html.menu-open .menu-btn::before { content: "\2715"; font: 700 18px/1 var(--disp
 .verdict[data-v="pending"] { display: inline-flex; align-items: center; gap: 6px; }
 .verdict[data-v="pending"]::before { content: ""; flex: none; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 .verdict .v-sign { display: none; }  /* the dot is the sign (the old look's ▒ inside the brackets) */
-.imp-verdicts .verdict::before, .imp-verdicts .verdict::after { content: none; }  /* bare, as the facts' labels */
 @media (max-width: 860px) {
   /* iOS zooms the page in on a field whose text is under 16px, and stays zoomed */
   input, textarea, select { font-size: 16px !important; }
