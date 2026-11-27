@@ -165,9 +165,11 @@ function countPage() {
   stat("view", pageKind());
   if (!visitBegins()) return;
   stat("visit");
-  // the installed app before any cookie choice (js/consent.js shows its bar): on iPhone the home-screen app has its
-  // own storage, so this is mostly its first launch, the only sign of an iPhone install
-  if (inApp() && root.dataset.consent === "open") stat("app_new");
+  // the installed app before any cookie choice was ever stored (js/consent.js, any version of its question): on iPhone
+  // the home-screen app has its own storage, so this is mostly its first launch, the only sign of an iPhone install
+  let fresh = false;
+  try { fresh = localStorage.getItem("vr-consent") === null; } catch { /* no storage: not counted */ }
+  if (inApp() && fresh) stat("app_new");
 }
 
 function escapeUrl(way) {

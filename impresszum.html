@@ -47,11 +47,11 @@
   <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js">
   <link rel="modulepreload" href="js/firebase.js?v=202611281400">
   <link rel="modulepreload" href="js/config.js?v=202611241021">
-  <link rel="modulepreload" href="js/common.js?v=202611281400">
-  <link rel="modulepreload" href="js/account.js?v=202611281800">
+  <link rel="modulepreload" href="js/common.js?v=202611291700">
+  <link rel="modulepreload" href="js/account.js?v=202611291700">
   <link rel="modulepreload" href="js/cdn.js?v=202611281400">
-  <link rel="modulepreload" href="js/consent.js?v=202611241021">
-  <link rel="modulepreload" href="js/presence.js?v=202611281400">
+  <link rel="modulepreload" href="js/consent.js?v=202611291700">
+  <link rel="modulepreload" href="js/presence.js?v=202611291700">
   <link rel="modulepreload" href="js/menu.js?v=202611241206">
   <link rel="stylesheet" href="css/style.css?v=202611291600">
 </head>
@@ -214,7 +214,7 @@
 
         <section class="imp-sec panel" id="sutik" aria-labelledby="imp-cookies">
           <h2 id="imp-cookies">Sütik és adattárolás</h2>
-          <p>Hirdetésünk és követésünk nincs. A böngésződben csak ezek kerülnek tárolásra, mert nélkülük az oldal nem működne:</p>
+          <p>Hirdetésünk nincs, és az engedélyed nélkül nem követünk. A böngésződben csak ezek kerülnek tárolásra, mert nélkülük az oldal nem működne:</p>
           <div class="imp-stores">
             <details class="imp-store" open><summary>Belépés.</summary><p>Ha bejelentkezel, a Firebase Auth a böngésző adatbázisában (IndexedDB) őrzi a belépésedet, amíg ki nem lépsz. A <code>vr-acct</code> azt jegyzi meg, hogy be vagy-e lépve, hogy a fejléc betöltéskor ne ugráljon.</p></details>
             <details class="imp-store" open><summary>Robotszűrés.</summary><p>Az oldalt és a hozzászólásokat a Google reCAPTCHA Enterprise védi a Firebase App Checken keresztül. Ehhez a Google egy <code>_GRECAPTCHA</code> sütit tesz a google.com-ra (fél évig él), a böngészőben pedig egy jelzést (<code>_grecaptcha</code>) és egy rövid életű App Check-tokent tárol. Lásd a <a href="https://policies.google.com/privacy?hl=hu" target="_blank" rel="noopener">Google adatvédelmi irányelveit</a>.</p></details>
@@ -226,6 +226,7 @@
             <details class="imp-store" open><summary>Offline oldal.</summary><p>Az oldal egy service workert (<code>sw.js</code>) regisztrál a böngésződben. Ez a böngésző gyorsítótárában (<code>vr-offline-…</code>) egyetlen „nincs internetkapcsolat” oldalt tárol, és csak akkor mutatja, ha egy oldal internet nélkül nem töltődik be. Mást nem tárol, és nem küld adatot.</p></details>
           </div>
           <p class="imp-callout"><b>Csak ha engeded:</b> <code>vr-presence-id</code>, egy véletlen azonosító, amitől a fejléc „N online” számlálója akkor is egyszer számol, ha több oldalt vagy lapot nyitsz meg. Ha nem engeded, az azonosító csak a megnyitott oldal memóriájában él, és nem tároljuk.</p>
+          <p class="imp-callout"><b>Csak ha engeded: felvétel és hőtérkép (PostHog).</b> Névtelen felvétel arról, hogyan használod az oldalt: görgetés, kattintás, koppintás, hogy lássuk, hol nehéz használni. Amit beírsz, a chat, a hozzászólások, a nevek és a profilképek nem kerülnek bele, a profiloldal pedig egyáltalán nem. Nem kapcsoljuk a fiókodhoz. A PostHog egy véletlen azonosítót tárol a böngésződben (<code>ph_…</code> kezdetű tételek, süti nélkül), az adatokat az EU-ban (Frankfurtban) tárolja, és az IP-címedet nem őrzi meg. A felvételek 30 nap után törlődnek. Ha nem engeded, a PostHog be sem töltődik. Lásd a <a href="https://posthog.com/privacy" target="_blank" rel="noopener">PostHog adatvédelmi tájékoztatóját</a>.</p>
           <p><b>Névtelen statisztika.</b> Naponta összeszámoljuk, hány oldal nyílik meg az appban és a böngészőben, és mit választanak az olvasók az app ajánlatánál. Ehhez semmit nem tárolunk a böngésződben, és azonosítót sem küldünk. Azt, hogy egy nap nagyjából hányan jártak itt, a szerver az IP-címből és a böngésző típusából számolja ki, egy aznapi kulccsal képzett kódból. A kulcsot és a kódokat másnap töröljük, csak a napi összesítés marad meg.</p>
           <p>A betűtípust a Google Fonts szolgálja ki. Ez semmit nem tárol a böngésződben, de mint minden letöltésnél, látja az IP-címedet.</p>
           <p><button class="btn small" type="button" data-consent-reset>Döntésem módosítása</button></p>
@@ -275,9 +276,10 @@
       <p class="footer-note">Felvétel: Országgyűlés.<span class="foot-more"> A minősítéseket mesterséges intelligencia készíti automatikusan, ezért tévedhet. <a href="https://github.com/kenyerman/vitaradar.hu/issues/new?template=fact-correction.yml" target="_blank" rel="noopener">Jelezd, ha hibát találsz.</a></span></p>
     </div>
   </footer>
-  <script type="module" src="js/consent.js?v=202611241021"></script>  <!-- the cookie bar at once, not after the Firebase scripts the page's own module waits for (common.js imports this same module) -->
-  <script type="module" src="js/impresszum.js?v=202611281800"></script>
+  <script type="module" src="js/consent.js?v=202611291700"></script>  <!-- the cookie bar at once, not after the Firebase scripts the page's own module waits for (common.js imports this same module) -->
+  <script type="module" src="js/impresszum.js?v=202611291700"></script>
   <script type="module" src="js/shell.js?v=202611282110"></script>
-  <script type="module" src="js/pwa.js?v=202611290100"></script>  <!-- the app: offline page, install sheet on phones -->
+  <script type="module" src="js/pwa.js?v=202611291700"></script>  <!-- the app: offline page, install sheet on phones -->
+  <script type="module" src="js/insights.js?v=202611291700"></script>  <!-- recordings and heatmaps (PostHog EU), only after Elfogadom -->
 </body>
 </html>

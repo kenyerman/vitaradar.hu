@@ -2,8 +2,8 @@
 
 import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { db, getDoc, getDocs } from "./firebase.js?v=202611281400";
-import "./consent.js?v=202611241021";   // the cookie and storage bar at the bottom, on every page
-import "./presence.js?v=202611281400";  // the header's "N online" (visitors included), on every page
+import "./consent.js?v=202611291700";   // the cookie and storage bar at the bottom, on every page
+import "./presence.js?v=202611291700";  // the header's "N online" (visitors included), on every page
 import "./menu.js?v=202611241206";      // the hamburger menu on phones, on every page
 import "./netwatch.js?v=202611281400";  // a bar with "Újrapróbálás" when the server cannot be reached, on every page
 import { CDN, cdnReady, cdnUrl } from "./cdn.js?v=202611281400";
