@@ -448,6 +448,7 @@ details[open] > summary .lvl-title::before { content: "▾ "; }
 .imp-data, .imp-verdicts { grid-template-columns: 1fr; gap: 2px; }
 .imp-data dd, .imp-verdicts dd { margin-bottom: 10px; }
 .imp-me { grid-template-columns: 1fr; gap: 14px; }
+.imp-me + .imp-me { margin-top: 18px; padding-top: 18px; border-top: 1px dashed var(--line-dim); }  /* the next one of us */
 .imp-photo { width: 132px; }
 
 /* narrow screens */
