@@ -51,6 +51,25 @@ Issues are public. Leave out personal data you don't want to share.
 - **Privacy.** No new trackers, cookies, local storage or third-party scripts without an issue first: the impresszum
   lists everything the site stores.
 
+## Commit messages
+
+Commits and pull request titles follow [Conventional Commits](https://www.conventionalcommits.org/):
+
+```
+type(scope): what changes
+```
+
+- **type:** `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore` or `revert`;
+- **scope** (optional, lower case): the part of the site, such as `mobile`, `profile`, `archive`, `share`;
+- a `!` before the colon marks a breaking change: `feat(api)!: …`.
+
+For example `fix(share): keep the quote under the URL limit` or `chore: new ?v= for js/app.js and its importers`.
+Write the subject in English. Merge commits (merging `master` into your branch) are left as Git writes them.
+
+A check on every pull request (`.github/workflows/commit-messages.yml`) fails when the title or a commit's first line
+doesn't follow this. To fix a commit message, reword it (`git commit --amend` for the last one, `git rebase -i` for
+older ones) and force-push your branch; to fix the title, edit it on the pull request.
+
 ## License
 
 By contributing code you agree that it is released under the repository's [MIT license](../LICENSE).

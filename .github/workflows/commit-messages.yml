@@ -1,0 +1,53 @@
+# Pull requests: the title and every commit's subject line (merge commits aside) must follow Conventional Commits,
+# "type(scope)!: subject" (https://www.conventionalcommits.org). The title counts too: a squash merge uses it.
+#
+# pull_request_target runs this file as it is on master, so a pull request can't change the check to pass itself. It
+# never checks out or runs the pull request's code: it only reads the title and the commit list from the API, with a
+# read-only token, and the title reaches the script through an environment variable, never pasted into it.
+name: commit messages
+
+on:
+  pull_request_target:
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  conventional-commits:
+    name: Conventional commits
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check the title and the commits
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          set -euo pipefail
+          types="feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert"
+          re="^(${types})(\([a-z0-9._/-]+\))?!?: [^ ]"
+          bad=0
+          check() {  # $1: what it is (the title, a commit), $2: its subject line
+            if [[ "$2" =~ $re || "$2" =~ ^Revert\ \" ]]; then
+              echo "ok    $1: $2"
+            else
+              echo "::error title=Not a conventional commit::$1: $2"
+              bad=1
+            fi
+          }
+          check "title" "$TITLE"
+          commits=$(gh api --paginate "repos/$REPO/pulls/$PR/commits?per_page=100" \
+            --jq '.[] | [.sha[0:7], (.parents | length | tostring), (.commit.message | split("\n")[0])] | @tsv')
+          while IFS=$'\t' read -r sha parents subject; do
+            [ -n "$sha" ] || continue
+            if [ "$parents" -gt 1 ]; then echo "skip  $sha (merge): $subject"; continue; fi
+            check "$sha" "$subject"
+          done <<< "$commits"
+          if [ "$bad" -ne 0 ]; then
+            echo "Write \"type(scope): subject\", the type one of: ${types//|/, }; the scope is optional, ! marks a breaking change."
+            echo "See https://github.com/$REPO/blob/master/.github/CONTRIBUTING.md#commit-messages"
+            exit 1
+          fi

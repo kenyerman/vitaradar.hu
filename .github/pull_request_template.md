@@ -12,6 +12,7 @@ Closes #
 
 ## Checklist
 
+- [ ] The title and every commit follow Conventional Commits: `type(scope): subject` (see CONTRIBUTING.md)
 - [ ] Ran it locally (`python3 -m http.server 8099`) with no errors in the console
 - [ ] Checked at phone and desktop width
 - [ ] Changed JS/CSS files, and every page or module naming them, have a `?v=` key newer than any on `master`
