@@ -1904,8 +1904,8 @@ body:is(.m-live, .m-watch):not(.m-ready) > main { visibility: hidden; animation:
   body.m-live > .site-header { flex: none; }
   body.m-live > main.wrap { flex: 1; min-height: 0; display: flex; flex-direction: column; padding-bottom: 0; }
   .m-live .m-top { flex: none; position: relative; top: auto; }
-  .m-live :is(.below, .m-chat-slot, .m-game-slot) { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
-    -webkit-overflow-scrolling: touch; }
+  .m-live :is(.below, .m-chat-slot, .m-game-slot, .m-agenda-slot) { flex: 1; min-height: 0; overflow-y: auto;
+    overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
   .m-live .below { margin: 0 -16px; padding: 0 16px 24px; overflow-x: hidden; }
   .m-live .m-chat-slot { display: flex; flex-direction: column; overflow: hidden; }
   .m-live .m-chat-slot .chat { flex: 1; height: auto; min-height: 0; }
@@ -2575,9 +2575,11 @@ html:not([data-loaded]) #mps:empty { background-image: url("data:image/svg+xml,%
     transition: transform .4s var(--m-out); }
   body[data-m-tab="chat"] .m-tabs::after { transform: translateX(100%); }
   body[data-m-tab="game"] .m-tabs::after { transform: translateX(200%); }
+  body[data-m-tab="agenda"] .m-tabs::after { transform: translateX(300%); }
+  .m-live .m-tabs::after { width: 25%; }  /* four tabs there: Napirend too */
   .m-tab[aria-selected="true"] { box-shadow: none; }
   .m-tab { transition: color .25s, background-color .25s; }
-  .m-live .below, .m-live .m-chat-slot, .m-live .m-game-slot { animation: m-page .45s var(--m-out); }
+  .m-live .below, .m-live .m-chat-slot, .m-live .m-game-slot, .m-live .m-agenda-slot { animation: m-page .45s var(--m-out); }
 
   /* the facts. Not the wide screens' own slide-in (.fact pop): it came back, a second slide, whenever one of the
      classes below went (a new fact's m-in after 1.6 s, a verdict's flash, the first screenful's m-intro) */
@@ -2712,7 +2714,7 @@ html:not([data-loaded]) #mps:empty { background-image: url("data:image/svg+xml,%
   .d-side > .tally div { display: flex; align-items: baseline; gap: 4px; padding: 0; background: none; border: 0; }
   .d-side > .tally dt { color: var(--muted); font: 600 10px/1.2 var(--display); letter-spacing: .5px; }
   .d-side > .tally dd { margin: 0; font: 700 11px/1.2 var(--display); }
-  .d-side > :is(.below, .m-chat-slot, .m-game-slot) { flex: 1; min-height: 0; margin: 0; overflow-y: auto;
+  .d-side > :is(.below, .m-chat-slot, .m-game-slot, .m-agenda-slot) { flex: 1; min-height: 0; margin: 0; overflow-y: auto;
     overscroll-behavior: contain; }
   .d-side > .below { display: block; }
   .d-side > .m-chat-slot { display: flex; flex-direction: column; overflow: hidden; }
@@ -3140,7 +3142,7 @@ html:has(.install-sheet[open]) { overflow: hidden; }  /* the page behind does no
   body.m-pulled.m-drag .m-top { overflow: visible; }
   body.m-pulled.m-drag .m-top > .m-strip { display: flex; position: absolute; left: 0; right: 0; z-index: 0;
     top: calc(var(--m-vtop, 0px) + var(--m-vh, 0px)); }
-  body.m-drag .m-top > :not(.stage, .player, .m-strip), body.m-drag main > :is(.below, .m-chat-slot, .m-game-slot) {
+  body.m-drag .m-top > :not(.stage, .player, .m-strip), body.m-drag main > :is(.below, .m-chat-slot, .m-game-slot, .m-agenda-slot) {
     will-change: transform; }
   /* the block's 1px foot (its border) stays where the layout has it while the parts move: the tabs and the notice carry
      a line of its colour under them, or the video showed through that pixel between them and the panel */
@@ -3214,3 +3216,84 @@ html:has(.install-sheet[open]) { overflow: hidden; }  /* the page behind does no
 .acct-google { display: inline-flex; align-items: center; justify-content: center; gap: 8px; white-space: nowrap; }
 .acct-g { display: inline-block; flex: none; box-sizing: content-box; width: 12px; height: 12px; padding: 3px; background: #fff;
   border-radius: 50%; vertical-align: middle; }
+
+/* ------------------------------------------------------------------ the agenda (js/agenda.js), the live page's Napirend tab
+   The sitting day's items from parlament.hu's accepted agenda, in order, under their sections; a segmented line on top is
+   the day as a timeline: the items done filled, the one under way lit. The current item is green and open (its
+   questions or speakers), the ones done dimmed. Times: the planned window (grey, "tervezett"), and when an item began
+   (green) once the broadcast got there. */
+.m-live .m-tabs { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 420px) { .m-live .m-tab { gap: 4px; padding: 0 3px; font-size: 11px; letter-spacing: .6px; } }
+.m-agenda-slot { display: none; }
+.m-live[data-m-tab="agenda"] .m-agenda-slot { display: block; margin: 0 -16px; }
+@media (min-width: 861px) { .d-side > .m-agenda-slot { margin: 0; } }
+.ag { display: flex; flex-direction: column; gap: 0; padding: 0 0 24px; }
+.ag-empty { margin: 0; padding: 18px 14px; color: var(--muted); font-size: 12px; letter-spacing: .5px; }
+.ag-head { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px 10px; background: var(--panel-solid);
+  border-bottom: 1px solid var(--line-dim); }
+.ag-kicker { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; margin: 0; color: #7d9187;
+  font: 600 10.5px/1.3 var(--display); letter-spacing: 1.2px; text-transform: uppercase; }
+.ag-date { color: #e9f2ed; font: 700 15px/1.2 var(--display); letter-spacing: .8px; }
+.ag-state { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: 0; color: #9fb2a8;
+  font: 400 13px/1.4 var(--sans); }
+.ag-state-live { color: var(--green); font: 700 12px/1.3 var(--display); letter-spacing: 1px; text-transform: uppercase; }
+.ag-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 8px var(--green);
+  animation: ag-pulse 1.6s ease-in-out infinite; }
+.ag-since { color: #9fb2a8; font-weight: 600; letter-spacing: .4px; text-transform: none; }
+@keyframes ag-pulse { 50% { opacity: .35; } }
+/* the timeline */
+.ag-bar { display: flex; gap: 3px; margin: 0; padding: 10px 14px; list-style: none; border-bottom: 1px solid var(--line-dim); }
+.ag-bar li { flex: 1; height: 6px; background: rgba(0, 255, 65, .12); }
+.ag-bar li[data-state="done"] { background: rgba(0, 255, 65, .55); }
+.ag-bar li[data-state="now"] { background: var(--green); box-shadow: 0 0 8px rgba(0, 255, 65, .7); animation: ag-pulse 1.6s ease-in-out infinite; }
+/* the items */
+.ag-list { margin: 0; padding: 0; list-style: none; }
+.ag-group { padding: 14px 14px 6px; color: #7d9187; font: 600 10.5px/1.3 var(--display); letter-spacing: 1.2px;
+  text-transform: uppercase; }
+.ag-item { position: relative; display: grid; grid-template-columns: 62px minmax(0, 1fr); gap: 10px; padding: 10px 14px 12px;
+  border-top: 1px solid rgba(61, 240, 130, .08); }
+.ag-group + .ag-item { border-top: 0; }
+.ag-item::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: transparent; }
+.ag-item[data-state="now"] { background: rgba(0, 255, 65, .05); }
+.ag-item[data-state="now"]::before { background: var(--green); box-shadow: 0 0 8px rgba(0, 255, 65, .6); }
+.ag-item[data-state="done"] :is(.ag-title, .ag-sub, .ag-meta) { color: #7d9187; }
+.ag-time { display: flex; flex-direction: column; gap: 3px; padding-top: 2px; font: 600 12px/1.2 var(--display);
+  letter-spacing: .4px; font-variant-numeric: tabular-nums; }
+.ag-real { color: var(--green); }
+.ag-plan { color: #7d9187; }
+.ag-real + .ag-plan { font-size: 10.5px; }
+.ag-body { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.ag-title { margin: 0; color: #e9f2ed; font: 600 14px/1.35 var(--sans); }
+.ag-item[data-state="now"] .ag-title { color: var(--green); }
+.ag-doc { margin-right: 8px; color: var(--green); font: 700 11px/1 var(--display); letter-spacing: .6px; white-space: nowrap; }
+.ag-sub, .ag-meta { margin: 0; color: #9fb2a8; font: 400 12.5px/1.4 var(--sans); }
+.ag-flag { display: inline-block; margin: 2px 0 0 6px; padding: 1px 6px; border: 1px solid var(--line-dim); color: #9fb2a8;
+  font: 600 10px/1.4 var(--display); letter-spacing: .8px; text-transform: uppercase; }
+.ag-meta:empty .ag-flag:first-child, .ag-meta > .ag-flag:first-child:only-child { margin-left: 0; }
+.ag-parts { margin: 0; padding: 0 0 0 14px; color: #c5d3cb; font: 400 13px/1.4 var(--sans); }
+.ag-more { margin-top: 2px; }
+.ag-more > summary { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; color: var(--green); cursor: pointer;
+  font: 700 11px/1 var(--display); letter-spacing: 1px; text-transform: uppercase; list-style: none; }
+.ag-more > summary::-webkit-details-marker { display: none; }
+.ag-more > summary::after { content: "\203A"; font-size: 16px; transition: transform .2s; }
+.ag-more[open] > summary::after { transform: rotate(90deg); }
+.ag-more > summary:focus-visible { outline: 1px solid var(--green); outline-offset: 2px; }
+.ag-people { display: flex; flex-direction: column; gap: 0; margin: 4px 0 0; padding: 0; list-style: none; counter-reset: ag; }
+.ag-people > li { position: relative; padding: 7px 0 7px 26px; border-top: 1px solid rgba(61, 240, 130, .06); counter-increment: ag; }
+.ag-people > li::before { content: counter(ag) "."; position: absolute; left: 0; top: 8px; color: #7d9187;
+  font: 600 11px/1.3 var(--display); }
+.ag-people > li[data-state="now"]::before { color: var(--green); }
+.ag-people > li[data-state="now"] .ag-name { color: var(--green); }
+.ag-who { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; margin: 0; }
+.ag-name { color: #e9f2ed; font: 600 13px/1.35 var(--sans); }
+.ag-party { color: #9fb2a8; font: 600 10.5px/1.3 var(--display); letter-spacing: .8px; text-transform: uppercase; }
+.ag-to { color: #9fb2a8; font: 400 12px/1.35 var(--sans); }
+.ag-q { margin: 2px 0 0; color: #c5d3cb; font: 400 13px/1.4 var(--sans); }
+.ag-source { margin: 0; padding: 14px 14px 0; color: #7d9187; font: 400 11.5px/1.5 var(--sans); }
+.ag-source a { color: var(--green); }
+/* nothing on air: the next sitting day under the note, its agenda a tap away */
+.player-note.has-next { flex-wrap: wrap; align-content: center; gap: 12px 0; }
+.player-next { flex-basis: 100%; max-width: max-content; margin: 0 auto; padding: 8px 14px; pointer-events: auto; cursor: pointer;
+  background: transparent; border: 1px solid var(--line); color: var(--green); font: 700 11px/1.3 var(--display);
+  letter-spacing: 1px; text-transform: uppercase; }
+.player-next:is(:hover, :focus-visible) { background: rgba(0, 255, 65, .08); outline: none; }

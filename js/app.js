@@ -15,6 +15,7 @@ import { mountChat } from "./chat.js?v=202611291700";
 import { scrollHint } from "./scrollhint.js?v=202611241021";
 import { mountGame } from "./game.js?v=202611291700";
 import { mountTwitch, twitchNow } from "./twitch.js?v=202611271700";
+import { mountAgenda, nextSittingText } from "./agenda.js?v=202611301200";
 
 const $ = (id) => document.getElementById(id);
 const els = {
@@ -30,11 +31,26 @@ mountAccount();
 mountChat($("stage"));
 scrollHint(document.querySelector(".below"), document.querySelector(".player"));  // the facts, when the full-width player hides them
 const game = mountGame({ now: streamNow });  // challenges and speech tips
-
-let live = { session: null, active: false, player: false };  // player: Twitch's player is in the page
+let live = { session: null, active: false, player: false, ready: false };  // player: Twitch's player is in the page;
+// ready: the server answered
 let claims = new Map();  // id -> fact document
 let turns = [];          // speaker turns, by start_at
 let unsub = [];
+
+// the sitting day's agenda, in the Napirend tab (js/mobile.js makes it): its tab shows how far the sitting is, and the
+// note when nothing is on air names the next sitting day
+let nextSitting = "";
+const agendaTab = $("m-tab-agenda");
+if ($("m-agenda")) {
+  mountAgenda($("m-agenda"), { now: streamNow, live: () => live.active, onState: (s) => {
+    if (agendaTab) {  // the sitting under way: the tab's live dot (as Játék's), and in its name how far it is
+      if (s.live) agendaTab.dataset.live = "true"; else delete agendaTab.dataset.live;
+      agendaTab.setAttribute("aria-label", s.live ? `Napirend, most a ${s.n}. pont (összesen ${s.total})` : "Napirend");
+    }
+    const text = nextSittingText(s.next);
+    if (text !== nextSitting) { nextSitting = text; if (!live.player && live.ready && !live.active) note("most nincs élő adás"); }
+  } });
+}
 
 // ------------------------------------------------------------------ live feed (Firestore)
 onSnapshot(doc(db, "live", "current"), (snap) => {
@@ -44,6 +60,7 @@ onSnapshot(doc(db, "live", "current"), (snap) => {
   const d = snap.data() || {};
   if (!snap.metadata.fromCache && focusElsewhere(d)) return;
   live.active = Boolean(d.active);
+  live.ready = true;
   setLiveNav(live.active);  // the header's "Élő adás" link (it stays plain until this first answer)
   if (d.session && d.session !== live.session) follow(d.session);
   // Nothing on air: the page says so, and Twitch's player comes with the next broadcast. A viewer who was watching
@@ -107,7 +124,17 @@ function showPlayer() {
 
 function note(text) {
   els.note.hidden = !text;
-  if (text) els.note.textContent = text;
+  if (!text) return;
+  els.note.textContent = text;
+  // nothing on air: when the next sitting day is, and its agenda a tap away (the Napirend tab, js/mobile.js)
+  const next = text === "most nincs élő adás" && nextSitting;
+  els.note.classList.toggle("has-next", Boolean(next));
+  if (next) {
+    const b = el("button", "player-next", `${nextSitting} · napirend ›`);
+    b.type = "button";
+    b.addEventListener("click", () => dispatchEvent(new Event("vr-agenda-open")));
+    els.note.append(b);
+  }
 }
 
 // The date (ms) of the frame on screen, on the stream's clock; null when it is unknown.

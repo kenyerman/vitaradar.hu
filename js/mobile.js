@@ -339,10 +339,11 @@ function followFeed(list) {
   return { show, resume() { show(); } };
 }
 
-// Phones, live page: three tabs under the pinned block. Állítások: the facts (with the AI notice above them); Chat:
+// Phones, live page: four tabs under the pinned block. Állítások: the facts (with the AI notice above them); Chat:
 // the chat, opened while its tab is on and closed otherwise, so its count of missed messages keeps working; Játék:
 // the games, moved out of the dock that popped up over the page. The Játék tab turns green, with the countdown, while
-// a game is open.
+// a game is open. Napirend: the sitting day's agenda and where the sitting is in it (js/agenda.js, which app.js mounts
+// in #m-agenda); while the sitting is on, its tab has the live dot (app.js sets it).
 function liveTabs(top, slots, feed) {
   const bar = el("div", "m-tabs");
   bar.setAttribute("role", "tablist");
@@ -361,7 +362,7 @@ function liveTabs(top, slots, feed) {
     bar.append(b);
     return { b, n };
   };
-  const tabs = [tab("feed", "Állítások"), tab("chat", "Chat"), tab("game", "Játék")];
+  const tabs = [tab("feed", "Állítások"), tab("chat", "Chat"), tab("game", "Játék"), tab("agenda", "Napirend")];
   const [, chatTab, gameTab] = tabs;
   const ai = el("p", "m-ai");
   const note = el("span");
@@ -440,7 +441,10 @@ function liveTabs(top, slots, feed) {
     live();
   }
 
-  for (const t of tabs) t.b.setAttribute("aria-controls", t.b.dataset.tab === "feed" ? "facts" : t.b.dataset.tab === "chat" ? "chat" : "m-game");
+  const panel = { feed: "facts", chat: "chat", game: "m-game", agenda: "m-agenda" };
+  for (const t of tabs) t.b.setAttribute("aria-controls", panel[t.b.dataset.tab]);
+  // the agenda's tab, from elsewhere on the page (js/app.js: the note when nothing is on air)
+  addEventListener("vr-agenda-open", () => select("agenda"));
   // the page starts on the facts, so the chat starts closed (js/chat.js, mounting later, reads it; the reader's stored
   // choice stays as it is)
   root.dataset.chat = "closed";
@@ -1129,7 +1133,7 @@ function mountApp(page) {
   player.before(top);
   // wider screens: the sidebar on the right (empty on phones, where its parts are in the page)
   const side = el("aside", "d-side");
-  side.setAttribute("aria-label", page === "live" ? "Állítások, chat és játék" : "Állítások és felszólalók");
+  side.setAttribute("aria-label", page === "live" ? "Állítások, chat, játék és napirend" : "Állítások és felszólalók");
   top.after(side);
 
   const moves = mover();
@@ -1188,13 +1192,19 @@ function mountApp(page) {
     moves.add(document.querySelector(".game-dock"), [game, how]);
     gameCards(document.querySelector(".game-dock"));
     gameTags(game);
-    slots = { chat: slot, game };
+    // the agenda: js/app.js mounts js/agenda.js here
+    const agenda = el("div", "m-agenda-slot");
+    agenda.id = "m-agenda";
+    game.after(agenda);
+    slots = { chat: slot, game, agenda };
   }
 
   compactFacts(document.getElementById("facts"));
   if (page === "live") {
     const { bar, ai } = liveTabs(top, slots, followFeed(document.getElementById("facts")));
-    for (const node of [bar, ai, document.querySelector("main > .below"), slots.chat, slots.game]) moves.add(node, null, [side]);
+    for (const node of [bar, ai, document.querySelector("main > .below"), slots.chat, slots.game, slots.agenda]) {
+      moves.add(node, null, [side]);
+    }
   }
   if (page === "watch") {
     replayParts(top, moves, side);
