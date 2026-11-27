@@ -16,9 +16,9 @@
 // - iPhone: Safari has no install dialog, so it shows the steps (Megosztás → Hozzáadás a főképernyőhöz).
 // - Apps' own browsers (Facebook, Messenger, Instagram, TikTok…): nothing can be installed in them, so the same sheet's
 //   Telepítés opens the page in the real browser (Android: an intent: link, iOS: x-safari-https: or the app's own
-//   link; the app asks "open in another app?" first) with ?telepites in its address. Nothing leaves by itself. When the
+//   link; the app asks "open in another app?" first) with ?install in its address. Nothing leaves by itself. When the
 //   browser does not come, the sheet says how to open the page from the app's menu, with a button to copy its link.
-// - Arriving with ?telepites (from an app's browser): the mark leaves the address, and the install comes straight away,
+// - Arriving with ?install (from an app's browser): the mark leaves the address, and the install comes straight away,
 //   before the cookie bar: Android the sheet with the one Telepítés (the browser's dialog needs a tap), iPhone the steps.
 // The sheet waits for a calm moment: not while a game card is open, the reader types or has just touched the screen,
 // the menu or another dialog is open; in a browser also not while the cookie bar asks (it comes first there; in an
@@ -41,7 +41,7 @@ const STILL = matchMedia("(prefers-reduced-motion: reduce)");
 const FIELD = "input:not([type=checkbox], [type=radio], [type=button], [type=submit], [type=range]), textarea, select, [contenteditable=true]";
 
 const KEY = "vr-install";  // {"v":1,"choice":"installed","at":<ms>}: the app was installed from this browser
-const MARK = "telepites";  // ?telepites: sent here from an app's browser to install
+const MARK = "install";  // ?install: sent here from an app's browser to install
 const FIRST_WAIT = 1500;   // after the page is in: its opening has played
 const RETRY = 2000;        // not calm yet: look again
 const QUIET = 1500;        // no touch, scroll or key for this long before it comes up (never under a finger)
@@ -49,7 +49,7 @@ const BACK = 15000;        // a game closed it: back after this long
 
 const inApp = () => APP.matches || navigator.standalone === true;
 
-// Sent from an app's browser by its Telepítés (?telepites): remembered, and gone from the address (a reload or a shared
+// Sent from an app's browser by its Telepítés (?install): remembered, and gone from the address (a reload or a shared
 // link does not bring it back). The page's own scripts have read their address by now: this file runs last.
 const ARRIVED = (() => {
   let u;

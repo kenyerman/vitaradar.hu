@@ -2,7 +2,7 @@
 // Tests the install from Facebook's and Messenger's own browsers (js/pwa.js) on an Android emulator or phone, over adb:
 // opens a Facebook post or a Messenger chat that holds a vitaradar.hu link, taps the link, waits for our install sheet
 // in the app's browser and taps its Telepítés, answers Meta's "open in another app?" (and Android's app chooser), and
-// checks that Chrome came up with the same page (path and query, the ?telepites mark already gone) and our "Még egy
+// checks that Chrome came up with the same page (path and query, the ?install mark already gone) and our "Még egy
 // koppintás" sheet; with --install also its Telepítés, Chrome's own install dialog and the installed app (removed again
 // unless --keep). Screenshots of each step and a result.json go to --out. Node 22+ (fetch, WebSocket), no packages.
 //
@@ -206,7 +206,7 @@ async function run() {
   result.newTab = !before.has(tab.id);
   result.page = await evaluate(tab, `(() => {
     const d = document.querySelector(".install-sheet[open]"), b = document.querySelector(".hdr-install");
-    return { url: location.href, marked: new URLSearchParams(location.search).has("telepites"),
+    return { url: location.href, marked: new URLSearchParams(location.search).has("install"),
       consentBar: document.documentElement.dataset.consent === "open", sheet: d ? d.dataset.view : null,
       headerButton: b ? !b.hidden : null, ua: navigator.userAgent };
   })()`);
