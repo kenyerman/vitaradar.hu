@@ -269,14 +269,15 @@ function mountItem() {
   if (inApp()) return;
   const panel = document.getElementById("menu");
   if (!panel) return;
-  item = el("button", "menu-install", `${ICON.get}<span>App telepítése</span>`);
+  item = el("button", "menu-install", `${ICON.get}<span>App<span class="mi-more"> telepítése</span></span>`);
   item.type = "button";
+  item.setAttribute("aria-label", "App telepítése");  // the narrowest phones show "App" only (css)
   item.hidden = true;
   item.addEventListener("click", () => {
     panel.querySelector(".menu-close")?.click();  // the menu closes first (js/menu.js), then the sheet comes
     setTimeout(go, 50);
   });
-  panel.append(item);
+  (panel.querySelector(".m-menu-calls") || panel).prepend(item);  // beside Támogatás (js/shell.js)
   PHONE.addEventListener("change", sync);
   APP.addEventListener("change", sync);
   sync();

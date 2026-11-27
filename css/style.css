@@ -783,7 +783,7 @@ a.acct-me, a.acct-me:hover { text-decoration: none; text-shadow: none; }
 /* the profile card's link to the profile page; "Profilom" in the phone menu, for registered users */
 .ucard-link { display: block; margin-top: 10px; padding: 4px 0; font-size: 12px; font-weight: 700; }
 .nav a.nav-profile { display: none; }
-.acct-new, .acct-hint, .acct-text { display: none; }  /* the phone menu's extras (js/account.js): not in the header */
+.acct-hint, .acct-text { display: none; }  /* the phone menu's extras (js/account.js): not in the header */
 .msg { position: relative; padding-right: 18px; }
 .msg-block { position: absolute; right: 0; top: 0; background: transparent; border: 0; color: var(--muted); font: 13px/1 var(--mono);
   cursor: pointer; padding: 2px; opacity: 0; }
@@ -1266,14 +1266,13 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   .menu-panel .nav a.nav-imp { display: flex; }
   /* the account (as in the design): signed out "Belépés" and "Regisztráció" side by side; registration unfinished, a line
      on why and a button; signed in, a row to the profile with the avatar, the nick and the points (js/account.js) */
-  .menu-panel > .acct { order: 2; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0; padding: 12px 16px 0; }
+  .menu-panel > .acct { order: 2; display: grid; grid-template-columns: 1fr; gap: 8px; margin: 0; padding: 12px 16px 0; }
   .menu-panel > .brand-sub { order: 3; }
-  .menu-panel > a.nav-support { order: 5; }  /* App telepítése (js/pwa.js) right above it */
+  .menu-panel > .m-menu-calls { order: 4; }  /* App telepítése (js/pwa.js) and Támogatás side by side */
   .m-menu-foot { order: 6; }
   .m-site .menu-panel .nav a.nav-profile { display: none; }  /* the account row leads there */
   .menu-panel > .acct .btn, .menu-panel > .acct .acct-btn { min-height: 44px; justify-content: center; font: 700 12px/1 var(--display);
     letter-spacing: 1.4px; }
-  .menu-panel > .acct .acct-new { display: inline-flex; background: #16231d; color: #e9f2ed; }
   .menu-panel > .acct :is(.acct-hint, .acct-reg, .acct-me) { grid-column: 1 / -1; }
   .menu-panel > .acct .acct-hint { display: block; color: #9fb2a8; font: 400 13px/1.4 var(--sans); }
   .menu-panel > .acct .acct-reg .acct-more { display: inline; }
@@ -1287,10 +1286,11 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   .menu-panel > .acct .acct-sub { color: #9fb2a8; font: 400 12px/1.3 var(--sans); }
   .menu-panel > .acct .acct-me::after { content: "\203A"; color: var(--muted); font-size: 18px; }
   .menu-panel > .brand-sub { position: static; display: flex; align-items: center; gap: 8px; padding: 14px 16px 6px; }
-  .menu-panel > a.nav-support { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px;
-    margin: 8px 16px 0; padding: 0 14px; border: 1px solid var(--green); background: none; color: var(--green);
-    font: 700 12px/1 var(--display); letter-spacing: 1.4px; text-shadow: none; text-transform: uppercase; }
-  .menu-panel > a.nav-support::before { content: "\2665"; color: #ff4d5a; text-shadow: none; }
+  .menu-panel > .m-menu-calls { display: flex; gap: 8px; margin: 8px 16px 0; }  /* (hidden elsewhere: the install's block) */
+  .m-menu-calls > a.nav-support { display: flex; flex: 1 1 0; min-width: 0; align-items: center; justify-content: center; gap: 8px;
+    min-height: 44px; margin: 0; padding: 0 8px; border: 1px solid var(--green); background: none; color: var(--green);
+    font: 700 11px/1 var(--display); letter-spacing: 1.1px; text-shadow: none; text-transform: uppercase; white-space: nowrap; }
+  .m-menu-calls > a.nav-support::before { content: "\2665"; color: #ff4d5a; text-shadow: none; }
   /* the small text (contact, copyright, source) at the foot of the menu, under the buttons' block: margin-top: auto
      takes the room between them (none when the menu is taller than the screen) */
   .m-menu-foot { margin: auto 0 0; padding: 24px 16px 0; display: flex; flex-direction: column; gap: 6px; color: var(--muted);
@@ -2319,7 +2319,7 @@ html:not([data-loaded]) #mps:empty { background-image: url("data:image/svg+xml,%
   .m-site .menu-panel[data-open] .nav a:nth-child(4) { animation-delay: .27s; }
   .m-site .menu-panel[data-open] .nav a:nth-child(n+5) { animation-delay: .32s; }
   .m-site .menu-panel[data-open] > :not(.nav, .menu-head) { animation: m-page .5s var(--m-out) .34s backwards; }
-  .m-site .menu-panel[data-open] > a.nav-support { animation: m-fade .2s ease-out .4s backwards, m-shove .5s var(--m-out) .4s backwards; }
+  .m-site .menu-panel[data-open] > .m-menu-calls > a.nav-support { animation: m-fade .2s ease-out .4s backwards, m-shove .5s var(--m-out) .4s backwards; }
   html.menu-open .menu-btn::before { display: inline-block; animation: m-stamp .3s var(--m-out); }
   @keyframes m-down { to { transform: translateY(100%); } }
   /* the support button: the heart beats twice once the button is in, then again every few seconds; a light sweeps
@@ -2327,13 +2327,13 @@ html:not([data-loaded]) #mps:empty { background-image: url("data:image/svg+xml,%
   @keyframes m-heart { 0%, 24%, 100% { transform: none; } 6% { transform: scale(1.35); } 12% { transform: scale(.95); }
     18% { transform: scale(1.25); } }
   @keyframes m-shine { from { transform: translateX(-100%); } to { transform: translateX(260%); } }
-  .menu-panel > a.nav-support { position: relative; overflow: hidden; transition: transform .15s var(--m-out), background-color .2s; }
-  .menu-panel > a.nav-support::before { display: inline-block; }
-  .menu-panel[data-open] > a.nav-support::before { animation: m-heart 3.2s ease-in-out .95s infinite; }
-  .menu-panel > a.nav-support::after { content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 40%; pointer-events: none;
+  .m-menu-calls > a.nav-support { position: relative; overflow: hidden; transition: transform .15s var(--m-out), background-color .2s; }
+  .m-menu-calls > a.nav-support::before { display: inline-block; }
+  .menu-panel[data-open] .m-menu-calls > a.nav-support::before { animation: m-heart 3.2s ease-in-out .95s infinite; }
+  .m-menu-calls > a.nav-support::after { content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 40%; pointer-events: none;
     background: linear-gradient(100deg, transparent, rgba(61, 240, 130, .28), transparent); transform: translateX(-100%); }
-  .menu-panel[data-open] > a.nav-support::after { animation: m-shine .9s var(--m-in-out) .85s backwards; }
-  .menu-panel > a.nav-support:active { transform: scale(.97); background: rgba(61, 240, 130, .1); }
+  .menu-panel[data-open] .m-menu-calls > a.nav-support::after { animation: m-shine .9s var(--m-in-out) .85s backwards; }
+  .m-menu-calls > a.nav-support:active { transform: scale(.97); background: rgba(61, 240, 130, .1); }
   .m-site .menu-panel.m-closing { display: flex; visibility: visible; pointer-events: none;
     animation: m-down .3s cubic-bezier(.55, 0, .75, .2) forwards; }  /* back down, speeding up */
 
@@ -2648,8 +2648,6 @@ html:not([data-loaded]) #mps:empty { background-image: url("data:image/svg+xml,%
 }
 /* the account in the header (wider screens), as in the phone menu: Belépés green, Regisztráció dark beside it */
 .site-header .acct { gap: 8px; }
-.acct .acct-new { background: #16231d; color: #e9f2ed; }
-.acct .acct-new:hover, .acct .acct-new:focus-visible { background: #1d2d26; color: #e9f2ed; }
 /* ------------------------------------------------------------------ wider screens: the header, in the phones' design
    The page links as in the phone menu: Chakra Petch, upper case, light, the page the reader is on in green, a red dot
    by Élő adás while live; right after the logo. Támogatás as the phones' outlined button with the red heart, and the
@@ -2820,17 +2818,18 @@ html:has(.install-sheet[open]) { overflow: hidden; }  /* the page behind does no
 }
 
 /* ------------------------------------------------------------------ App telepítése in the phone menu (js/pwa.js)
-   Whenever the app is not installed: a button with the phone icon right above Támogatás, in its look (outlined green,
-   the same height and type), so the two read as the menu's two calls. Not in the header, which keeps the name, the
-   heart and ☰. */
-.menu-install { display: none; }
+   Whenever the app is not installed: a button with the phone icon beside Támogatás (.m-menu-calls, js/shell.js), in
+   its look (outlined green, the same height and type), so the two read as the menu's two calls; Támogatás alone takes
+   the row's width. Not in the header, which keeps the name, the heart and ☰. */
+.menu-install, .m-menu-calls { display: none; }
 @media (max-width: 860px) {
-  .menu-panel > .menu-install:not([hidden]) { order: 4; display: flex; align-items: center; justify-content: center; gap: 8px;
-    min-height: 44px; margin: 8px 16px 0; padding: 0 14px; border: 1px solid var(--green); background: none; color: var(--green);
-    font: 700 12px/1 var(--display); letter-spacing: 1.4px; text-transform: uppercase; cursor: pointer; }
+  .m-menu-calls > .menu-install:not([hidden]) { display: flex; flex: 1 1 0; min-width: 0; align-items: center; justify-content: center;
+    gap: 7px; min-height: 44px; margin: 0; padding: 0 8px; border: 1px solid var(--green); background: none; color: var(--green);
+    font: 700 11px/1 var(--display); letter-spacing: 1.1px; text-transform: uppercase; white-space: nowrap; cursor: pointer; }
   .menu-install .mi-ico { display: block; flex: none; width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.9;
     stroke-linecap: round; stroke-linejoin: round; }
-  .menu-panel > .menu-install:active { background: rgba(61, 240, 130, .1); }
+  .m-menu-calls > .menu-install:active { background: rgba(61, 240, 130, .1); }
+  @media (max-width: 359px) { .menu-install .mi-more { display: none; } }  /* half of a 320px row: "App" */
   .menu-install:focus-visible { outline: 1px solid var(--green); outline-offset: 3px; }
 }
 
@@ -2929,3 +2928,10 @@ html:has(.install-sheet[open]) { overflow: hidden; }  /* the page behind does no
 @keyframes ig-bob { 50% { transform: translateY(6px); } }
 @media (max-width: 359px) { .ig { grid-template-columns: 1fr; } .ig-screen { margin: 0 auto; } }
 @media (prefers-reduced-motion: reduce) { .ig-f { transition: none; } .ig-hit, .ig-point { animation: none; } }
+
+/* ------------------------------------------------------------------ Belépés Google-lel (js/account.js)
+   The one sign-in button, in the header and the phone menu: Google's G in its own colours on a white disc, then the
+   words. */
+.acct-google { display: inline-flex; align-items: center; justify-content: center; gap: 8px; white-space: nowrap; }
+.acct-g { display: inline-block; flex: none; box-sizing: content-box; width: 12px; height: 12px; padding: 3px; background: #fff;
+  border-radius: 50%; vertical-align: middle; }

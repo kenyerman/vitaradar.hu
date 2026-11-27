@@ -58,7 +58,10 @@ function menuParts(moves) {
     nav.insertBefore(imp, nav.querySelector(".nav-support"));
   }
   moves.add(document.getElementById("acct"), panel);
-  moves.add(nav.querySelector(".nav-support"), panel);
+  // the menu's two calls side by side: App telepítése (js/pwa.js puts it first) and Támogatás
+  const calls = el("div", "m-menu-calls");
+  panel.append(calls);
+  moves.add(nav.querySelector(".nav-support"), calls);
   // what the footer says (phones have no footer): the contact links, the copyright, the source. Not the maker's pages
   // nor "Mire megy a pénz?": the menu keeps to the site itself (the impresszum has both)
   const foot = el("div", "m-menu-foot");
