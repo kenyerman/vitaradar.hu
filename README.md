@@ -37,6 +37,12 @@ parliament's stream ──► fact-check pipeline (GPU VM) ──► HLS video p
   - `live/current`: the running session, the stream address, whether it is live;
   - `sessions/{session}/claims/{id}`: one fact each, with `show_at` / `verdict_at`;
   - `sessions/{session}/state/floor`: the speaker turns, with `start_at`.
+  - `sessions/{session}/transcripts/{speech id}`: a speech's Gemini 3.5 Transcribe transcript, written about a
+    minute after the speech ends (`text`, `words: [{w, s, e}]` with times from the speech's start). The replay has a
+    Leirat tab (beside Állítások and Felszólalók) with the playing speech's, the word being said lit, a click on a
+    word jumps there (`js/transcript.js`, `js/watch.js`). The speaker is who the picture showed, never the
+    transcription's guess. The word is lit by the archive's clock, so it is as exact as the YouTube video is in step
+    with the archive's pieces.
 - **In sync with the picture:** every time is on the stream's own clock (the playlist's
   `EXT-X-PROGRAM-DATE-TIME`). The page compares it with the date of the frame on screen (Twitch's player hides it:
   `js/twitch.js` estimates it), so a fact appears when the viewer's video reaches it, not when the server found it.

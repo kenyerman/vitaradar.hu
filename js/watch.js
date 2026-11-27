@@ -9,6 +9,8 @@
 // A fallacy said in the same sentence as a checked claim shows on that claim's card, as on the live page.
 // ?t= opens the video at that second (the MP page's fact links); ?f=<claim id> opens that fact (a shared link,
 // js/share.js): at its moment, the video waiting for a tap, the card opened and framed.
+// The Leirat tab shows the playing speech's Gemini transcript, the word being said lit, a click on a word jumps there
+// (js/transcript.js).
 
 import { doc, onSnapshot, collection, query, where } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { db, getDoc, getDocs, el, factBadge, LABEL, sourceList, setPhoto, hms, huDate, mpHref, watchLiveNav, loadFailed } from "./common.js?v=202611272300";
@@ -20,6 +22,7 @@ import { cdnReady, cdnUrl } from "./cdn.js?v=202611272300";
 import { scrollHint } from "./scrollhint.js?v=202611241021";
 import { setPageMeta } from "./meta.js?v=202611241124";
 import { youtubeMedia } from "./ytplayer.js?v=202611271300";
+import { AI_NOTE, loadTranscript, paragraphs, wordCount } from "./transcript.js?v=202611280500";
 
 watchLiveNav();
 mountAccount();
@@ -164,6 +167,76 @@ function renderSpeaker(t) {
   shownSpeech = sk;
   // the speeches only: an opened speech's facts under it have their own mark (renderFacts)
   document.querySelectorAll(".speaker-list > li").forEach((li) => li.classList.toggle("now", li.dataset.id === sk));
+  showTranscript(s);
+}
+
+// The playing speech's Gemini transcript (the Leirat tab): the word being said is lit, a click on a word jumps there.
+// A word's video second is its speech's start in the video + its time from the speech's start.
+let trWords = [];  // {t (video seconds), span}, in order
+let trLit = null;
+let trTouched = 0;  // when the reader last scrolled it: it does not move under their finger
+async function showTranscript(s) {
+  const box = $("transcript"), empty = $("transcript-empty");
+  trWords = [];
+  trLit = null;
+  box.replaceChildren();
+  box.hidden = true;
+  $("transcript-count").textContent = "";
+  empty.hidden = false;
+  if (!s) { empty.textContent = "a felszólalás leirata itt követi a videót"; return; }
+  empty.textContent = "leirat betöltése…";
+  let tr = null;
+  try { tr = await loadTranscript(session, s.speech_id); } catch (e) { console.warn("transcript:", e); }
+  if (shownSpeech !== s.speech_id) return;  // the video moved on meanwhile
+  if (!tr) { empty.textContent = "ehhez a felszólaláshoz nincs leirat"; return; }
+  for (const p of paragraphs(tr.words)) {
+    const para = el("p", "gtranscript-p");
+    for (const w of p.words) {
+      const span = el("span", "w", w.w);
+      span.dataset.t = String(s.start_s + w.s);
+      para.append(span, " ");
+      trWords.push({ t: s.start_s + w.s, span });
+    }
+    box.append(para);
+  }
+  if (!trWords.length && tr.text) box.append(el("p", "gtranscript-p", tr.text));
+  box.append(el("p", "gtranscript-note", AI_NOTE));
+  $("transcript-count").textContent = `${wordCount(tr)} szó`;
+  box.hidden = false;
+  empty.hidden = true;
+  litWord(media.currentTime);
+}
+
+// The panel the transcript scrolls in: the sidebar's or the phone's panel (css), else the window.
+function scroller(node) {
+  for (let n = node.parentElement; n && n !== document.body; n = n.parentElement) {
+    const o = getComputedStyle(n).overflowY;
+    if ((o === "auto" || o === "scroll") && n.scrollHeight > n.clientHeight) return n;
+  }
+  return null;
+}
+
+function litWord(t) {
+  if (!trWords.length) return;
+  let lo = 0, hi = trWords.length - 1, i = -1;
+  while (lo <= hi) {  // the last word started by t
+    const mid = (lo + hi) >> 1;
+    if (trWords[mid].t <= t + 0.05) { i = mid; lo = mid + 1; } else hi = mid - 1;
+  }
+  const w = i >= 0 ? trWords[i].span : null;
+  if (w === trLit) return;
+  if (trLit) trLit.classList.remove("now");
+  trLit = w;
+  if (!w) return;
+  w.classList.add("now");
+  if (performance.now() - trTouched < 4000 || !w.getClientRects().length) return;  // being read, or its tab is not open
+  const box = scroller(w);
+  if (!box) return;
+  const view = box.getBoundingClientRect(), at = w.getBoundingClientRect();
+  if (at.top < view.top + 8 || at.bottom > view.bottom - 24) box.scrollTop += at.top - view.top - view.height / 3;
+}
+for (const ev of ["wheel", "touchmove", "pointerdown"]) {
+  $("transcript").parentElement.addEventListener(ev, () => { trTouched = performance.now(); }, { passive: true });
 }
 
 let current = null;
@@ -199,6 +272,7 @@ function tick() {
   const t = media.currentTime;
   renderFacts(t);
   renderSpeaker(t);
+  litWord(t);
 }
 
 function shareUrl() {
@@ -313,6 +387,10 @@ function wire(m) {
   m.addEventListener("pause", () => history.replaceState(null, "", watchHref(session, media.currentTime)));
 }
 
+$("transcript").addEventListener("click", (e) => {
+  const w = e.target.closest(".w");
+  if (w) seek(parseFloat(w.dataset.t));
+});
 $("copy-link").addEventListener("click", async () => {
   try { await navigator.clipboard.writeText(shareUrl()); } catch { prompt("A link:", shareUrl()); return; }
   $("copied").hidden = false;

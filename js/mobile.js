@@ -635,8 +635,9 @@ function openingSpeeches(list) {
 }
 
 // Phones, replay page (as the live page): a compact row on top of the pinned block (back to the archive, the date
-// and the time, the link to this moment as an icon), the video and the speaker strip, two tabs (the speakers, open
-// first, and the facts) and the AI notice with the "all facts" switch. The tab names show how many there are.
+// and the time, the link to this moment as an icon), the video and the speaker strip, three tabs (the speakers, open
+// first, the facts and the Leirat: the playing speech's transcript, js/watch.js) and the AI notice with the "all facts"
+// switch. The facts' and speakers' tab names show how many there are.
 function replayParts(top, moves, side) {
   const head = el("div", "m-whead");
   const text = el("div", "m-whead-text");
@@ -653,7 +654,7 @@ function replayParts(top, moves, side) {
   const copy = document.getElementById("copy-link");
   if (copy) { copy.setAttribute("aria-label", "Link ehhez a pillanathoz"); copy.title = "Link ehhez a pillanathoz"; }
 
-  const bar = el("div", "m-tabs m-tabs-2");
+  const bar = el("div", "m-tabs m-tabs-3");
   bar.setAttribute("role", "tablist");
   bar.setAttribute("aria-label", "A visszanézés részei");
   const tab = (id, label) => {
@@ -669,10 +670,12 @@ function replayParts(top, moves, side) {
     bar.append(b);
     return { b, n };
   };
-  const facts = tab("feed", "Állítások"), speakers = tab("speakers", "Felszólalók");
+  const facts = tab("feed", "Állítások"), speakers = tab("speakers", "Felszólalók"), transcript = tab("transcript", "Leirat");
+  const tabs = [facts, speakers, transcript];
   openingSpeeches(document.getElementById("speakers"));
   facts.b.setAttribute("aria-controls", "facts");
   speakers.b.setAttribute("aria-controls", "speakers");
+  transcript.b.setAttribute("aria-controls", "transcript-col");
   const ai = el("p", "m-ai");
   const note = el("span");
   note.textContent = "// automatikus (AI) ellenőrzés — tévedhet";
@@ -684,14 +687,15 @@ function replayParts(top, moves, side) {
 
   const select = (id) => {
     document.body.dataset.mTab = id;
-    for (const t of [facts, speakers]) t.b.setAttribute("aria-selected", String(t.b.dataset.tab === id));
+    for (const t of tabs) t.b.setAttribute("aria-selected", String(t.b.dataset.tab === id));
     const box = document.querySelector(".m-watch .below");
     if (box) box.scrollTop = 0;
   };
-  for (const t of [facts, speakers]) t.b.addEventListener("click", () => select(t.b.dataset.tab));
+  for (const t of tabs) t.b.addEventListener("click", () => select(t.b.dataset.tab));
   bar.addEventListener("keydown", (e) => {
     if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
-    const next = document.body.dataset.mTab === "feed" ? speakers : facts;
+    const at = tabs.findIndex((t) => t.b.dataset.tab === document.body.dataset.mTab);
+    const next = tabs[(at + (e.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length];
     select(next.b.dataset.tab);
     next.b.focus();
   });
@@ -701,7 +705,9 @@ function replayParts(top, moves, side) {
   const count = document.getElementById("fact-count"), list = document.getElementById("speakers");
   const title = document.getElementById("w-title");
   const sync = () => {
-    facts.n.textContent = (count?.textContent || "").replace(/[[\]]/g, "").replace(/\b0+(\d)/g, "$1");  // "[05/30]": "5/30"
+    const said = (count?.textContent || "").replace(/[[\]]/g, "").replace(/\b0+(\d)/g, "$1");  // "[05/30]": "5/30"
+    facts.n.textContent = said.split("/")[0];  // three tabs are narrow: only how many were said by now, "5 / 30" in its title
+    facts.b.title = said ? `${said.replace("/", " / ")} állítás` : "";
     speakers.n.textContent = list && list.children.length ? String(list.children.length) : "";
     if (!title) return;
     const t = title.textContent;

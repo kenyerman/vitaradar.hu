@@ -377,6 +377,19 @@ details[open] > summary .lvl-title::before { content: "▾ "; }
 .transcript-d[open] > summary::before { content: "▾ "; }
 .transcript { margin: 8px 0 0; white-space: pre-wrap; font-size: 13px; color: var(--text); opacity: .9; max-height: 420px; overflow: auto;
   border-left: 2px solid var(--line); padding-left: 12px; }
+/* the Gemini transcript (js/transcript.js), the replay's Leirat tab (js/watch.js lights the word being said): set like the
+   live caption in the video, monospace, the word being said a solid chip. It flows in the panel that scrolls. */
+.transcript-col { grid-column: 1 / -1; --caption: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace; }  /* (--mono is the display font here) */
+.gtranscript.live { padding: 16px 18px 24px; }
+.gtranscript-p { margin: 0 0 18px; color: var(--text); font: 400 14px/2.2 var(--caption); }
+.gtranscript-note { margin: 4px 0 0; color: var(--muted); font: 400 11px/1.5 var(--caption); letter-spacing: .4px; }
+.gtranscript.live .w { padding: 3px 4px; border-radius: 4px; cursor: pointer; transition: background-color .15s, color .15s; }  /* the gap between words is the space and both paddings */
+.gtranscript.live .w:hover { background: rgba(61, 240, 130, .16); }
+.gtranscript.live .w.now { background: var(--green); color: #021108; font-weight: 700; }
+.m-watch .transcript-col .gtranscript.live { border: 0; background: none; }
+.m-watch .transcript-col .panel::before, .m-watch .transcript-col .panel::after { display: none; }
+.m-watch .transcript-col .empty { padding: 18px; font: 400 12px/1.5 var(--caption); }
+@media (max-width: 860px) { .m-watch .transcript-col .gtranscript.live { padding-left: 2px; padding-right: 2px; } }  /* the panel has its own 16px */
 
 /* the day picker (js/calendar.js) and the controls beside it */
 .days-tools { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 16px; align-items: start; margin-bottom: 14px; }
@@ -1810,7 +1823,7 @@ body:is(.m-live, .m-watch):not(.m-ready) > main { visibility: hidden; animation:
   font: 700 10px/1 var(--display); letter-spacing: 1px; text-transform: uppercase; }
 .m-whead #copied[hidden] { display: none; }
 /* the tabs and the notice line */
-.m-tabs-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.m-tabs-3 .m-tab { gap: 4px; padding: 0 4px; font-size: 11px; letter-spacing: .7px; }  /* the replay's three tabs on a narrow screen */
 .m-tab-count { display: inline; color: var(--muted); font-weight: 600; letter-spacing: .4px; }
 .m-tab[aria-selected="true"] .m-tab-count { color: var(--green); }
 .m-tab-count:empty { display: none; }
@@ -1821,10 +1834,11 @@ body:is(.m-live, .m-watch):not(.m-ready) > main { visibility: hidden; animation:
 .m-watch .m-ai #show-all::after { content: "Összes"; font-size: 10px; }  /* short on screen; its name stays "összes állítás" */
 /* Felszólalók, the first tab, shows facts too (a speech's, all of them): the notice stays, the switch is for the
    facts list (hidden, not gone, so the panel below keeps its place between the tabs) */
-body.m-watch[data-m-tab="speakers"] .m-ai { display: flex; }
-body.m-watch[data-m-tab="speakers"] .m-ai #show-all { visibility: hidden; }
+body.m-watch:is([data-m-tab="speakers"], [data-m-tab="transcript"]) .m-ai { display: flex; }
+body.m-watch:is([data-m-tab="speakers"], [data-m-tab="transcript"]) .m-ai #show-all { visibility: hidden; }
 /* the panels */
 .m-watch[data-m-tab="feed"] .speaker-col, .m-watch[data-m-tab="speakers"] .facts-col { display: none; }
+.m-watch:not([data-m-tab="transcript"]) .transcript-col, .m-watch[data-m-tab="transcript"] :is(.facts-col, .speaker-col) { display: none; }
 .m-watch .speaker-col { display: block; position: static; }  /* in the panel that scrolls: the old page's sticky
                                                                  top (84px) put the list that far down */
 .m-watch .speaker-list { gap: 0; margin: 0 -16px; }
@@ -1849,8 +1863,8 @@ body.m-watch[data-m-tab="speakers"] .m-ai #show-all { visibility: hidden; }
 .speech-facts .fact-who { display: none; }
 .speech-facts > li.empty { padding: 12px 16px; color: var(--muted); font-size: 13px; }
 @media (prefers-reduced-motion: no-preference) {
-  .m-tabs.m-tabs-2::after { width: 50%; }
   body.m-watch[data-m-tab="speakers"] .m-tabs::after { transform: translateX(100%); }
+  body.m-watch[data-m-tab="transcript"] .m-tabs::after { transform: translateX(200%); }
   .m-watch .below { animation: m-page .45s var(--m-out); }
 }
 
