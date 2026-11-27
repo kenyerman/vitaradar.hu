@@ -2,7 +2,8 @@
 //
 // App Check (reCAPTCHA Enterprise, invisible and score-based) proves that requests come from this site and not from
 // a script: the Firebase SDK attaches its token to Firestore requests by itself, and appCheckHeaders() adds it to
-// calls to our own functions (the speech search, the user API). Sign-in is Google only (a popup).
+// calls to our own functions (the speech search, the user API). Sign-in is Google only: a popup, or in the iPhone app
+// the page goes to Google and comes back (below, at "sign-in").
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import { initializeAppCheck, ReCaptchaEnterpriseProvider, getToken } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check.js";
@@ -15,7 +16,12 @@ import {
 import { firebaseConfig, recaptchaSiteKey } from "./config.js?v=202611241021";
 import { withTimeout, sleep } from "./net.js?v=202611270600";
 
-export const app = initializeApp(firebaseConfig);
+// The iPhone app (the site added to the home screen, js/pwa.js) signs in by leaving the page; its sign-in helper is on
+// vitaradar.hu itself (the "sign-in" part below says why).
+export const signInLeavesPage = navigator.standalone === true;
+const SITE_AUTH_DOMAIN = "vitaradar.hu";  // __/auth/ of this site (tools/auth-helper.sh)
+
+export const app = initializeApp(signInLeavesPage ? { ...firebaseConfig, authDomain: SITE_AUTH_DOMAIN } : firebaseConfig);
 
 // ------------------------------------------------------------------ App Check that recovers
 // Firebase's own reCAPTCHA Enterprise provider (10.14.1, pinned above), with what it lacks. Firestore, sign-in and our
@@ -163,11 +169,22 @@ export async function appCheckHeaders() {
 // warmSignIn() loads it once the page is in, for a visitor who is signed out. _shouldInitProactively and
 // _initialize are what Firebase itself uses for this (firebase-auth 10.14.1, pinned above).
 //
-// In the iPhone app (the site added to the home screen, js/pwa.js) Google's window would open in a Safari sheet of its
-// own, which keeps its own storage and cannot hand the sign-in back to the app. There the page itself goes to Google and
-// comes back (a redirect, through auth.vitaradar.hu, the same site): Firebase finishes it as the page loads again, and
-// js/account.js sees the user as after a popup. Everywhere else (Android's app too) the popup, as before.
-export const signInLeavesPage = navigator.standalone === true;
+// In the iPhone app the page itself goes to Google and comes back (a redirect): Firebase finishes it as the page loads
+// again, and js/account.js sees the user as after a popup. Google's answer comes to the helper's page, which keeps it in
+// its own storage for the helper's iframe on our page to pick up. Through auth.vitaradar.hu that cannot arrive: Safari
+// gives an iframe from another address (even our own subdomain) storage of its own, apart from the same address opened
+// as a page (a test page in the iOS 26.5 Simulator's home-screen app showed it, 27 Nov 2026; Firebase's "Best practices
+// for using signInWithRedirect on browsers that block third-party storage access"), so the app came back signed out. So
+// there the helper is served from vitaradar.hu itself (__/auth/: Firebase's own files, kept current by
+// tools/auth-helper.sh and its weekly workflow), the page's own address and storage. Everywhere else (the browser, and
+// Android's app, where the popup comes back) the popup through auth.vitaradar.hu, as before.
+
+// Apps' own browsers (Facebook, Instagram, Messenger, TikTok…): Google signs no one in there ("disallowed_useragent":
+// Android's WebView, and iPhone apps' web views, which leave "Safari/" out of their name, unlike Safari's own views
+// and the home-screen app). The tap tells the reader to open the page in the browser instead (js/account.js).
+const UA = navigator.userAgent;
+export const signInRefused = (/Android/.test(UA) && /; wv\)/.test(UA))
+  || (/iPhone|iPod|iPad/.test(UA) && !/Safari\//.test(UA) && navigator.standalone !== true);
 
 class Resolver extends browserPopupRedirectResolver {
   get _shouldInitProactively() { return false; }

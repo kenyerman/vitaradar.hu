@@ -137,15 +137,41 @@ function escapeUrl(way) {
   return `intent://${u.host}${u.pathname}${u.search}#Intent;scheme=${u.protocol.slice(0, -1)};end`;
 }
 
-// Sends the reader to the browser; resolves true when the page went to the background (the browser came up). Apps ask
-// first ("open in another app?"): an answer after the 1.6 s still counts, the sheet goes then (see below).
+// Sends the reader to the browser; resolves true when the page went to the background (the browser came up), false
+// when it stayed. Apps ask first ("You're leaving our app…"), a native dialog over the page. Where the page loses its
+// focus meanwhile, the answer is waited for (up to 30 s), and the focus coming back with the page still in front means
+// "no" (Go back). Messenger's browser keeps the focus (seen on Android 16), so Meta's apps, which always ask, get 12 s
+// for an answer; the others 4 s for anything to happen. An answer after that still counts: the sheet goes when the page
+// goes to the background (see below).
 let lastTry = 0;
+const PATIENCE = IAB && ["facebook", "messenger", "instagram", "threads"].includes(IAB.id) ? 12000 : 4000;
 function leave() {
   lastTry = Date.now();
   return new Promise((done) => {
-    let gone = false;
-    const hide = () => { if (document.visibilityState === "hidden") gone = true; };
-    document.addEventListener("visibilitychange", hide);
+    const t0 = Date.now();
+    let asked = false, over = false, tick = 0;
+    const finish = (gone) => {
+      if (over) return;
+      over = true;
+      clearInterval(tick);
+      document.removeEventListener("visibilitychange", onShow);
+      removeEventListener("blur", onBlur);
+      removeEventListener("focus", onFocus);
+      done(gone);
+    };
+    const onShow = () => { if (document.visibilityState === "hidden") finish(true); };
+    const onBlur = () => { asked = true; };
+    const onFocus = () => {  // the question went: a yes takes the page to the background in a moment, a no leaves it here
+      if (asked) setTimeout(() => { if (document.visibilityState === "visible") finish(false); }, 1200);
+    };
+    document.addEventListener("visibilitychange", onShow);
+    addEventListener("blur", onBlur);
+    addEventListener("focus", onFocus);
+    tick = setInterval(() => {
+      if (!document.hasFocus()) asked = true;
+      const t = Date.now() - t0;
+      if ((!asked && t > PATIENCE) || t > 30000) finish(false);
+    }, 250);
     const url = escapeUrl(WAY);
     try {
       if (WAY === "open") window.open(url, "_blank");
@@ -157,7 +183,6 @@ function leave() {
         setTimeout(() => f.remove(), 3000);
       } else location.href = url;
     } catch { /* the app refused it: the steps */ }
-    setTimeout(() => { document.removeEventListener("visibilitychange", hide); done(gone); }, 1600);
   });
 }
 
@@ -253,10 +278,12 @@ function arrive() {
   started = Date.now();
   if (IOS) { setTimeout(() => { if (!sheet && offer()) open("steps"); }, 600); return; }
   const t0 = Date.now();
+  // a stored install does not stop it (the app may have been removed since: then the browser offers it again); only
+  // with no offer in 8 s and an install remembered nothing comes
   const look = () => {
-    if (sheet || dismissed || !PHONE.matches || installed()) return;
+    if (sheet || dismissed || !PHONE.matches) return;
     if (bip) open("direct");
-    else if (Date.now() - t0 > 8000) open("android");
+    else if (Date.now() - t0 > 8000) { if (!installed()) open("android"); }
     else setTimeout(look, 300);
   };
   setTimeout(look, 400);

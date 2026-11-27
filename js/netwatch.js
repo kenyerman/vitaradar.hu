@@ -10,7 +10,7 @@
 // the connection, and a stuck one is started anew (js/firebase.js kick).
 
 import { doc, onSnapshot, getDocFromServer } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { db, kick } from "./firebase.js?v=202611270600";
+import { db, kick } from "./firebase.js?v=202611272300";
 import { withTimeout } from "./net.js?v=202611270600";
 
 const GRACE_MS = 12_000;   // on screen this long without the server's answer: the bar
