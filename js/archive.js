@@ -6,10 +6,10 @@
 // calendar), a filter by MP name and by party, and the totals. The parts only the wider screens show are in the cards from the start, hidden on phones (css).
 
 import { collection } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { db, getDocs, el, hms, huDate, initials, watchLiveNav } from "./common.js?v=202611270330";
-import { mountAccount } from "./account.js?v=202611270330";
+import { db, getDocs, el, hms, huDate, initials, watchLiveNav, loadFailed } from "./common.js?v=202611270600";
+import { mountAccount } from "./account.js?v=202611270600";
 import { watchHref } from "./links.js?v=202611241021";
-import { cdnReady, cdnUrl } from "./cdn.js?v=202611270330";
+import { cdnReady, cdnUrl } from "./cdn.js?v=202611270600";
 
 watchLiveNav();
 mountAccount();
@@ -337,4 +337,4 @@ getDocs(collection(db, "archive")).then((snap) => {
   }));
   empty.hidden = all.length > 0;
   if (all.length) sidebar(dayList, sections);
-}).catch((e) => { empty.hidden = false; empty.textContent = "az archívum most nem tölthető be"; console.warn(e); });
+}).catch((e) => { loadFailed(empty, "az archívum most nem tölthető be"); console.warn(e); });
