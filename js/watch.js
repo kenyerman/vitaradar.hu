@@ -13,16 +13,16 @@
 // (js/transcript.js).
 
 import { doc, onSnapshot, collection, query, where } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { db, getDoc, getDocs, el, factBadge, LABEL, sourceList, setPhoto, hms, huDate, mpHref, watchLiveNav, loadFailed } from "./common.js?v=202611272300";
-import { mountAccount } from "./account.js?v=202611280100";
-import { factSocial } from "./social.js?v=202611280100";
+import { db, getDoc, getDocs, el, factBadge, LABEL, sourceList, setPhoto, hms, huDate, mpHref, watchLiveNav, loadFailed } from "./common.js?v=202611281400";
+import { mountAccount } from "./account.js?v=202611281400";
+import { factSocial } from "./social.js?v=202611281400";
 import { addShare, FOCUS, revealFact, liveUrl } from "./share.js?v=202611272100";
 import { watchHref } from "./links.js?v=202611241021";
-import { cdnReady, cdnUrl } from "./cdn.js?v=202611272300";
+import { cdnReady, cdnUrl } from "./cdn.js?v=202611281400";
 import { scrollHint } from "./scrollhint.js?v=202611241021";
 import { setPageMeta } from "./meta.js?v=202611241124";
 import { youtubeMedia } from "./ytplayer.js?v=202611271300";
-import { AI_NOTE, loadTranscript, paragraphs, wordCount } from "./transcript.js?v=202611280500";
+import { AI_NOTE, loadTranscript, paragraphs, wordCount } from "./transcript.js?v=202611281400";
 
 watchLiveNav();
 mountAccount();
