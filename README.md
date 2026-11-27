@@ -95,7 +95,9 @@ Then open http://localhost:8099/.
 
 ## License
 
-- The code in this repository is [MIT](LICENSE).
+- The code in this repository is [MIT](LICENSE), except `__/auth/`.
+- `__/auth/` is Firebase's sign-in helper (Google's code, copied unchanged by `tools/auth-helper.sh`), under the
+  [Firebase terms](https://firebase.google.com/terms/) and the licenses named in its files (Apache-2.0 and others).
 - The fact-check texts, the Vitaradar name and logo, and the video stream: © vitaradar.hu, all rights reserved.
 - The footage is the Hungarian Parliament's (Országgyűlés).
 - The MP portraits in `img/mps/` are the Hungarian Parliament's official photos (parlament.hu), with the
