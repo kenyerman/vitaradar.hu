@@ -315,29 +315,69 @@ function el(tag, cls, html) {
   return e;
 }
 
-// The iPhone steps: where Share is depends on the browser (Safari 26 keeps it under •••, the others in their bar), and
-// Safari 26's Share sheet keeps "Add to Home Screen" behind its ⌄ (View More) button (seen in iOS 26.5).
+// The iPhone steps. Safari 26 (iOS 26) gets the guide: its five taps one by one, each with a small picture of that
+// screen playing in turn (the step it shows lit in the list; with less motion only on a tap), and a green arrow at the
+// bottom right pointing at the real ••• below the sheet. The labels are iOS 26.5's own Hungarian ones (MobileSafari's
+// and the share sheet's strings): ••• → Megosztás → Továbbiak megtekintése (the round ⌄ ending the second row) →
+// Főképernyőhöz adás → Hozzáadás (top right). Older Safari and the other iPhone browsers keep Share in their bar.
 function steps() {
-  const s26 = SAFARI >= 26 && !IOS_OTHER;
+  if (SAFARI >= 26 && !IOS_OTHER) return guide();
   const first = IOS_OTHER
     ? `Koppints a böngésző <b>Megosztás</b> gombjára <i class="is-i">${ICON.share}</i>.`
-    : s26
-      ? `Koppints alul a <b>•••</b> gombra, majd a <b>Megosztás</b> <i class="is-i">${ICON.share}</i> gombra.`
-      : `Koppints alul a <b>Megosztás</b> <i class="is-i">${ICON.share}</i> gombra.`;
-  const more = s26
-    ? `Ha nincs ott, előbb koppints a sor végén a <i class="is-i">${ICON.down}</i> gombra.`
-    : "Ha nem látod, görgess lejjebb.";
-  const tiles = [...(s26 ? [ICON.more] : []), ICON.share, ICON.add]
+    : `Koppints alul a <b>Megosztás</b> <i class="is-i">${ICON.share}</i> gombra.`;
+  const tiles = [ICON.share, ICON.add]
     .map((svg) => `<span class="is-tile">${svg}</span>`).join('<span class="is-arrow">›</span>');
   return `<h2 class="is-title" id="is-view-title" tabindex="-1">Így kerül a főképernyőre</h2>
     <div class="is-pic" aria-hidden="true">${tiles}<span class="is-arrow">›</span><span class="is-tile is-home">${APP_ICON}</span></div>
     <ol class="is-list">
       ${VIEW ? `<li>Ha alul egy Safari <i class="is-i">${ICON.compass}</i> gomb van (egy app böngészője, például a Reddité), előbb arra koppints: a lap megnyílik a Safariban.</li>` : ""}
       <li>${first}</li>
-      <li>Válaszd: <b>Hozzáadás a főképernyőhöz</b> <i class="is-i">${ICON.add}</i>. ${more}</li>
+      <li>Válaszd: <b>Főképernyőhöz adás</b> <i class="is-i">${ICON.add}</i>. Ha nem látod, görgess lejjebb.</li>
       <li>Koppints a <b>Hozzáadás</b> gombra. Az app a főképernyőn vár.</li>
     </ol>
     <button type="button" class="btn is-done" data-act="done">Rendben</button>`;
+}
+
+function guide() {
+  const say = [
+    "Koppints alul jobbra a <b>•••</b> gombra.",
+    `<b>Megosztás</b> <i class="is-i">${ICON.share}</i>`,
+    `A második sor végén: <b>Továbbiak megtekintése</b> <i class="is-i">${ICON.down}</i>`,
+    `<b>Főképernyőhöz adás</b> <i class="is-i">${ICON.add}</i>`,
+    "Jobb fent: <b>Hozzáadás</b>. Kész!",
+  ];
+  return `<h2 class="is-title" id="is-view-title" tabindex="-1">Így kerül a főképernyőre</h2>
+    ${VIEW ? `<p class="is-note">Ha alul egy Safari <i class="is-i">${ICON.compass}</i> gomb van (egy app böngészője, például a Reddité), előbb arra koppints: a lap megnyílik a Safariban.</p>` : ""}
+    <div class="ig">
+      <div class="ig-screen" data-step="1" aria-hidden="true">
+        <div class="ig-f ig-f1"><span class="ig-bar"><span class="ig-c">‹</span><span class="ig-url">vitaradar.hu</span><span class="ig-c ig-hit">•••</span></span></div>
+        <div class="ig-f ig-f2"><span class="ig-pop"><span class="ig-row ig-hit">${ICON.share}<span>Megosztás</span></span><span class="ig-row ig-ghost"></span><span class="ig-row ig-ghost"></span></span><span class="ig-bar"><span class="ig-c">‹</span><span class="ig-url">vitaradar.hu</span><span class="ig-c">•••</span></span></div>
+        <div class="ig-f ig-f3"><span class="ig-sheet"><span class="ig-apps"><i></i><i></i><i></i></span><span class="ig-acts"><i></i><i></i><i></i><i class="ig-hit">${ICON.down}</i></span></span></div>
+        <div class="ig-f ig-f4"><span class="ig-sheet"><span class="ig-row ig-ghost"></span><span class="ig-row ig-ghost"></span><span class="ig-row ig-hit">${ICON.add}<span>Főképernyőhöz adás</span></span></span></div>
+        <div class="ig-f ig-f5"><span class="ig-add"><span class="ig-head"><span class="ig-c">✕</span><span class="ig-ok ig-hit">Hozzáadás</span></span><span class="ig-app">${APP_ICON}<span>vitaradar</span></span></span></div>
+      </div>
+      <ol class="is-list ig-steps">${say.map((x, i) => `<li data-n="${i + 1}">${x}</li>`).join("")}</ol>
+    </div>
+    <button type="button" class="btn is-done" data-act="done">Rendben</button>
+    <span class="ig-point" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M12 3.5v16M5.5 13.5l6.5 6.5 6.5-6.5"/></svg></span>`;
+}
+
+// The guide's pictures, one after the other; a tap on a step shows its picture (and holds it a while).
+let cycle = 0;
+function play() {
+  clearInterval(cycle);
+  const box = sheet && sheet.querySelector(".ig-screen");
+  if (!box) return;
+  const items = [...sheet.querySelectorAll(".ig-steps li")];
+  let n = 1, held = 0;
+  const show = (k) => {
+    n = k;
+    box.dataset.step = String(k);
+    items.forEach((li, i) => li.classList.toggle("is-on", i + 1 === k));
+  };
+  items.forEach((li, i) => li.addEventListener("click", () => { show(i + 1); held = Date.now(); }));
+  show(1);
+  if (!STILL.matches) cycle = setInterval(() => { if (Date.now() - held > 6000) show((n % items.length) + 1); }, 1900);
 }
 
 // Android, once its dialog was used on this page (it comes once per page): Chrome's menu has the install too.
@@ -434,6 +474,7 @@ function open(view, asked = false) {
   d.addEventListener("cancel", (e) => { e.preventDefault(); if (sheet === d) close("dismiss"); });
   d.showModal();
   if (v !== "main") { const t = d.querySelector(".is-title"); if (t) t.focus({ preventScroll: true }); }
+  play();
   since = asked ? 0 : Date.now();
   guard = setInterval(() => { if (gameOpen()) close(asked ? "final" : "game"); }, 1000);  // a game started: it goes
 }
@@ -473,6 +514,7 @@ function swap(view) {
   old.replaceWith(next);
   sheet.dataset.view = view;
   next.querySelector(".is-title").focus({ preventScroll: true });
+  play();
 }
 
 // Android's install dialog (straight from a tap: browsers want that). It comes once per page; after a no the menu's
@@ -529,6 +571,7 @@ function close(why) {
   const d = sheet;
   if (!d || d.dataset.closing != null) return;
   clearInterval(guard);
+  clearInterval(cycle);
   sheet = null;
   if (why !== "game") dismissed = true;
   let done = false;
