@@ -930,11 +930,12 @@ function composerInView() {
 
 // page: "live" (index.html) or "watch" (watch.html)
 // Phones, live and replay pages: the panels pulled up for more room, the video playing on under them, heard and not
-// seen. A drag up on the strip or the tabs, or a tap on the pull button on the line between them, hides the video and
-// the speaker strip: the tabs and the open panel move up to where the video starts (the header and the replay's top
-// row stay), and a line there says the video plays on behind them. A drag down, a tap on that line or the button, or
-// the open panel pulled down from its very top brings them back. The player is never moved in the page (that reloads
-// its iframe and stops it): css takes it out of the flow, in the same place, under the panels. A playback the viewer
+// seen. Two ends: the video shown, or the tabs and the open panel up where the video starts (the header and the
+// replay's top row stay), with a line there saying the video plays on behind them. Dragged (the strip, the tabs, the
+// notice or that line; pulled up, also the open panel pulled down from its very top), the parts follow the finger
+// between the two ends and settle at the nearer one when it lifts, or the one a flick heads for. A tap on the pull
+// button on the line between the strip and the tabs, or on the line, goes to the other end. The player is never moved
+// in the page (that reloads its iframe and stops it): css takes it out of the flow, in the same place, under the panels. A playback the viewer
 // started plays on under them (js/twitch.js); the line says when it has stopped (the players' "vr-playing" events),
 // e.g. a Twitch player rebuilt after an error, which waits for a click while it is covered.
 function pullUp(top, player, remeasure) {
@@ -982,36 +983,126 @@ function pullUp(top, player, remeasure) {
     remeasure();
   };
   label();
-  pull.addEventListener("click", () => set(!isUp()));
-  line.addEventListener("click", () => set(false));
-  PHONE.addEventListener("change", () => { if (!PHONE.matches) set(false); });
 
-  // a vertical drag on the parts under the video (not the video: its iframe has its own touches)
-  let start = null;
-  top.addEventListener("touchstart", (e) => {
-    const t = e.touches[0];
-    start = e.touches.length === 1 && PHONE.matches && e.target.closest?.(".m-strip, .m-tabs, .m-ai, .m-audio")
-      ? { x: t.clientX, y: t.clientY } : null;
-  }, { passive: true });
-  top.addEventListener("touchmove", (e) => {
-    if (!start || document.body.classList.contains("m-typing")) return;
-    const dx = e.touches[0].clientX - start.x, dy = e.touches[0].clientY - start.y;
-    if (Math.abs(dy) < 24 || Math.abs(dy) < Math.abs(dx) * 1.5) return;
-    start = null;
-    set(dy < 0);
-  }, { passive: true });
-  // pulled up: the open panel pulled down from its very top brings the video back (scrolled down, it scrolls as ever)
-  let from = null;
+  // The drag: the parts follow the finger between the two ends and settle at one when it lifts. Drawn on the pulled-up
+  // layout (body.m-pulled.m-drag): the video and the strip stay where they are, under the moving parts (the line, the
+  // tabs, the notice and the open panel), which are moved down by y px with transforms: 0 is pulled up, D the video
+  // shown, each the same picture as its layout, so nothing jumps when a drag starts or ends. The block's clip follows
+  // the parts' foot, so the video never shows over the panel below them; the line fades out towards the video's end.
+  // y is kept to whole screen pixels (a part at a fraction of one showed the video through a hairline at its edges),
+  // and the settle is drawn frame by frame here, the clip with the parts: as css animations the clip ran on another
+  // clock than the transforms on iPhone, and the video or the page showed through between them for a few frames.
+  let drag = null;  // { D, y, parts, raf }
+  const dpr = () => window.devicePixelRatio || 1;
+  const whole = (y) => Math.round(y * dpr()) / dpr();
+  const moving = () => [line, ...[...top.children].filter((c) => c !== player && c !== strip && c !== line
+    && (strip.compareDocumentPosition(c) & Node.DOCUMENT_POSITION_FOLLOWING)),
+    ...panels().filter((p) => p.getClientRects().length)];
+  const paint = (y) => {
+    y = whole(y);
+    drag.y = y;
+    for (const p of drag.parts) p.style.transform = y ? `translateY(${y}px)` : "";
+    line.style.opacity = String(1 - y / drag.D);
+    top.style.clipPath = `inset(0 0 ${-y}px 0)`;
+  };
+  const begin = () => {
+    if (drag) return null;
+    const up = isUp();
+    if (!up) top.style.setProperty("--m-vtop", `${player.offsetTop}px`);
+    const vh = player.offsetHeight;
+    document.body.classList.add("m-pulled", "m-drag");
+    const D = vh + strip.offsetHeight - line.offsetHeight;
+    if (D < 40) { document.body.classList.remove("m-drag"); document.body.classList.toggle("m-pulled", up); return null; }
+    top.style.setProperty("--m-vh", `${vh}px`);
+    drag = { D, y: 0, parts: moving(), raf: 0 };
+    paint(up ? 0 : D);
+    return drag;
+  };
+  const finish = (up) => {
+    const d = drag;
+    if (!d) return;
+    drag = null;
+    cancelAnimationFrame(d.raf);
+    for (const p of d.parts) p.style.transform = "";
+    line.style.opacity = "";
+    top.style.clipPath = "";
+    document.body.classList.remove("m-drag");
+    document.body.classList.toggle("m-pulled", up);
+    label();
+    remeasure();
+  };
+  // to an end, with the rows' easing; from the finger's place, or from the other end for a tap
+  const settle = (up) => {
+    const d = drag;
+    if (!d) return;
+    const to = up ? 0 : d.D;
+    if (calm.matches || Math.abs(to - d.y) < 1) { finish(up); return; }
+    const from = d.y, duration = Math.round(180 + 160 * Math.abs(to - from) / d.D);
+    const t0 = performance.now();
+    const step = (now) => {
+      if (drag !== d) return;
+      const k = Math.min(1, Math.max(0, (now - t0) / duration));
+      paint(from + (to - from) * (1 - (1 - k) ** 5));  // the rows' easing, cubic-bezier(.22, 1, .36, 1) ("ease out quint")
+      if (k < 1) d.raf = requestAnimationFrame(step);
+      else finish(up);
+    };
+    d.raf = requestAnimationFrame(step);
+    setTimeout(() => { if (drag === d) finish(up); }, duration + 150);  // a page in the background draws no frames
+  };
+  const toggle = (up) => {
+    if (drag || up === isUp() || (up && !PHONE.matches)) return;
+    if (begin()) settle(up); else set(up);
+  };
+  pull.addEventListener("click", () => toggle(!isUp()));
+  line.addEventListener("click", () => toggle(false));
+  PHONE.addEventListener("change", () => { if (!PHONE.matches) { finish(false); set(false); } });
+
+  // What a drag starts from: the parts under the video (not the video: its iframe has its own touches), in either
+  // direction; pulled up, also the open panel pulled down from its very top (scrolled down, or pushed up, it scrolls
+  // as ever). A tap (no move) leaves the buttons their clicks.
+  let touch = null;  // { y, x, from: "top" | box, live, y0, track }
   addEventListener("touchstart", (e) => {
-    const box = isUp() && e.touches.length === 1
-      && e.target.closest?.("main > .below, .m-chat-slot .chat-list, main > .m-game-slot");
-    from = box && box.scrollTop <= 0 ? { box, y: e.touches[0].clientY } : null;
+    touch = null;
+    if (drag || e.touches.length !== 1 || !PHONE.matches || document.body.classList.contains("m-typing")) return;
+    const t = e.touches[0];
+    let from = e.target.closest?.(".m-top > :is(.m-strip, .m-tabs, .m-ai, .m-audio)") && top.contains(e.target) ? "top" : null;
+    if (!from && isUp()) {
+      const box = e.target.closest?.("main > .below, .m-chat-slot .chat-list, main > .m-game-slot");
+      if (box && box.scrollTop <= 0) from = box;
+    }
+    if (from) touch = { x: t.clientX, y: t.clientY, from, live: false, y0: 0, track: [] };
   }, { passive: true });
   addEventListener("touchmove", (e) => {
-    if (!from) return;
-    if (from.box.scrollTop > 0) { from = null; return; }
-    if (e.touches[0].clientY - from.y > 70) { from = null; set(false); }
-  }, { passive: true });
+    if (!touch) return;
+    const t = e.touches[0], dx = t.clientX - touch.x, dy = t.clientY - touch.y;
+    if (!touch.live) {
+      if (touch.from !== "top" && (touch.from.scrollTop > 0 || dy < -4)) { touch = null; return; }  // a scroll
+      if (Math.abs(dy) < 8 || Math.abs(dy) < Math.abs(dx) * 1.2) { if (Math.abs(dx) > 16) touch = null; return; }
+      if (touch.from !== "top" && dy < 0) return;
+      if (!begin()) { touch = null; return; }
+      touch.live = true;
+      touch.y0 = drag.y;
+      touch.y = t.clientY;  // it follows from here: no jump by the distance it took to tell a drag
+    }
+    if (e.cancelable) e.preventDefault();  // the panel under the finger does not scroll (or bounce) meanwhile
+    paint(Math.min(drag.D, Math.max(0, touch.y0 + t.clientY - touch.y)));
+    touch.track.push([e.timeStamp, drag.y]);
+    if (touch.track.length > 6) touch.track.shift();
+  }, { passive: false });
+  const lift = (e) => {
+    const t = touch;
+    touch = null;
+    if (!t || !t.live || !drag) return;
+    // a flick decides by its way; a slow drag by the nearer end
+    const last = t.track[t.track.length - 1];
+    const recent = t.track.filter(([ts]) => ts >= last[0] - 100);
+    const [t0, y0] = recent[0], [t1, y1] = recent[recent.length - 1];
+    // px per ms, down positive; none when the finger had stopped before it lifted
+    const v = t1 > t0 && e.timeStamp - last[0] < 80 ? (y1 - y0) / (t1 - t0) : 0;
+    settle(Math.abs(v) > 0.35 ? v < 0 : drag.y < drag.D / 2);
+  };
+  addEventListener("touchend", lift, { passive: true });
+  addEventListener("touchcancel", lift, { passive: true });
 }
 
 function mountApp(page) {
