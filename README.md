@@ -89,7 +89,7 @@ parliament's stream ──► fact-check pipeline (GPU VM) ──► HLS video p
 ## Issues
 
 Bugs, wrong verdicts and ideas: [open an issue](https://github.com/kenyerman/vitaradar.hu/issues/new/choose), with a
-form for each. A wrong fact check also has a flag on its card on the site, which opens the
+form for each. Write in English; only fact-check reports are accepted in Hungarian. A wrong fact check also has a flag on its card on the site, which opens the
 [fact-correction form](https://github.com/kenyerman/vitaradar.hu/issues/new?template=fact-correction.yml) filled in
 (`js/share.js`). The tracker is public and linked from every page's footer and the impresszum; for anything private,
 write to help@vitaradar.hu, and for security problems see [SECURITY.md](.github/SECURITY.md). Pull requests:

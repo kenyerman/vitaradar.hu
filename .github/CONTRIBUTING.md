@@ -4,15 +4,21 @@ Thanks for helping! This repository is the website of [vitaradar.hu](https://vit
 JavaScript on GitHub Pages, with no build step. The fact-check pipeline and the backend are in a private repository,
 so verdicts can't be changed here by a pull request; report them instead (below).
 
-You can write issues and pull requests in English or Hungarian (magyarul is írhatsz).
+## Language
+
+English is this repository's language: write bug reports, suggestions, pull requests, commit messages and reviews in
+English. The one exception is fact checking: a report about a wrong verdict, speaker, quote or time may be written in
+Hungarian, and its form is in Hungarian. Other issues written in Hungarian may be closed with a request to reopen them
+in English.
 
 ## Reporting
 
-- **A wrong fact check** (verdict, speaker, quote or time): use the flag on the fact's card on the site, which fills in
-  the [Tényellenőrzés helyesbítése](https://github.com/kenyerman/vitaradar.hu/issues/new?template=fact-correction.yml)
+- **A wrong fact check** (verdict, speaker, quote or time), in Hungarian or English: use the flag on the fact's card
+  on the site, which fills in the
+  [Tényellenőrzés helyesbítése](https://github.com/kenyerman/vitaradar.hu/issues/new?template=fact-correction.yml)
   form for you. Please add sources.
-- **Something broken:** [bug report](https://github.com/kenyerman/vitaradar.hu/issues/new?template=bug-report.yml).
-- **An idea:** [suggestion](https://github.com/kenyerman/vitaradar.hu/issues/new?template=suggestion.yml).
+- **Something broken**, in English: [bug report](https://github.com/kenyerman/vitaradar.hu/issues/new?template=bug-report.yml).
+- **An idea**, in English: [suggestion](https://github.com/kenyerman/vitaradar.hu/issues/new?template=suggestion.yml).
 - **A security problem:** don't open an issue; see [SECURITY.md](SECURITY.md).
 - **Anything private** (your account, your data): e-mail help@vitaradar.hu.
 
@@ -39,7 +45,8 @@ Issues are public. Leave out personal data you don't want to share.
   `master`, in every page and module that names it, and give those modules new keys too. One module has one key
   everywhere.
 - **Offline page.** If you change `offline.html`, raise `VERSION` in `sw.js`.
-- **Language.** Visible text is Hungarian. Ids, classes, query parameters, storage keys and code comments are English.
+- **Site text.** Text visitors see on the site is Hungarian. Ids, classes, query parameters, storage keys and code
+  comments are English.
 - **Safety.** Put user text on the page as text (`textContent`), never as HTML.
 - **Privacy.** No new trackers, cookies, local storage or third-party scripts without an issue first: the impresszum
   lists everything the site stores.

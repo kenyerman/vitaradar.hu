@@ -1,12 +1,12 @@
 name: Suggestion
-description: An idea for a new feature or an improvement.
+description: An idea for a new feature or an improvement. In English, please.
 title: "Suggestion: "
 labels: ["suggestion"]
 body:
   - type: markdown
     attributes:
       value: |
-        Thanks for the idea! You can write in English or Hungarian. Suggestions are public.
+        Thanks for the idea! Please write in English: only fact-check reports are accepted in Hungarian. Suggestions are public.
   - type: textarea
     id: idea
     attributes:

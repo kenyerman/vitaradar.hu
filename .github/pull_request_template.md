@@ -1,3 +1,5 @@
+<!-- Please write in English. -->
+
 ## What and why
 
 <!-- What changes, and the issue it closes. -->

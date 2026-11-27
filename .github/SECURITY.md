@@ -2,8 +2,8 @@
 
 ## Reporting a vulnerability
 
-Please don't report security problems in public issues. E-mail **help@vitaradar.hu** with "Security" in the subject,
-and include:
+Please don't report security problems in public issues. E-mail **help@vitaradar.hu** in English with "Security" in
+the subject, and include:
 
 - what the problem is and where (page, address, request);
 - how to reproduce it;

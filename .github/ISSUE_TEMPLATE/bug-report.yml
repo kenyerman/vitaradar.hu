@@ -1,14 +1,14 @@
 name: Bug report
-description: Something on vitaradar.hu doesn't work or looks broken.
+description: Something on vitaradar.hu doesn't work or looks broken. In English, please.
 title: "Bug: "
 labels: ["bug"]
 body:
   - type: markdown
     attributes:
       value: |
-        Thanks for reporting! You can write in English or Hungarian.
+        Thanks for reporting! Please write in English.
 
-        A wrong fact check (verdict, speaker, quote or time) has its own form: [Tényellenőrzés helyesbítése](https://github.com/kenyerman/vitaradar.hu/issues/new?template=fact-correction.yml).
+        Only fact-check reports are accepted in Hungarian: a wrong verdict, speaker, quote or time has its own form, [Tényellenőrzés helyesbítése](https://github.com/kenyerman/vitaradar.hu/issues/new?template=fact-correction.yml).
 
         Reports are public, so please leave out personal data.
   - type: textarea

@@ -17,6 +17,8 @@ body:
 
         A bejelentés **nyilvános**, ezért ne írj bele olyan személyes adatot, amelyet nem szeretnél megosztani. Ha nincs GitHub-fiókod, vagy nem nyilvános ügyről van szó, írj a help@vitaradar.hu címre.
 
+        Ez az egyetlen űrlap, amelyet magyarul is kitölthetsz (angolul is lehet). Az oldal hibáit és az ötleteket angolul kérjük.
+
         Ha az állítás kártyájáról jöttél, az első mezőket már kitöltöttük.
   - type: input
     id: fact_link
