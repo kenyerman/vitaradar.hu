@@ -182,7 +182,7 @@
           <li><b>Visszanézés (YouTube).</b> A korábbi ülések felvételét a YouTube lejátszója mutatja (youtube-nocookie.com). A YouTube a lejátszás indításakor a saját sütijeit és tárolóját használhatja. Lásd a <a href="https://policies.google.com/privacy?hl=hu" target="_blank" rel="noopener">Google adatvédelmi irányelveit</a>.</li>
           <li><b>Videó.</b> Ha a videó a cdn.vitaradar.hu-ról jön (archívum, támogatói lejátszás), egy aláírt süti (<code>Cloud-CDN-Cookie</code>, a lejárata a <code>vr-cdn-exp</code>-ben) engedi letölteni. Egy órán belül lejár, és az oldal megújítja.</li>
           <li><b>A Firebase működése.</b> A Firebase programkönyvtára feljegyzi, mely napokon használták az oldalon (<code>firebase-heartbeat-database</code>). Azonosítót nem tartalmaz.</li>
-          <li><b>A döntéseid.</b> A <code>vr-consent</code> a sütikről hozott döntésedet őrzi. A <code>vitaradar.leave-ok</code> csak akkor jön létre, ha egy külső linknél bejelölöd, hogy ne kérdezzünk rá többet. Az élő adás melletti chat alapból csukva van; a <code>vr-chat</code> azt jegyzi meg, ha kinyitod vagy becsukod. Telefonon a <code>vr-install</code> azt jegyzi meg, ha ebből a böngészőből telepítetted az appot, hogy ne ajánljuk újra.</li>
+          <li><b>A döntéseid.</b> A <code>vr-consent</code> a sütikről hozott döntésedet őrzi. A <code>vitaradar.leave-ok</code> csak akkor jön létre, ha egy külső linknél bejelölöd, hogy ne kérdezzünk rá többet. Az élő adás melletti chat alapból csukva van; a <code>vr-chat</code> azt jegyzi meg, ha kinyitod vagy becsukod. Telefonon a <code>vr-install</code> azt jegyzi meg, ha az app ajánlatánál a böngészőt választod (akkor magától többé nem jön elő, csak a menü „App telepítése” pontjából), vagy ha ebből a böngészőből telepítetted az appot.</li>
           <li><b>Offline oldal.</b> Az oldal egy service workert (<code>sw.js</code>) regisztrál a böngésződben. Ez a böngésző gyorsítótárában (<code>vr-offline-…</code>) egyetlen „nincs internetkapcsolat” oldalt tárol, és csak akkor mutatja, ha egy oldal internet nélkül nem töltődik be. Mást nem tárol, és nem küld adatot.</li>
         </ul>
         <p><b>Csak ha engeded:</b> <code>vr-presence-id</code>, egy véletlen azonosító, amitől a fejléc „N online” számlálója akkor is egyszer számol, ha több oldalt vagy lapot nyitsz meg. Ha nem engeded, az azonosító csak a megnyitott oldal memóriájában él, és nem tároljuk.</p>
@@ -233,6 +233,6 @@
   </footer>
   <script type="module" src="js/impresszum.js?v=202611270600"></script>
   <script type="module" src="js/shell.js?v=202611271300"></script>
-  <script type="module" src="js/pwa.js?v=202611271400"></script>  <!-- the app: offline page, install sheet on phones -->
+  <script type="module" src="js/pwa.js?v=202611271600"></script>  <!-- the app: offline page, install sheet on phones -->
 </body>
 </html>

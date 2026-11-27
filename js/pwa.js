@@ -5,10 +5,12 @@
 // page and file still comes from the network as before; sw.js says what it leaves alone and how it updates.
 //
 // The app is offered on phones in a browser tab (never in the installed app), in two places:
-// - The install sheet from the bottom, on every page load: Böngésző – Folytatás (closes it), vitaradar – Telepítés.
-//   Once closed it stays closed on that page; the next page or a reload brings it back. Only an install is remembered
-//   (vr-install in localStorage), and then it never comes again.
-// - "App telepítése" in the phone menu, any time. Not in the header: the bar keeps the name, the heart and ☰.
+// - The install sheet from the bottom ("Az appban jobb"), on every page load: Böngésző – Folytatás, vitaradar –
+//   Telepítés. Folytatás (or "Maradok itt" in an app's browser) is remembered (vr-install in localStorage): from then
+//   on it never comes by itself, only from the menu. Closed any other way (beside it, Escape, the steps' Rendben) it
+//   stays closed on that page only. An install is remembered too, and then nothing is offered.
+// - "App telepítése" in the phone menu, any time: it brings the sheet back. Not in the header: the bar keeps the
+//   name, the heart and ☰.
 // Where the reader is decides what Telepítés does:
 // - Android (Chrome, Samsung Internet, Edge): the browser's own install dialog (beforeinstallprompt). Without that event
 //   (another browser, or the app is installed already) nothing is offered; once the dialog was used on a page, the
@@ -40,7 +42,7 @@ const APP = matchMedia("(display-mode: standalone), (display-mode: fullscreen), 
 const STILL = matchMedia("(prefers-reduced-motion: reduce)");
 const FIELD = "input:not([type=checkbox], [type=radio], [type=button], [type=submit], [type=range]), textarea, select, [contenteditable=true]";
 
-const KEY = "vr-install";  // {"v":1,"choice":"installed","at":<ms>}: the app was installed from this browser
+const KEY = "vr-install";  // {"v":1,"choice":"browser"|"installed","at":<ms>}: stays in the browser / installed
 const MARK = "install";  // ?install: sent here from an app's browser to install
 const FIRST_WAIT = 1500;   // after the page is in: its opening has played
 const RETRY = 2000;        // not calm yet: look again
@@ -169,16 +171,19 @@ document.addEventListener("visibilitychange", () => {
 let bip = null;     // Android's install dialog, kept for Telepítés (beforeinstallprompt)
 let seen = false;   // it came on this page (the app can be installed here), even if it was used since
 
-function installed() {
+function choice() {
   try {
     const s = JSON.parse(localStorage.getItem(KEY) || "null");
-    if (s && s.choice !== "installed") localStorage.removeItem(KEY);  // an earlier version's "not now": not kept now
-    return Boolean(s && s.v === 1 && s.choice === "installed");
-  } catch { return false; }
+    if (s && s.v === 1 && (s.choice === "browser" || s.choice === "installed")) return s.choice;
+    if (s) localStorage.removeItem(KEY);  // an earlier version's "steps": not kept now
+  } catch { /* no storage: nothing remembered */ }
+  return null;
 }
+const installed = () => choice() === "installed";
+const stays = () => choice() === "browser";  // chose the browser: the sheet only from the menu
 
-function remember() {
-  try { localStorage.setItem(KEY, JSON.stringify({ v: 1, choice: "installed", at: Date.now() })); } catch { /* fine */ }
+function remember(c) {
+  try { localStorage.setItem(KEY, JSON.stringify({ v: 1, choice: c, at: Date.now() })); } catch { /* fine */ }
 }
 
 // "inapp", "ios" (the steps), "prompt" (Android's dialog), "android" (Chrome's menu), or null: nothing to offer
@@ -194,10 +199,10 @@ addEventListener("beforeinstallprompt", (e) => {
   e.preventDefault();  // not the browser's own bar as well: the sheet and the menu's item ask
   bip = e;
   seen = true;
-  try { localStorage.removeItem(KEY); } catch { /* the browser offers it: the app is not installed (any more) */ }
+  if (installed()) try { localStorage.removeItem(KEY); } catch { /* the browser offers it: not installed (any more) */ }
   sync();
 });
-addEventListener("appinstalled", () => { remember(); bip = null; sync(); if (sheet) close("final"); });
+addEventListener("appinstalled", () => { remember("installed"); bip = null; sync(); if (sheet) close("final"); });
 
 // ------------------------------------------------------------------ when the sheet comes
 let sheet = null, dismissed = false, timer = 0, since = 0, lastTouch = 0, started = 0;
@@ -223,7 +228,7 @@ function calm() {
 function later(ms) {
   clearTimeout(timer);
   timer = setTimeout(() => {
-    if (sheet || dismissed) return;
+    if (sheet || dismissed || stays()) return;
     const o = offer();
     if (!o) {  // Android: the install dialog may still come (for three minutes)
       if (ANDROID && !IAB && Date.now() - started < 180000) later(RETRY);
@@ -279,19 +284,15 @@ function sync() {
   if (item) item.hidden = !offer();
 }
 
+// The menu's "App telepítése": the sheet again, the same as on page load (Android after its dialog was used: Chrome's
+// menu steps). Without <dialog> support straight to what Telepítés does.
 function go() {
   const o = offer();
   if (!o) return;
-  if (o === "prompt") { ask(); return; }  // the browser's own dialog, straight from the tap
-  if (!DIALOG) { if (o === "inapp" && WAY) leave(); return; }
+  if (!DIALOG) { if (o === "prompt") ask(); else if (o === "inapp" && WAY) leave(); return; }
   if (sheet) close("final");
   clearTimeout(timer);
-  if (o === "inapp") {  // straight to the browser; the app's menu steps only when it does not come
-    if (!WAY) { open("out", true); return; }
-    leave().then((gone) => { if (!gone && !sheet) open("out", true); });
-    return;
-  }
-  open(o === "ios" ? "steps" : o, true);
+  open(o, true);
 }
 
 // ------------------------------------------------------------------ the sheet
@@ -443,7 +444,8 @@ function onClick(e) {
   const b = e.target instanceof Element ? e.target.closest("button[data-act]") : null;
   if (!b || Date.now() - since < 500) return;  // a tap meant for the page, landing as it came up
   const act = b.dataset.act;
-  if (act === "browser" || act === "done") close("dismiss");
+  if (act === "browser") { remember("browser"); close("dismiss"); }  // Folytatás, Maradok itt: not by itself again
+  else if (act === "done") close("dismiss");
   else if (act === "install") install();
   else if (act === "leave") away();
   else if (act === "copy") copy(b);
@@ -485,7 +487,7 @@ function ask() {
   dismissed = true;
   sync();
   Promise.resolve(asked).then(() => p.userChoice)
-    .then((r) => { if (r && r.outcome === "accepted") { remember(); sync(); } })
+    .then((r) => { if (r && r.outcome === "accepted") { remember("installed"); sync(); } })
     .catch(() => { /* asked: nothing to keep */ });
 }
 
