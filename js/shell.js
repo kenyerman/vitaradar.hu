@@ -114,11 +114,13 @@ function headerHeight() {
 
 // Loading (css: the strip under the header and the grey blocks): until the page's data is in. It comes from
 // Firestore after the scripts ran: the pages with a list are ready once its first entry is there (Archívum and
-// Képviselők also once they say there is nothing); the others once the page starts changing and then stays still for
-// a moment. At most a few seconds, and at once on a page that has nothing to fetch. Archívum and Képviselők wait
-// longer: their data waits for the server (js/firebase.js getDocs), and an empty page looked like "nothing here".
+// Képviselők also once they say there is nothing), the profile once its head (or why there is none) is drawn; the
+// others once the page starts changing and then stays still for a moment. At most a few seconds, and at once on a page
+// that has nothing to fetch. Archívum and Képviselők wait longer: their data waits for the server (js/firebase.js
+// getDocs), and an empty page looked like "nothing here".
 const READY = { "": "#facts > li", "index.html": "#facts > li", "watch.html": "#facts > li",
-  "archive.html": "#days > *, #arch-empty:not([hidden])", "mps.html": "#mps > li, #mps-empty:not([hidden])" };
+  "archive.html": "#days > *, #arch-empty:not([hidden])", "mps.html": "#mps > li, #mps-empty:not([hidden])",
+  "profile.html": "#prof .prof-nick, #prof .prof-gate" };  // the profile's head, or why there is none
 const PATIENT = new Set(["archive.html", "mps.html"]);
 
 function loading() {
