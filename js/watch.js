@@ -22,7 +22,7 @@ import { cdnReady, cdnUrl } from "./cdn.js?v=202611272300";
 import { scrollHint } from "./scrollhint.js?v=202611241021";
 import { setPageMeta } from "./meta.js?v=202611241124";
 import { youtubeMedia } from "./ytplayer.js?v=202611271300";
-import { AI_NOTE, loadTranscript, paragraphs, wordCount } from "./transcript.js?v=202611280300";
+import { AI_NOTE, loadTranscript, paragraphs, wordCount } from "./transcript.js?v=202611280500";
 
 watchLiveNav();
 mountAccount();
