@@ -4,24 +4,18 @@
 // stream's newest piece. So a fact must not appear when the server publishes it (that can be a minute early) but
 // when this viewer's video reaches the moment the speaker said it. The server times everything on the stream's own
 // clock (EXT-X-PROGRAM-DATE-TIME in the playlist), and the page compares that with the date of the frame on screen.
+// The video is Twitch's player (twitch.tv/vitaradar), which hides that date: js/twitch.js estimates it.
 
 import { doc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { defaultStream } from "./config.js?v=202611241021";
 import { db, el, factBadge, LABEL, sourceList, setPhoto, mpHref, setLiveNav, loadFailed } from "./common.js?v=202611270600";
 import { mountAccount } from "./account.js?v=202611270600";
 import { factSocial } from "./social.js?v=202611270600";
 import { mountChat } from "./chat.js?v=202611270600";
 import { scrollHint } from "./scrollhint.js?v=202611241021";
 import { mountGame } from "./game.js?v=202611270600";
-import { cdnReady, cdnUrl, cdnXhr } from "./cdn.js?v=202611270600";
-import { useTwitch, mountTwitch, twitchNow } from "./twitch.js?v=202611271300";
-import { loadScript } from "./net.js?v=202611270600";
-
-const TWITCH = useTwitch();  // the stream from twitch.tv/vitaradar; ?player=cdn: our own CDN (supporters)
-if (!TWITCH) cdnReady();  // the stream is on cdn.vitaradar.hu, which needs its cookie: get it before the player asks
+import { mountTwitch, twitchNow } from "./twitch.js?v=202611271700";
 
 const $ = (id) => document.getElementById(id);
-const video = $("video");
 const els = {
   facts: $("facts"), empty: $("facts-empty"), count: $("fact-count"), note: $("player-note"),
   speaker: $("speaker"), img: $("speaker-img"),
@@ -36,33 +30,30 @@ mountChat($("stage"));
 scrollHint(document.querySelector(".below"), document.querySelector(".player"));  // the facts, when the full-width player hides them
 const game = mountGame({ now: streamNow });  // challenges and speech tips
 
-let live = { session: null, active: false, url: null };
+let live = { session: null, active: false, player: false };  // player: Twitch's player is in the page
 let claims = new Map();  // id -> fact document
 let turns = [];          // speaker turns, by start_at
 let unsub = [];
-let hls = null;
-let failed = false;  // the stream could not be loaded (not live yet, or not reachable)
 
 // ------------------------------------------------------------------ live feed (Firestore)
 onSnapshot(doc(db, "live", "current"), (snap) => {
   // Not the server's answer and nothing known yet (Firestore gave up waiting, js/netwatch.js says so): that is not
   // "no broadcast", so the page keeps waiting instead of saying there is none.
-  if (snap.metadata.fromCache && !snap.exists()) { if (!live.url) note("kapcsolódás a szerverhez…"); return; }
+  if (snap.metadata.fromCache && !snap.exists()) { if (!live.player) note("kapcsolódás a szerverhez…"); return; }
   const d = snap.data() || {};
   live.active = Boolean(d.active);
   setLiveNav(live.active);  // the header's "Élő adás" link (it stays plain until this first answer)
   if (d.session && d.session !== live.session) follow(d.session);
-  const url = d.hls_url || defaultStream;
-  // Nothing on air: the bucket still holds the last broadcast's playlist, which must not play as if it were live.
-  // A viewer who was watching when the broadcast ended keeps playing its last minute (the delay) to the end.
+  // Nothing on air: the page says so, and Twitch's player comes with the next broadcast. A viewer who was watching
+  // when the broadcast ended keeps the player, which plays its last minute (the delay) to the end.
   if (!live.active) {
-    if (!live.url) note("most nincs élő adás");
+    if (!live.player) note("most nincs élő adás");
     return;
   }
-  if (url !== live.url || failed) loadStream(url);  // a new stream, or the broadcast (re)started
+  if (!live.player) showPlayer();
 }, (err) => {  // refused (App Check, the rules): the page gets nothing more; js/netwatch.js offers Újrapróbálás
   console.warn("live feed:", err);
-  if (!live.url) note("nincs kapcsolat a szerverrel");
+  if (!live.player) note("nincs kapcsolat a szerverrel");
 });
 
 function follow(session) {
@@ -88,70 +79,22 @@ function follow(session) {
 }
 
 // ------------------------------------------------------------------ video
-// hls.js (about 100 KB) plays the stream where the browser can't; it loads only once there is a broadcast to play.
-const HLS_JS = "https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js";
-let hlsLib = null;
-function loadHls() {
-  if (window.Hls) return Promise.resolve(window.Hls);
-  return hlsLib ||= loadScript(HLS_JS).then(() => window.Hls || null,
-    (e) => { console.warn(e); hlsLib = null; return null; });  // Safari can still play it itself
-}
-let loads = 0;
-
-async function loadStream(url) {
-  live.url = url;
-  failed = false;
-  if (TWITCH) {  // Twitch shows its own offline screen; the player stays once it is there
-    video.hidden = true;
-    note(null);
-    mountTwitch(video.parentElement).catch((e) => { console.warn(e); loadFailed(els.note, "a Twitch lejátszó nem töltődött be"); });
-    return;
-  }
-  if (hls) { hls.destroy(); hls = null; }
-  note("várakozás az adásra…");
-  const load = ++loads;
-  const [Hls] = await Promise.all([loadHls(), cdnReady()]);  // the CDN serves the stream only with its cookie
-  if (load !== loads) return;  // a newer stream came in meanwhile
-  if (Hls && Hls.isSupported()) {
-    hls = new Hls({ liveSyncDurationCount: 3, manifestLoadingMaxRetry: 6, levelLoadingMaxRetry: 6, xhrSetup: cdnXhr });
-    hls.loadSource(cdnUrl(url));
-    hls.attachMedia(video);
-    hls.on(Hls.Events.MANIFEST_PARSED, () => { note(null); video.play().catch(() => {}); });
-    hls.on(Hls.Events.ERROR, (_, e) => {
-      if (!e.fatal) return;
-      if (e.type === Hls.ErrorTypes.MEDIA_ERROR) { hls.recoverMediaError(); return; }
-      failed = true;
-      note(live.active ? "az adás pillanatnyilag nem érhető el, újrapróbálkozás…" : "most nincs élő adás");
-      // retry only while a broadcast runs; otherwise the live feed reloads the stream when one starts
-      setTimeout(() => { if (live.url === url && live.active && failed) loadStream(url); }, 8000);
-    });
-  } else if (video.canPlayType("application/vnd.apple.mpegurl")) {  // Safari plays HLS itself
-    video.src = cdnUrl(url);
-    video.addEventListener("loadedmetadata", () => { note(null); video.play().catch(() => {}); }, { once: true });
-    video.addEventListener("error", () => {
-      failed = true;
-      note(live.active ? "az adás pillanatnyilag nem érhető el" : "most nincs élő adás");
-    }, { once: true });
-  } else {
-    note("ez a böngésző nem tudja lejátszani az adást");
-  }
+// Twitch's player, once there is a broadcast; it stays once it is there (Twitch shows its own offline screen).
+function showPlayer() {
+  live.player = true;
+  note(null);
+  mountTwitch(document.querySelector("#stage .player"))
+    .catch((e) => { console.warn(e); loadFailed(els.note, "a Twitch lejátszó nem töltődött be"); });
 }
 
 function note(text) {
   els.note.hidden = !text;
   if (text) els.note.textContent = text;
-  video.controls = !text;  // nothing to play while the note says why (iOS would draw its play button over the note)
 }
 
 // The date (ms) of the frame on screen, on the stream's clock; null when it is unknown.
 function streamNow() {
-  if (TWITCH) return twitchNow();
-  if (hls && hls.playingDate) return hls.playingDate.getTime();
-  if (typeof video.getStartDate === "function") {  // Safari's own HLS player
-    const start = video.getStartDate().getTime();
-    if (start > 0) return start + video.currentTime * 1000;
-  }
-  return null;
+  return twitchNow();
 }
 
 // ------------------------------------------------------------------ rendering
