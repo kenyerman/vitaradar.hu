@@ -219,8 +219,9 @@ main.wrap { padding-top: 32px; padding-bottom: 56px; }  /* main.wrap: beats .wra
 .c-fallacy { color: var(--fallacy); text-shadow: 0 0 8px rgba(199, 125, 255, .45); }
 
 /* a verdict bar: true | partly true | misleading | false | opinion | promise | unverifiable | fallacy (js/archive.js,
-   js/mps.js, js/mp.js) */
-.bar { display: flex; height: 8px; background: rgba(0, 255, 65, .06); border: 1px solid var(--line-dim); }
+   js/mps.js, js/mp.js). One weight on every page and width: a solid 2px line, no outline (the places below set only
+   where it sits) */
+.bar { display: flex; height: 2px; background: rgba(61, 240, 130, .1); border: 0; }
 .bar span { display: block; height: 100%; }
 .bar .b-true { background: var(--true); } .bar .b-unverifiable { background: var(--unverifiable); }
 .bar .b-false { background: var(--false); } .bar .b-fallacy { background: var(--fallacy); }
@@ -411,20 +412,10 @@ details[open] > summary .lvl-title::before { content: "▾ "; }
   .fact-d > summary .verdict { flex: 0 1 auto; min-width: 0; white-space: normal; line-height: 1.4; }  /* long badges wrap */
 }
 
-/* footer */
-.site-footer { border-top: 1px solid var(--line); padding: 20px 0 26px; font-size: 12px; background: rgba(0, 0, 0, .82); }
-.footer-row { display: grid; gap: 4px; }
+/* footer (wider screens only: phones have it in the menu). Its look is with the other pages' desktop rules below. */
+.site-footer { border-top: 1px solid var(--line); padding: 34px 0 0; font-size: 12px; background: rgba(0, 0, 0, .82); }
 .footer-row p { margin: 0; }
-.footer-row p:first-child { color: var(--green); }
-.footer-links {
-  display: grid; grid-template-columns: repeat(4, max-content); gap: 14px 56px;
-  padding-bottom: 16px; margin-bottom: 14px; border-bottom: 1px solid var(--line-dim);
-}
-.footer-links ul { list-style: none; margin: 0; padding: 0; }
-.footer-links li a { display: inline-block; padding: 3px 0; color: var(--text); }  /* a 24px-tall target */
-.footer-links li a:hover, .footer-links li a:focus-visible { color: var(--green); }
 .footer-h { margin: 0 0 4px; color: var(--green); letter-spacing: .5px; }
-@media (max-width: 700px) { .footer-links { grid-template-columns: 1fr 1fr; gap: 16px 24px; } }  /* four columns need ~630px */
 
 /* impresszum */
 .imp { display: grid; gap: 18px; max-width: 900px; }
@@ -1949,9 +1940,107 @@ body.m-watch[data-m-tab="speakers"] .m-ai #show-all { visibility: hidden; }
 .arch-body { display: flex; flex-direction: column; gap: 4px; min-width: 0; padding: 0; }
 .arch-body h3 { margin: 0; font-size: 13px; }
 .arch-who { margin: 0; font-size: 11.5px; }
-.arch-body .bar { height: 3px; margin: 2px 0 0; }
+.arch-body .bar { margin: 2px 0 0; }
 .arch-body .mp-stats { display: none; }
 .arch-body .empty { margin: 0; font-size: 11.5px; }
+/* what only the wider screens show (below), and the wrappers around a row's parts: no boxes on phones */
+.arch-layout, .arch-list, .arch-when, .arch-people, .arch-verdicts { display: contents; }
+.arch-side, .arch-wd, .arch-claims, .arch-dur, .arch-faces, .arch-n, .arch-mini { display: none; }
+.arch-day[hidden], .arch-grid > li[hidden] { display: none; }  /* the filter's (wider screens) */
+
+/* ------------------------------------------------------------------ the archive on wider screens
+   A sidebar beside the days: the month's calendar (each sitting day with its verdicts' bar; a click goes to the day),
+   a filter by MP name and by party, the totals. Each run a row in columns: the picture, the time and length, the
+   speakers' photos (the party's colour under each) and names, the claims, the bar with true / false / fallacy. */
+@media (min-width: 861px) {
+  .arch-layout { display: grid; grid-template-columns: 272px minmax(0, 1fr); align-items: start; gap: 0 36px; margin-top: 22px; }
+  .arch-list { display: block; min-width: 0; }
+  .arch-side:not([hidden]) { position: sticky; top: calc(var(--m-hdr, 57px) + 20px); display: grid; gap: 18px; }
+  /* taller than the window (a laptop's 768px, the filter's chips): it scrolls by itself, so its foot is in reach
+     before the list ends */
+  .arch-side:not([hidden]) { max-height: calc(100vh - var(--m-hdr, 57px) - 40px); overflow-y: auto; overscroll-behavior: contain;
+    scrollbar-width: thin; }
+  .arch-box { padding: 14px; border: 1px solid var(--line-dim); background: var(--panel); }
+  .arch-h { margin: 0 0 10px; color: var(--green); font: 700 11px/1 var(--display); letter-spacing: 1.6px; text-transform: uppercase; }
+  /* the calendar */
+  .arch-cal-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+  .arch-cal-head .cal-nav { width: 32px; height: 32px; }
+  .arch-cal-title { margin: 0; color: #e9f2ed; font: 700 13px/1 var(--display); letter-spacing: 1.4px; text-transform: uppercase; }
+  .arch-cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; text-align: center; }
+  .arch-cal-wd { padding: 4px 0; color: var(--muted); font: 600 10px/1 var(--display); letter-spacing: .8px; }
+  .arch-cal-day { display: grid; align-content: start; justify-items: center; gap: 6px; height: 40px; padding: 7px 0 0; border: 0;
+    background: none; color: #2f4a3b; font: 600 12px/1 var(--display); }
+  .arch-cal-day.today { color: #e9f2ed; text-decoration: underline; text-underline-offset: 3px; }
+  .arch-cal-day.has { background: #16231d; color: #e9f2ed; font-weight: 700; cursor: pointer; }
+  .arch-cal-day .bar { width: calc(100% - 8px); margin: 0; }  /* the day's verdicts */
+  .arch-cal-day.has:hover, .arch-cal-day.has:focus-visible { outline: 2px solid var(--line); outline-offset: -2px; }
+  .arch-cal-day.has[aria-pressed="true"] { outline: 2px solid #e9f2ed; outline-offset: -2px; }
+  .arch-cal-day.has.off { color: #4d6a5a; }  /* the filter leaves nothing of the day */
+  .arch-cal-day.has.off .bar { opacity: .25; }
+  /* the day picked: its date, its numbers, its bar */
+  .arch-cal-pick { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line-dim); }
+  .arch-cal-pick-h { margin: 0; color: var(--green); font: 700 12px/1.2 var(--display); letter-spacing: 1.2px; text-transform: uppercase; }
+  .arch-cal-pick-meta { margin: 5px 0 0; color: #c5d3cb; font: 400 12px/1.3 var(--sans); }
+  .arch-cal-pick .bar { margin-top: 8px; }
+  /* the filter */
+  .arch-filter .field { width: 100%; }
+  .arch-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .arch-chip { display: inline-flex; align-items: center; gap: 7px; min-height: 32px; padding: 0 10px; border: 0; background: #16231d;
+    color: #e9f2ed; font: 700 11px/1 var(--display); letter-spacing: 1px; text-transform: uppercase; cursor: pointer; }
+  .arch-chip::before { content: ""; flex: none; width: 8px; height: 8px; background: var(--party, var(--muted)); }
+  .arch-chip small { color: var(--muted); font-size: 11px; }
+  .arch-chip:hover { background: #1d2d26; }
+  .arch-chip[aria-pressed="true"] { background: rgba(61, 240, 130, .14); box-shadow: inset 0 0 0 1px var(--green); }
+  .arch-chip:focus-visible { outline: 2px solid var(--green); outline-offset: 1px; }
+  /* the totals */
+  .arch-totals ul { margin: 0; padding: 0; list-style: none; color: var(--muted); font: 400 12.5px/1.8 var(--sans); }
+  .arch-totals b { color: #e9f2ed; font: 700 13px/1 var(--display); }
+  /* the rows: each day's head, the rows in columns */
+  .arch-day { scroll-margin-top: calc(var(--m-hdr, 57px) + 16px); margin: 0 0 24px; }
+  .arch-day > .arch-date { font-size: 15px; letter-spacing: 1.3px; }
+  .arch-wd { display: inline; margin-left: 12px; color: var(--muted); font: 600 12px/1 var(--display); letter-spacing: 1.2px; }
+  .arch-day > .count-line { font-size: 12.5px; }
+  .arch-claims { display: inline; }
+  .arch-grid { margin: 8px 0 0; }
+  .arch-card { grid-template-columns: 136px 118px minmax(0, 1fr) 86px 200px; gap: 18px; padding: 10px 8px; }
+  .arch-card:hover { background: rgba(61, 240, 130, .04); }
+  .arch-card:focus-visible { outline: 1px solid var(--green); outline-offset: -1px; }
+  .arch-poster { width: 136px; }
+  .arch-len { right: 4px; bottom: 4px; padding: 1px 5px; font-size: 11px; }
+  .arch-wait { left: 4px; top: 4px; font-size: 9.5px; }
+  .arch-body { display: contents; }
+  .arch-when, .arch-people, .arch-verdicts { display: block; min-width: 0; }
+  .arch-body h3 { font-size: 15px; }
+  .arch-dur { display: block; margin-top: 3px; color: var(--muted); font: 400 12px/1 var(--sans); }
+  .arch-people { display: grid; gap: 6px; }
+  .arch-faces { display: flex; align-items: flex-end; min-width: 0; overflow: hidden; }
+  .arch-face { position: relative; flex: none; display: grid; place-items: center; width: 26px; height: 32px; margin-right: 3px;
+    overflow: hidden; background: #16231d; border-bottom: 3px solid var(--party, #5d6f66); }
+  .arch-face-ini { color: #c5d3cb; font: 700 10px/1 var(--display); }
+  .arch-face img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+  .arch-more { align-self: center; margin-left: 6px; color: var(--muted); font: 600 12px/1 var(--display); letter-spacing: .6px; }
+  .arch-who { font-size: 12.5px; color: #c5d3cb; }
+  .arch-n { display: block; text-align: right; color: var(--muted); font: 400 11.5px/1.2 var(--sans); }
+  .arch-n b { display: block; color: #e9f2ed; font: 700 18px/1.1 var(--display); }
+  .arch-body .bar { margin: 0; }
+  .arch-mini { display: flex; gap: 10px; margin: 5px 0 0; color: var(--muted); font: 600 10.5px/1 var(--display); letter-spacing: .5px; }
+  .arch-mini b { font-weight: 700; text-shadow: none; }
+  .arch-body .empty { font-size: 12px; }
+  .arch-list > .empty { margin-top: 12px; }
+}
+/* narrower (a laptop, a tablet across): the sidebar narrower, and each row in two lines, the verdicts under the
+   speakers */
+@media (min-width: 861px) and (max-width: 1199px) {
+  .arch-layout { grid-template-columns: 232px minmax(0, 1fr); gap: 0 28px; }
+  .arch-cal-title { font-size: 12px; letter-spacing: 1px; white-space: nowrap; }
+  .arch-card { grid-template-columns: 120px 104px minmax(0, 1fr) 72px; gap: 8px 16px; }
+  .arch-poster { grid-row: 1 / span 2; width: 120px; }
+  .arch-when { grid-column: 2; grid-row: 1 / span 2; }
+  .arch-people { grid-column: 3; grid-row: 1; }
+  .arch-n { grid-column: 4; grid-row: 1 / span 2; }
+  .arch-verdicts { grid-column: 3; grid-row: 2; }
+  .arch-face { width: 22px; height: 28px; }
+}
 
 /* ------------------------------------------------------------------ the MPs (the phones' design, every width)
    A compact list, as the archive: a small photo with the party's colour under it, the name, the party and the role in
@@ -1981,7 +2070,7 @@ body.m-watch[data-m-tab="speakers"] .m-ai #show-all { visibility: hidden; }
 .mp-body .mp-party { display: flex; align-items: center; gap: 5px; }
 .mp-body .mp-party::before { content: ""; flex: none; width: 7px; height: 7px; background: var(--party, var(--green)); }
 .mp-body .mp-role::before { content: " · "; white-space: pre; }
-.mp-body .bar { grid-column: 1 / -1; height: 3px; margin: 2px 0 0; }
+.mp-body .bar { grid-column: 1 / -1; margin: 2px 0 0; }
 .mp-body .mp-stats { display: none; }
 .mp-total { display: flex; flex-direction: column; align-items: flex-end; margin: 0; }
 .mp-total b { color: #e9f2ed; font: 700 16px/1 var(--display); font-variant-numeric: tabular-nums; }
@@ -2094,7 +2183,7 @@ body.m-watch[data-m-tab="speakers"] .m-ai #show-all { visibility: hidden; }
 .mp-head .scores dd { display: grid; grid-column: 2 / -1; grid-template-columns: minmax(0, 1fr) 34px 34px;
   grid-template-columns: subgrid; column-gap: 10px; align-items: center; justify-items: end; margin: 0;
   font: 700 13px/1.3 var(--display); font-variant-numeric: tabular-nums; text-shadow: none; }
-.mp-head .scores .score-bar { display: flex; justify-self: stretch; height: 6px; border: 0; background: #16231d; overflow: hidden; }
+.mp-head .scores .score-bar { display: flex; justify-self: stretch; height: 2px; border: 0; background: #16231d; overflow: hidden; }  /* the bars' one weight */
 .mp-head .scores .score-bar > span { min-width: 2px; }
 .mp-head .scores small { margin: 0; color: var(--muted); font: 400 11.5px/1.3 var(--sans); }
 .mp-head #mp-bar { display: none; }
@@ -2120,7 +2209,7 @@ body.m-watch[data-m-tab="speakers"] .m-ai #show-all { visibility: hidden; }
 .replay-counts { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 8px; color: var(--muted);
   font: 600 10.5px/1.2 var(--display); letter-spacing: 1px; text-transform: uppercase; }
 .replay-counts b { margin-left: 5px; font-size: 12px; }
-.replay-sum .bar { grid-column: 1 / -1; height: 3px; margin: 6px 0 0; }
+.replay-sum .bar { grid-column: 1 / -1; margin: 6px 0 0; }
 /* its speeches: rows under the head, each opening its replay */
 .replay-list { list-style: none; margin: 0; padding: 0 14px 6px; }
 .replay-list > li { border-top: 1px solid rgba(61, 240, 130, .1); }
@@ -2455,10 +2544,93 @@ html:not([data-loaded]) #mps:empty { background-image: url("data:image/svg+xml,%
   .speech-tally dt { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 }
 /* ------------------------------------------------------------------ wider screens: the other pages
-   The phones' design, in a column in the middle; the header edge to edge, as on the live page. */
+   One width for all of them and their footer (1200px), in the middle; the header edge to edge, as on the live page. */
 @media (min-width: 861px) {
   .site-header > .wrap { max-width: none; }
-  body:not(.m-live):not(.m-watch) > main.wrap, body:not(.m-live):not(.m-watch) > .site-footer > .wrap { max-width: 760px; }
+  body:not(.m-live):not(.m-watch) > main.wrap, body:not(.m-live):not(.m-watch) > .site-footer > .wrap { max-width: 1200px; }
+}
+/* ------------------------------------------------------------------ wider screens: the MPs as a table (js/mps.js)
+   The phones' rows, wider: the place, the photo, the name with the party and the role, the bar of the verdicts, then
+   every count in its own column, and a click on a column's head sorts by it (the head stays under the header). Above
+   them the parties side by side, everything their MPs said added up, and by the search the same parties as chips: a
+   click on either shows one party's MPs. Phones have none of it: their rows, sort and search are as they were. */
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }  /* read, not seen */
+.mp-parties, .mp-chips, .mp-thead, .mp-rank, .mp-cols, .mp-grid > li.mp-sep { display: none; }
+@media (min-width: 861px) {
+  body:not(.m-live):not(.m-watch) > main.mp-page { max-width: 1200px; }  /* every page's width there (feat/archive-desktop) */
+  .mp-page { --mp-bar: clamp(150px, 19vw, 260px); --mp-cols: 26px 40px minmax(0, 1fr) 64px 52px 56px 70px 88px 52px 70px; }
+  /* the parties */
+  .mp-parties:not([hidden]) { display: block; margin: 20px 0 18px; }
+  .mp-parties-h { margin: 0 0 10px; color: var(--green); font: 700 11px/1 var(--display); letter-spacing: 1.6px; text-transform: uppercase; }
+  .mp-parties-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; }
+  .mp-party-card { display: flex; flex-direction: column; gap: 10px; min-width: 0; margin: 0; padding: 14px 16px; text-align: left;
+    background: #0a110e; border: 1px solid var(--line-dim); border-left: 4px solid var(--party, var(--green)); color: #e9f2ed;
+    font: inherit; cursor: pointer; }
+  .mp-party-card:is(:hover, :focus-visible) { border-color: var(--line); border-left-color: var(--party, var(--green)); }
+  .mp-party-card[aria-pressed="true"] { background: rgba(61, 240, 130, .07); border-color: var(--green); border-left-color: var(--party, var(--green)); }
+  .mp-party-top { display: flex; align-items: baseline; gap: 10px; }
+  .mp-party-top b { font: 700 15px/1 var(--display); letter-spacing: 1.2px; text-transform: uppercase; }
+  .mp-party-top span { margin-left: auto; color: var(--muted); font: 400 12px/1 var(--sans); white-space: nowrap; }
+  .mp-party-card .bar { height: 2px; margin: 0; border: 0; background: rgba(61, 240, 130, .1); }  /* every bar: a solid 2px line */
+  .mp-party-nums { display: flex; flex-wrap: wrap; gap: 8px 22px; }
+  .mp-party-nums > span { display: flex; flex-direction: column; gap: 5px; }
+  .mp-party-nums b { color: #e9f2ed; font: 700 19px/1 var(--display); font-variant-numeric: tabular-nums; }
+  .mp-party-nums small { color: var(--muted); font: 600 9.5px/1 var(--display); letter-spacing: 1.1px; text-transform: uppercase; }
+  .mp-party-nums .c-true b { color: var(--true); }
+  .mp-party-nums .c-false b { color: var(--false); }
+  .mp-party-nums .c-fallacy b { color: var(--fallacy); }
+  /* the search, the chips, and the switch at the right; the table's head sorts (the dropdown is the phones') */
+  .mp-page .toolbar { align-items: center; }
+  .mp-page .toolbar #filter { flex: 0 1 300px; min-height: 36px; }
+  .mp-page .toolbar #sort { display: none; }
+  .mp-page .toolbar #only-data { margin-left: auto; }
+  .mp-chips:not([hidden]) { display: flex; flex-wrap: wrap; gap: 6px; }
+  .mp-chip { display: inline-flex; align-items: center; gap: 7px; min-height: 36px; margin: 0; padding: 0 10px;
+    border: 1px solid transparent; background: #16231d; color: #e9f2ed; font: 700 10.5px/1 var(--display); letter-spacing: 1px;
+    text-transform: uppercase; cursor: pointer; }
+  .mp-chip:not([data-party="*"])::before { content: ""; flex: none; width: 7px; height: 7px; background: var(--party, var(--muted)); }
+  .mp-chip:is(:hover, :focus-visible) { background: #1d2d26; }
+  .mp-chip[aria-pressed="true"] { background: rgba(61, 240, 130, .14); border-color: var(--green); color: var(--green); }
+  .mp-chip-n { color: var(--muted); font-weight: 600; }
+  /* the head */
+  .mp-thead:not([hidden]) { display: grid; grid-template-columns: var(--mp-cols); align-items: center; gap: 0 14px; margin: 0 -16px;
+    padding: 4px 16px; position: sticky; top: var(--m-hdr, 0px); z-index: 3; background: var(--bg);
+    border-bottom: 1px solid var(--line-dim); }
+  :is(.mp-th, .mp-th-rank, .mp-th-label) { margin: 0; padding: 0; border: 0; background: none; color: var(--muted);
+    font: 700 10px/1.2 var(--display); letter-spacing: 1.1px; text-transform: uppercase; white-space: nowrap; }
+  .mp-th-rank { justify-self: end; }
+  .mp-th { justify-self: end; min-height: 32px; cursor: pointer; }
+  .mp-th:is(:hover, :focus-visible) { color: #e9f2ed; }
+  .mp-th[aria-pressed="true"] { color: var(--green); }
+  .mp-th[data-dir="first"]::after { content: " ▼"; }
+  .mp-th[data-dir="last"]::after { content: " ▲"; }
+  .mp-th-who { grid-column: 2 / 4; display: grid; grid-template-columns: minmax(0, 1fr) var(--mp-bar); align-items: center; }
+  .mp-th-who .mp-th { justify-self: start; }
+  /* the rows */
+  .mp-page .mp-grid > li.mp-sep { display: block; padding: 18px 16px 8px; color: var(--muted); font: 700 10.5px/1.2 var(--display);
+    letter-spacing: 1.3px; text-transform: uppercase; }
+  .mp-page .mp-card { grid-template-columns: var(--mp-cols); gap: 0 14px; padding: 8px 16px; }
+  .mp-page .mp-card:is(:hover, :focus-visible) { background: rgba(61, 240, 130, .04); }
+  .mp-rank { display: block; justify-self: end; color: var(--muted); font: 600 12px/1 var(--display); font-variant-numeric: tabular-nums; }
+  .mp-page .mp-thumb { width: 40px; height: 48px; }
+  .mp-page .mp-body { grid-template-columns: auto minmax(0, 1fr) var(--mp-bar); }
+  .mp-page .mp-card h2 { grid-column: 1 / 3; padding-right: 16px; font-size: 14px; }
+  .mp-page .mp-body .mp-role { padding-right: 16px; }
+  .mp-page .mp-body .bar { grid-column: 3; grid-row: 1 / 3; align-self: center; height: 2px; margin: 0; border: 0;
+    background: rgba(61, 240, 130, .1); }  /* every bar: a solid 2px line */
+  .mp-page .mp-cols { display: contents; }
+  .mp-col { justify-self: end; color: #e9f2ed; font: 600 13px/1 var(--display); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .mp-col-claims { font-size: 15px; font-weight: 700; }
+  .mp-col-true_share { color: var(--true); }
+  .mp-col-false_share { color: var(--false); }
+  .mp-col-fallacy { color: var(--fallacy); }
+  .mp-col-seconds, .mp-col-recent, .mp-card.no-data .mp-col { color: var(--muted); }
+  .mp-page .mp-total { display: none; }
+}
+@media (min-width: 861px) and (max-width: 1099px) {  /* a narrower window: no speeches and no speaking time */
+  .mp-page { --mp-bar: clamp(110px, 16vw, 170px); --mp-cols: 26px 40px minmax(0, 1fr) 60px 50px 54px 68px 66px; }
+  .mp-page :is(.mp-col-speeches, .mp-col-seconds), .mp-thead :is([data-sort="speeches"], [data-sort="seconds"]) { display: none; }
+  .mp-party-nums { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 16px; }  /* two by two */
 }
 /* the account in the header (wider screens), as in the phone menu: Belépés green, Regisztráció dark beside it */
 .site-header .acct { gap: 8px; }
@@ -2499,37 +2671,69 @@ html:not([data-loaded]) #mps:empty { background-image: url("data:image/svg+xml,%
   .site-header .nav a.nav-support::before { font-size: 16px; }
   .site-header .acct :is(.btn, .acct-btn) { padding: 0 12px; }
 }
-/* the live and replay pages' footer (wider screens): the page doesn't scroll, so the original's is out of reach; its
-   links in one line across the bottom instead, in its look. Of "// oldalak" only the impresszum (the header has the
-   rest, and drops the impresszum below 1200px); the long sentences (.foot-more) stay on the other pages. In order: the
-   copyright and the recording's source, the contact, the support, the maker; the impresszum and the source code at the
-   right */
+/* ------------------------------------------------------------------ the other pages' footer (wider screens)
+   The brand at the left (the chamber icon and the name, the tagline, the Patreon button and where the money goes), the
+   pages, the contact and the maker's pages in three columns beside it; under a line the copyright and the source code,
+   then the recording's source and the note that the AI can be wrong. The live and replay pages keep their one line
+   (above), and phones have none (the menu says what it says, js/shell.js). */
+.footer-top { display: grid; grid-template-columns: minmax(0, 1fr) repeat(3, max-content); gap: 0 48px; padding-bottom: 26px; }
+.footer-brand { display: inline-flex; align-items: center; gap: 10px; color: var(--green); }
+.footer-mark { flex: none; width: 40px; height: 23px; fill: var(--green); }
+.footer-mark circle { fill: var(--false); }
+.footer-name { font: 700 20px/1 "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace; letter-spacing: -.02em; }
+.footer-name::after { content: "_"; }
+.footer-tag { max-width: 240px; margin: 10px 0 16px; color: var(--muted); font: 400 13px/1.45 var(--sans); }
+.footer-support { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 14px;
+  border: 1px solid var(--green); color: var(--green); font: 700 12px/1 var(--display); letter-spacing: 1.4px;
+  text-transform: uppercase; }
+.footer-support::before { content: "\2665"; color: var(--false); font-size: 14px; }
+.footer-support:is(:hover, :focus-visible) { background: rgba(61, 240, 130, .08); color: var(--green); }
+.footer-why { display: block; width: fit-content; margin-top: 8px; padding: 3px 0; color: var(--muted);
+  font: 400 12px/1.4 var(--sans); text-decoration: underline; text-decoration-color: rgba(138, 158, 148, .4);
+  text-underline-offset: 3px; }
+.footer-why:is(:hover, :focus-visible) { color: var(--text); text-decoration-color: currentColor; }
+.footer-top .footer-h { margin: 4px 0 10px; font-size: 11px; }
+.footer-top ul { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
+.footer-top li a { display: inline-block; padding: 4px 0; color: #e9f2ed; font: 400 13px/1.3 var(--sans); }  /* 25px tall */
+.footer-top li a:is(:hover, :focus-visible), .footer-top li a[aria-current="page"] { color: var(--green); }
+.site-footer > .footer-bottom { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 18px; padding-top: 14px;
+  padding-bottom: 18px; border-top: 1px solid var(--line-dim); color: var(--muted); font: 400 11.5px/1.5 var(--sans); }
+.footer-bottom :is(.footer-copy, .footer-source) { font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace; }
+.footer-bottom .footer-copy { color: var(--green); }
+.footer-bottom .footer-source { margin-left: auto; color: var(--muted); }
+.footer-bottom .footer-source:is(:hover, :focus-visible) { color: var(--green); }
+.footer-bottom .footer-note { flex-basis: 100%; }
+/* the live and replay pages' footer (wider screens), in the other pages' look: the page doesn't scroll, so the footer
+   is one line across the bottom instead. In order: the copyright and the recording's source, the contact, the maker's
+   pages; the impresszum (the header drops it below 1200px) and the source code at the right. The brand, the tagline,
+   the Patreon button and where the money goes (the header's Támogatás is right above), the other pages (the header has
+   them) and the long note stay on the other pages. */
 @media (min-width: 861px) {
   body:is(.m-live, .m-watch) > .site-footer { display: flex; flex: none; align-items: center; gap: 0 22px; height: 32px;
     padding: 0 16px; font-size: 11px; line-height: 1.4; white-space: nowrap; overflow: hidden; }
   body:is(.m-live, .m-watch) > .site-footer > .wrap { display: contents; }
-  body:is(.m-live, .m-watch) .site-footer .foot-more { display: none; }
-  body:is(.m-live, .m-watch) .footer-links > * { display: flex; align-items: baseline; gap: 10px; }
-  body:is(.m-live, .m-watch) .footer-h { margin: 0; font-size: 10px; }
-  body:is(.m-live, .m-watch) .footer-links ul { display: flex; gap: 0 12px; }
-  body:is(.m-live, .m-watch) .footer-links li a { padding: 2px 0; }
-  body:is(.m-live, .m-watch) .footer-links > :first-child :is(.footer-h, li:not(:last-child)) { display: none; }
-  body:is(.m-live, .m-watch) .footer-row > :nth-child(1) { order: 1; }
-  body:is(.m-live, .m-watch) .footer-row > :nth-child(2) { order: 2; }
-  body:is(.m-live, .m-watch) .footer-links > :nth-child(3) { order: 3; }
-  body:is(.m-live, .m-watch) .footer-links > :nth-child(4) { order: 4; }
-  body:is(.m-live, .m-watch) .footer-links > :nth-child(2) { order: 5; }
-  body:is(.m-live, .m-watch) .footer-links > :nth-child(1) { order: 6; margin-left: auto; }
-  body:is(.m-live, .m-watch) .footer-row > :nth-child(3) { order: 7; }
+  body:is(.m-live, .m-watch) .site-footer :is(.footer-about, .foot-more) { display: none; }
+  body:is(.m-live, .m-watch) .footer-top > * { display: flex; align-items: center; gap: 10px; }
+  body:is(.m-live, .m-watch) .footer-top .footer-h { margin: 0; font-size: 10px; }
+  body:is(.m-live, .m-watch) .footer-top ul { display: flex; gap: 0 12px; }
+  body:is(.m-live, .m-watch) .footer-top li a { padding: 2px 0; font-size: 11px; }
+  body:is(.m-live, .m-watch) .footer-top > nav[aria-label="Oldalak"] :is(.footer-h, li:not(:last-child)) { display: none; }
+  body:is(.m-live, .m-watch) .footer-top > nav[aria-label="Oldalak"] a[aria-current] { color: #e9f2ed; }
+  body:is(.m-live, .m-watch) .footer-bottom { display: contents; }
+  body:is(.m-live, .m-watch) .footer-copy { order: 1; color: var(--green); }
+  body:is(.m-live, .m-watch) .footer-note { order: 2; flex-basis: auto; color: var(--muted); }
+  body:is(.m-live, .m-watch) .footer-top > :nth-child(3) { order: 3; }  /* the contact */
+  body:is(.m-live, .m-watch) .footer-top > nav[aria-label="A készítő máshol"] { order: 4; }
+  body:is(.m-live, .m-watch) .footer-top > nav[aria-label="Oldalak"] { order: 5; margin-left: auto; }
+  body:is(.m-live, .m-watch) .footer-source { order: 6; margin-left: 0; color: var(--muted); }
 }
-/* still one line in a narrower window: the "// …" labels go (it needs 1284px with them, ~970 without), and below 980px
-   the maker's links (the other pages' footers have them) */
-@media (min-width: 861px) and (max-width: 1299px) {
+/* still one line in a narrower window: the labels go, then the maker's pages (the other pages' footers have them) */
+@media (min-width: 861px) and (max-width: 1119px) {
   body:is(.m-live, .m-watch) > .site-footer { gap: 0 16px; }
   body:is(.m-live, .m-watch) .site-footer .footer-h { display: none; }
 }
-@media (min-width: 861px) and (max-width: 979px) {
-  body:is(.m-live, .m-watch) .footer-links > :nth-child(2) { display: none; }
+@media (min-width: 861px) and (max-width: 939px) {
+  body:is(.m-live, .m-watch) .footer-top > nav[aria-label="A készítő máshol"] { display: none; }
 }
 /* the wordmark and the cookie bar's text: the phones' sizes on every width */
 .site-header .brand-name { font-size: 17px; }
@@ -2644,3 +2848,35 @@ html:has(.install-sheet[open]) { overflow: hidden; }  /* the page behind does no
 .is-copied.is-raw { color: #e9f2ed; overflow-wrap: anywhere; -webkit-user-select: all; user-select: all; }
 .is-hidden-copy { position: fixed; top: 0; left: 0; width: 1px; height: 1px; padding: 0; border: 0; opacity: 0; font-size: 16px; }
 .is-en { color: var(--muted); font-size: 13px; }
+
+/* ------------------------------------------------------------------ phones: the panels pulled up over the video
+   js/mobile.js pullUp. A pull button on the line between the speaker strip and the tabs; pulled up, the video and the
+   strip are under the tabs and the open panel (the player stays where it is, out of the flow, under them: moving it
+   in the page would reload its iframe), and a line in their place says the video plays on, heard and not seen. */
+.m-pull, .m-audio { display: none; }
+@media (max-width: 860px) {
+  :is(.m-live, .m-watch) .m-top > :is(.m-strip, .m-tabs, .m-ai, .m-audio) { touch-action: none; }  /* the drags are ours */
+  :is(.m-live, .m-watch) .m-top > .m-tabs { position: relative; }
+  :is(.m-live, .m-watch) .m-pull { display: grid; place-items: center; position: absolute; z-index: 3; top: -7px; left: 50%;
+    width: 48px; height: 18px; margin-left: -24px; padding: 0; background: var(--panel-solid); border: 1px solid var(--line);
+    border-radius: 9px; cursor: pointer; }
+  .m-pull::before { content: ""; width: 22px; height: 3px; border-radius: 2px; background: rgba(213, 224, 218, .55); }
+  .m-pull::after { content: ""; position: absolute; inset: -14px -12px -6px; }  /* a 44 px tall target, mostly off the tab */
+  .m-pull:focus-visible { outline: 1px solid var(--green); outline-offset: 2px; }
+
+  body.m-pulled .m-top { overflow: hidden; }  /* the video under the panels never shows past their foot */
+  body.m-pulled .m-top > :is(.stage, .player) { position: absolute; left: 0; right: 0; top: var(--m-vtop, 0px); z-index: 0; }
+  body.m-pulled .m-top > :not(.stage, .player) { position: relative; z-index: 1; }
+  body.m-pulled .m-top > .m-strip { display: none; }
+  body.m-pulled .m-audio { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 32px; margin: 0; padding: 0 14px;
+    background: #0f1814; border: 0; border-bottom: 1px solid var(--line-dim); color: #8af5b4; font: 700 10.5px/1 var(--display);
+    letter-spacing: 1.2px; text-align: left; text-transform: uppercase; cursor: pointer; }
+  body.m-pulled .m-audio[data-playing="false"] { color: var(--muted); }  /* stopped: no longer heard either */
+  .m-audio-dot { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--muted); }
+  .m-audio[data-playing="true"] .m-audio-dot { background: var(--false); }
+  .m-audio-hint { margin-left: auto; color: var(--muted); }
+  .m-audio-hint::after { content: " \25BE"; }
+}
+@media (max-width: 860px) and (prefers-reduced-motion: no-preference) {
+  .m-audio[data-playing="true"] .m-audio-dot { animation: blink 1s steps(1) infinite; }
+}

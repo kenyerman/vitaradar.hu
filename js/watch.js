@@ -18,7 +18,7 @@ import { watchHref } from "./links.js?v=202611241021";
 import { cdnReady, cdnUrl, cdnXhr } from "./cdn.js?v=202611270600";
 import { scrollHint } from "./scrollhint.js?v=202611241021";
 import { setPageMeta } from "./meta.js?v=202611241124";
-import { youtubeMedia } from "./ytplayer.js?v=202611270600";
+import { youtubeMedia } from "./ytplayer.js?v=202611271300";
 
 watchLiveNav();
 mountAccount();

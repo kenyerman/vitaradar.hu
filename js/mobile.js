@@ -97,7 +97,9 @@ function measure(header, top, video) {
     // where the video ends (the menu opens right below it)
     const end = PHONE.matches && top ? Math.max(h, Math.round(top.getBoundingClientRect().bottom)) : h;
     root.style.setProperty("--m-top", `${end}px`);
-    const vid = PHONE.matches && video ? Math.max(h, Math.round(video.getBoundingClientRect().bottom)) : h;
+    // (pulled up, the video is under the panels: the menu opens below the header, pullUp)
+    const shown = video && !document.body.classList.contains("m-pulled");
+    const vid = PHONE.matches && shown ? Math.max(h, Math.round(video.getBoundingClientRect().bottom)) : h;
     root.style.setProperty("--m-menu", `${vid}px`);
   };
   const ro = new ResizeObserver(set);
@@ -769,6 +771,21 @@ function keyboardFit() {
   const lock = swipeLock();
   let full = vv.height;  // the screen without the keyboard
   let fingers = 0, settle = 0;  // touches on the screen; the wait for the page to stop after them
+  // The row a tap opened while the keyboard was up (a fact under the comment box, a speech) is brought into view when
+  // the keyboard goes: the header and the video come back over its panel, and it was left below the panel's foot. Once
+  // the row above it has folded (compactFacts keeps the row in place until then).
+  let tapped = null, tappedAt = 0;
+  addEventListener("click", (e) => { tapped = e.target; tappedAt = performance.now(); }, true);
+  const keepTapped = () => {
+    const row = performance.now() - tappedAt < 1000 && tapped?.closest?.("li.fact, #speakers > li");
+    const box = row && row.closest(".below");
+    if (!box) return;
+    setTimeout(() => {
+      if (!row.isConnected || fingers) return;  // the reader has moved on
+      const r = row.getBoundingClientRect(), b = box.getBoundingClientRect();
+      if (r.top > b.bottom - 48) box.scrollTop += Math.round(r.top - b.top);  // only a row pushed below the foot
+    }, 450);
+  };
   const later = () => { clearTimeout(settle); settle = setTimeout(() => { settle = 0; fit(); }, 150); };
   // only the phone layout of the live and replay pages keeps the window still (the panels scroll); a wide screen, and
   // a page that scrolls as a whole, are left alone: putting their scroll back sent every click to the page's top
@@ -784,7 +801,7 @@ function keyboardFit() {
       const atEnd = chat && chat.scrollHeight - chat.scrollTop - chat.clientHeight < 40;
       document.body.classList.toggle("m-typing", on);
       lock(on);
-      if (!on) root.style.removeProperty("--m-kb-h");
+      if (!on) { root.style.removeProperty("--m-kb-h"); keepTapped(); }
       // writing in the chat: its newest messages over the field; after it, they stay if they were in view
       if (on && document.activeElement.closest(".m-chat-slot")) chatToEnd();
       else if (atEnd) chat.scrollTop = chat.scrollHeight;
@@ -912,6 +929,94 @@ function composerInView() {
 }
 
 // page: "live" (index.html) or "watch" (watch.html)
+// Phones, live and replay pages: the panels pulled up for more room, the video playing on under them, heard and not
+// seen. A drag up on the strip or the tabs, or a tap on the pull button on the line between them, hides the video and
+// the speaker strip: the tabs and the open panel move up to where the video starts (the header and the replay's top
+// row stay), and a line there says the video plays on behind them. A drag down, a tap on that line or the button, or
+// the open panel pulled down from its very top brings them back. The player is never moved in the page (that reloads
+// its iframe and stops it): css takes it out of the flow, in the same place, under the panels. A playback the viewer
+// started plays on under them (js/twitch.js); the line says when it has stopped (the players' "vr-playing" events),
+// e.g. a Twitch player rebuilt after an error, which waits for a click while it is covered.
+function pullUp(top, player, remeasure) {
+  const tabs = top.querySelector(":scope > .m-tabs");
+  const strip = top.querySelector(":scope > .m-strip");
+  if (!tabs || !strip || !player) return;
+  const pull = el("button", "m-pull");  // made once, with the page: nothing clickable appears under a finger (iOS)
+  pull.type = "button";
+  tabs.prepend(pull);
+  const line = el("button", "m-audio");
+  line.type = "button";
+  line.setAttribute("aria-label", "A videó vissza");
+  const text = el("span", "m-audio-text"), hint = el("span", "m-audio-hint");
+  hint.textContent = "húzd le";
+  line.append(el("span", "m-audio-dot"), text, hint);
+  strip.before(line);
+  let playing = false;
+  const say = () => {
+    line.dataset.playing = String(playing);
+    text.textContent = playing ? "A videó szól a háttérben" : "A videó áll";
+  };
+  addEventListener("vr-playing", (e) => { playing = Boolean(e.detail); say(); });
+  // our own stream's <video> (?player=cdn): its own events
+  top.addEventListener("playing", () => { playing = true; say(); }, true);
+  top.addEventListener("pause", () => { playing = false; say(); }, true);
+  say();
+
+  const calm = matchMedia("(prefers-reduced-motion: reduce)");
+  const isUp = () => document.body.classList.contains("m-pulled");
+  const label = () => pull.setAttribute("aria-label",
+    isUp() ? "A videó vissza" : "A panelek fel: a videó nem látszik, a hangja szól tovább");
+  const panels = () => [...document.querySelectorAll("main > .below, main > .m-chat-slot, main > .m-game-slot")];
+  const set = (up) => {
+    if ((up && !PHONE.matches) || up === isUp()) return;
+    const parts = [...top.children, ...panels()].filter((p) => p.getClientRects().length);
+    const was = new Map(parts.map((p) => [p, p.getBoundingClientRect().top]));
+    top.style.setProperty("--m-vtop", `${player.offsetTop}px`);
+    document.body.classList.toggle("m-pulled", up);
+    label();
+    if (!calm.matches) {
+      for (const p of parts) {  // each part slides from where it was: transforms only, nothing moves in the page
+        if (!p.getClientRects().length) continue;
+        const dy = was.get(p) - p.getBoundingClientRect().top;
+        if (Math.abs(dy) >= 1) p.animate([{ transform: `translateY(${dy}px)` }, { transform: "none" }],
+          { duration: 340, easing: "cubic-bezier(.22, 1, .36, 1)" });
+      }
+    }
+    remeasure();
+  };
+  label();
+  pull.addEventListener("click", () => set(!isUp()));
+  line.addEventListener("click", () => set(false));
+  PHONE.addEventListener("change", () => { if (!PHONE.matches) set(false); });
+
+  // a vertical drag on the parts under the video (not the video: its iframe has its own touches)
+  let start = null;
+  top.addEventListener("touchstart", (e) => {
+    const t = e.touches[0];
+    start = e.touches.length === 1 && PHONE.matches && e.target.closest?.(".m-strip, .m-tabs, .m-ai, .m-audio")
+      ? { x: t.clientX, y: t.clientY } : null;
+  }, { passive: true });
+  top.addEventListener("touchmove", (e) => {
+    if (!start || document.body.classList.contains("m-typing")) return;
+    const dx = e.touches[0].clientX - start.x, dy = e.touches[0].clientY - start.y;
+    if (Math.abs(dy) < 24 || Math.abs(dy) < Math.abs(dx) * 1.5) return;
+    start = null;
+    set(dy < 0);
+  }, { passive: true });
+  // pulled up: the open panel pulled down from its very top brings the video back (scrolled down, it scrolls as ever)
+  let from = null;
+  addEventListener("touchstart", (e) => {
+    const box = isUp() && e.touches.length === 1
+      && e.target.closest?.("main > .below, .m-chat-slot .chat-list, main > .m-game-slot");
+    from = box && box.scrollTop <= 0 ? { box, y: e.touches[0].clientY } : null;
+  }, { passive: true });
+  addEventListener("touchmove", (e) => {
+    if (!from) return;
+    if (from.box.scrollTop > 0) { from = null; return; }
+    if (e.touches[0].clientY - from.y > 70) { from = null; set(false); }
+  }, { passive: true });
+}
+
 function mountApp(page) {
   const main = document.querySelector("main");
   const player = document.querySelector(page === "live" ? "#stage" : "main > .player");
@@ -1010,6 +1115,7 @@ function mountApp(page) {
 
   const remeasure = measure(document.querySelector(".site-header"), top,
     page === "live" ? player.querySelector(".player") : player);
+  pullUp(top, player, remeasure);
   const place = () => { moves.place(); remeasure(); };
   PHONE.addEventListener("change", place);
   place();
