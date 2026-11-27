@@ -7,12 +7,14 @@
 // whoever had the floor, the chair included (the archive's floor turns; runs archived before them have only the
 // fact-checked speeches, so their card is empty while the chair speaks).
 // A fallacy said in the same sentence as a checked claim shows on that claim's card, as on the live page.
-// ?t= opens the video at that second (the MP page's fact links).
+// ?t= opens the video at that second (the MP page's fact links); ?f=<claim id> opens that fact (a shared link,
+// js/share.js): at its moment, the video waiting for a tap, the card opened and framed.
 
 import { doc, onSnapshot, collection, query, where } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { db, getDoc, getDocs, el, factBadge, LABEL, sourceList, setPhoto, hms, huDate, mpHref, watchLiveNav, loadFailed } from "./common.js?v=202611270600";
 import { mountAccount } from "./account.js?v=202611270600";
 import { factSocial } from "./social.js?v=202611270600";
+import { addShare, FOCUS, revealFact, liveUrl } from "./share.js?v=202611272100";
 import { watchHref } from "./links.js?v=202611241021";
 import { cdnReady, cdnUrl } from "./cdn.js?v=202611270600";
 import { scrollHint } from "./scrollhint.js?v=202611241021";
@@ -25,7 +27,7 @@ scrollHint(document.querySelector(".below"), document.querySelector(".player"));
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
 const session = params.get("s") || "";
-const startAt = Math.max(0, parseFloat(params.get("t") || "0") || 0);
+let startAt = Math.max(0, parseFloat(params.get("t") || "0") || 0);  // or the linked fact's moment (load)
 const video = $("video");
 let media = video;  // the YouTube player behind a <video>'s calls (ytplayer.js); until it comes, the poster's <video>
 let facts = [];      // {c, speech, fallacy, li}, newest first (those past the end of the video at the top)
@@ -33,6 +35,7 @@ let speakers = [];   // archive doc's speeches: {mp_id, name, party, start_s, en
 let turns = [];      // archive doc's floor turns: {speaker_id, name, party, role, color, photo, chair, start_s, end_s}
 const mps = new Map();  // mp id -> mps doc (photo, colour, role)
 let showAll = false;  // the "összes állítás" toggle
+let focus = null;     // the fact a link opened (?f=, js/share.js): shown whatever the video's time, and framed
 
 function note(text) {
   $("player-note").hidden = !text;
@@ -92,7 +95,8 @@ function factItem(f) {
     li.append(el("p", "fact-fallacy", `» ${LABEL.fallacy.toLowerCase()} (${fallacy.name}): ${fallacy.explanation || ""}`));
   }
   li.append(sourceList(c.sources));
-  if (c.id && v !== "pending") li.append(factSocial(session, c.id));  // votes and comments, as on the MP page
+  // votes and comments, as on the MP page, and the share button
+  if (c.id && v !== "pending") li.append(addShare(factSocial(session, c.id), session, c.id));
   return li;
 }
 
@@ -171,7 +175,7 @@ function renderFacts(t) {
   for (const f of facts) {  // newest first: the first one already said is the latest
     const said = f.c.video_s != null && f.c.video_s <= t + 0.5;
     f.li.classList.toggle("future", !said);
-    f.li.hidden = !said && !showAll;
+    f.li.hidden = !said && !showAll && f !== focus;
     if (!f.li.hidden) shown += 1;
     if (said && !now) now = f;
   }
@@ -209,6 +213,10 @@ async function load() {
     fallacyLinks(),
   ]);
   const a = aSnap.data();
+  if (!a && FOCUS && FOCUS.session === session) {  // a link to a fact of the sitting on air: the live page has it
+    const cur = await getDoc(doc(db, "live", "current")).then((d) => d.data(), () => null);
+    if (cur && cur.session === session) { location.replace(liveUrl(session, FOCUS.claim)); return; }
+  }
   if (!a) { $("w-title").textContent = "Nincs ilyen adás"; note("ez az adás nincs az archívumban"); return; }
   setPageMeta({
     title: `Ülés visszanézése: ${huDate(a.date)} – Vitaradar`,
@@ -248,9 +256,17 @@ async function load() {
   $("speakers").addEventListener("speech-open", (e) => fillSpeech(e.target));
   for (const f of facts) f.li = factItem(f);
   $("facts").replaceChildren(...facts.map((f) => f.li));
+  // a link to a fact: the video waits at its moment (unless ?t= says another); a fallacy said with a claim is on the
+  // claim's card
+  if (FOCUS && (!FOCUS.session || FOCUS.session === session)) {
+    focus = facts.find((f) => f.c.id === FOCUS.claim) || facts.find((f) => f.fallacy && f.fallacy.id === FOCUS.claim) || null;
+    // (up to the next whole second: YouTube starts there, and the fact counts as said from its own second on)
+    if (focus && !params.has("t") && focus.c.video_s != null) startAt = Math.ceil(focus.c.video_s);
+  }
   for (const li of $("speakers").querySelectorAll(":scope > li.open")) fillSpeech(li);  // opened before the facts came
   showSpeechAt(startAt);
   renderFacts(startAt);  // the speaker card waits for the MPs' photos (play() ticks)
+  if (focus) revealFact(focus.li);
 
   // the MPs' photos and roles for the speaker card
   await Promise.all([...new Set(speakers.map((s) => s.mp_id))].map(async (id) => {
@@ -271,7 +287,7 @@ async function mountYoutube(id) {
   note(null);
   $("player-note").classList.remove("over-poster");
   tick();
-  if (startAt) media.play();  // a link to a moment plays from there
+  if (startAt && !focus) media.play();  // a link to a moment plays from there; one to a fact waits for a tap
 }
 
 // Not on YouTube yet: the poster, every fact listed (none is "said" before the video plays), and the player once the
