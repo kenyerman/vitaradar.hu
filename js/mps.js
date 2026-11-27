@@ -195,7 +195,8 @@ function marks() {
     b.setAttribute("aria-pressed", String(on));
     b.dataset.dir = on ? (dir === 1 ? "first" : "last") : "";
   }
-  for (const b of document.querySelectorAll("[data-party]")) b.setAttribute("aria-pressed", String(b.dataset.party === (party ?? "*")));
+  // the party cards and chips only: a picture with a party colour has data-party too (common.js setPhoto)
+  for (const b of document.querySelectorAll("button[data-party]")) b.setAttribute("aria-pressed", String(b.dataset.party === (party ?? "*")));
 }
 
 // The parties (side by side on wider screens, a row to swipe on phones), everything their MPs said added up, and the chips. The true and false
