@@ -66,8 +66,8 @@ type(scope): what changes
 For example `fix(share): keep the quote under the URL limit` or `chore: new ?v= for js/app.js and its importers`.
 Write the subject in English. Merge commits (merging `master` into your branch) are left as Git writes them.
 
-A check on every pull request (`.github/workflows/commit-messages.yml`) fails when the title or a commit's first line
-doesn't follow this. To fix a commit message, reword it (`git commit --amend` for the last one, `git rebase -i` for
+A required check on every pull request (`.github/workflows/commit-messages.yml`) fails when the title or a commit's
+first line doesn't follow this, and the pull request can't be merged until it passes. To fix a commit message, reword it (`git commit --amend` for the last one, `git rebase -i` for
 older ones) and force-push your branch; to fix the title, edit it on the pull request.
 
 ## License
