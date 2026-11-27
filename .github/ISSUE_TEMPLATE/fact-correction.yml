@@ -1,0 +1,80 @@
+# The form the site links from every fact card (js/share.js correctionUrl fills these fields in through the URL:
+# ?template=fact-correction.yml&title=…&fact_link=…&sitting=…&speaker=…&quote=…&verdict=…). Keep the ids as they are.
+name: Tényellenőrzés helyesbítése
+description: Hibás minősítés, felszólaló, idézet vagy időpont a vitaradar.hu-n.
+title: "Helyesbítés: "
+labels: ["fact-correction"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Köszönjük, hogy segítesz pontosabbá tenni a Vitaradart! A minősítéseket mesterséges intelligencia készíti automatikusan, ezért tévedhet.
+
+        **Mi történik a bejelentéseddel?**
+        - Elolvassuk, és a megadott forrásokkal újraellenőrizzük az állítást. Legkésőbb egy hónapon belül döntünk.
+        - Ha igazad van, kijavítjuk az oldalon, és a magyarázat végén jelezzük, mi szerepelt ott korábban („Javítva: korábban …”). Az élő adás videójába égetett minősítést utólag nem tudjuk megváltoztatni.
+        - A döntést és az indoklását itt írjuk meg, utána lezárjuk a bejelentést.
+
+        A bejelentés **nyilvános**, ezért ne írj bele olyan személyes adatot, amelyet nem szeretnél megosztani. Ha nincs GitHub-fiókod, vagy nem nyilvános ügyről van szó, írj a help@vitaradar.hu címre.
+
+        Ha az állítás kártyájáról jöttél, az első mezőket már kitöltöttük.
+  - type: input
+    id: fact_link
+    attributes:
+      label: Link az állításhoz
+      description: Az állítás kártyáján a megosztás gombbal kapod meg. Ha nincs meg, hagyd üresen.
+      placeholder: https://vitaradar.hu/fact.html?s=…&f=…
+  - type: input
+    id: sitting
+    attributes:
+      label: Az ülés napja és az időpont
+      description: Melyik napon és nagyjából mikor hangzott el?
+      placeholder: "2026. november 26., 14:05"
+  - type: input
+    id: speaker
+    attributes:
+      label: Felszólaló
+      description: Akinek az oldal az állítást tulajdonítja.
+  - type: textarea
+    id: quote
+    attributes:
+      label: Az ellenőrzött állítás
+      description: Ahogy az oldalon szerepel.
+    validations:
+      required: true
+  - type: input
+    id: verdict
+    attributes:
+      label: A Vitaradar minősítése
+      placeholder: "pl. HAMIS"
+  - type: checkboxes
+    id: problem
+    attributes:
+      label: Mi a hiba?
+      description: Többet is bejelölhetsz.
+      options:
+        - label: A minősítés (például IGAZ, nem HAMIS)
+        - label: A felszólaló (nem ő mondta)
+        - label: Az idézet vagy a leirat (nem így hangzott el)
+        - label: Az időpont (máskor hangzott el)
+        - label: Egyéb
+  - type: textarea
+    id: correction
+    attributes:
+      label: Mi a helyes?
+      description: Szerinted mi a helyes minősítés vagy adat, és miért?
+    validations:
+      required: true
+  - type: textarea
+    id: sources
+    attributes:
+      label: Források
+      description: Linkek vagy pontos hivatkozások (például KSH-adat, jogszabály, hivatalos közlemény, a jegyzőkönyv vagy a felvétel adott perce), amelyek alátámasztják a javítást. Forrás nélkül nem tudjuk újraellenőrizni az állítást.
+      placeholder: https://…
+    validations:
+      required: true
+  - type: input
+    id: contact
+    attributes:
+      label: Elérhetőség (nem kötelező)
+      description: Csak akkor add meg, ha e-mailben is választ szeretnél. Ez is nyilvános lesz! A GitHub a válaszunkról magától is értesít.

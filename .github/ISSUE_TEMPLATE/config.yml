@@ -1,0 +1,6 @@
+# Blank issues stay possible: questions, design work and anything else that fits none of the forms.
+blank_issues_enabled: true
+contact_links:
+  - name: E-mail – help@vitaradar.hu
+    url: https://vitaradar.hu/impresszum.html#kapcsolat
+    about: Nincs GitHub-fiókod, vagy nem nyilvános ügy? Írj e-mailt. / No GitHub account, or a private matter? Send us an email.

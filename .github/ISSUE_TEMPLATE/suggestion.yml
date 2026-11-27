@@ -1,0 +1,26 @@
+name: Suggestion
+description: An idea for a new feature or an improvement.
+title: "Suggestion: "
+labels: ["suggestion"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the idea! You can write in English or Hungarian. Suggestions are public.
+  - type: textarea
+    id: idea
+    attributes:
+      label: The idea
+      description: What should vitaradar.hu do or do differently?
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does it solve?
+      description: Who would use it, and when?
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you've considered
+      description: Other ways to solve it, or how you get by today.

@@ -68,7 +68,7 @@ const factsOf = (s) => (s.claims || []).filter((c) => !c.merged_into);
 
 // level 3: a fact. Collapsed it shows the verdict and the headline; open, the claim, the explanation and the sources.
 // A claim with its sentence's fallacy is the fallacy's card, as on the live page (common.js factBadge).
-function factItem(c, session) {
+function factItem(c, session, date) {
   const li = el("li", "fact");
   const v = c.kind === "fallacy" ? "fallacy" : c.verdict || "pending";
   const withFallacy = Boolean(c.fallacy) && v !== "pending";
@@ -83,9 +83,10 @@ function factItem(c, session) {
     body.append(el("p", "fact-fallacy", `» ${LABEL.fallacy.toLowerCase()} (${c.fallacy.name}): ${c.fallacy.explanation || ""}`));
   }
   body.append(sourceList(c.sources));
-  // votes and comments (social.js), and the share button (share.js; the speaker is this page's MP)
+  // votes and comments (social.js), the correction flag and the share button (share.js; the speaker is this page's MP)
   if (session && c.id && v !== "pending") {
-    body.append(addShare(factSocial(session, c.id), session, c.id, { speaker: () => $("mp-name").textContent }));
+    const sitting = () => [huDate(date), c.video_s != null && `a felvételen ${hms(c.video_s)}`].filter(Boolean).join(", ");
+    body.append(addShare(factSocial(session, c.id), session, c.id, { speaker: () => $("mp-name").textContent, sitting }));
   }
   det.append(sum, body);
   li.append(det);
@@ -116,7 +117,7 @@ function speechItem(s, open) {
     body.append(w);
   }
   const list = el("ol", "facts");
-  factsOf(s).sort((a, b2) => a.at_s - b2.at_s).forEach((c) => list.append(factItem(c, s.session)));
+  factsOf(s).sort((a, b2) => a.at_s - b2.at_s).forEach((c) => list.append(factItem(c, s.session, s.date)));
   if (list.children.length) body.append(list);
   else body.append(el("p", "empty", "ebben a felszólalásban nem volt ellenőrizhető állítás"));
   if (s.has_transcript && s.text) {
