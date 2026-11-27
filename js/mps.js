@@ -278,7 +278,7 @@ getDocs(collection(db, "mps")).then((snap) => {
   parties();
   render();
 }).catch((e) => {
-  strip.hidden = chips.hidden = true;  // the room kept for them (css) goes
+  strip.hidden = chips.hidden = head.hidden = true;  // the room kept for them (css) goes
   loadFailed(empty, "az adatok most nem tölthetők be");
   console.warn(e);
 });

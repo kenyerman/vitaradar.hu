@@ -2872,6 +2872,7 @@ html:not([data-loaded]) #mps:empty { background-image: url("data:image/svg+xml,%
   .mp-thead:not([hidden]) { display: grid; grid-template-columns: var(--mp-cols); align-items: center; gap: 0 14px; margin: 0 -16px;
     padding: 4px 16px; position: sticky; top: var(--m-hdr, 0px); z-index: 3; background: var(--bg);
     border-bottom: 1px solid var(--line-dim); }
+  .mp-thead:empty { min-height: 41px; }  /* its height before js/mps.js puts the column heads in: the rows below stay put */
   :is(.mp-th, .mp-th-rank, .mp-th-label) { margin: 0; padding: 0; border: 0; background: none; color: var(--muted);
     font: 700 10px/1.2 var(--display); letter-spacing: 1.1px; text-transform: uppercase; white-space: nowrap; }
   .mp-th-rank { justify-self: end; }
