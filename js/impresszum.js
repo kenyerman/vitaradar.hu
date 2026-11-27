@@ -5,7 +5,7 @@
 // motion). Without this script every item is open, nothing is marked and nothing waits to come in.
 
 import { watchLiveNav } from "./common.js?v=202611281400";
-import { mountAccount } from "./account.js?v=202611281400";
+import { mountAccount } from "./account.js?v=202611281800";
 
 watchLiveNav();
 mountAccount();
