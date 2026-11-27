@@ -956,10 +956,7 @@ function pullUp(top, player, remeasure) {
     line.dataset.playing = String(playing);
     text.textContent = playing ? "A videó szól a háttérben" : "A videó áll";
   };
-  addEventListener("vr-playing", (e) => { playing = Boolean(e.detail); say(); });
-  // our own stream's <video> (?player=cdn): its own events
-  top.addEventListener("playing", () => { playing = true; say(); }, true);
-  top.addEventListener("pause", () => { playing = false; say(); }, true);
+  addEventListener("vr-playing", (e) => { playing = Boolean(e.detail); say(); });  // js/twitch.js, js/ytplayer.js
   say();
 
   const calm = matchMedia("(prefers-reduced-motion: reduce)");

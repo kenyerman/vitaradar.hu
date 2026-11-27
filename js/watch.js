@@ -11,11 +11,10 @@
 
 import { doc, onSnapshot, collection, query, where } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { db, getDoc, getDocs, el, factBadge, LABEL, sourceList, setPhoto, hms, huDate, mpHref, watchLiveNav, loadFailed } from "./common.js?v=202611270600";
-import { loadScript } from "./net.js?v=202611270600";
 import { mountAccount } from "./account.js?v=202611270600";
 import { factSocial } from "./social.js?v=202611270600";
 import { watchHref } from "./links.js?v=202611241021";
-import { cdnReady, cdnUrl, cdnXhr } from "./cdn.js?v=202611270600";
+import { cdnReady, cdnUrl } from "./cdn.js?v=202611270600";
 import { scrollHint } from "./scrollhint.js?v=202611241021";
 import { setPageMeta } from "./meta.js?v=202611241124";
 import { youtubeMedia } from "./ytplayer.js?v=202611271300";
@@ -28,7 +27,7 @@ const params = new URLSearchParams(location.search);
 const session = params.get("s") || "";
 const startAt = Math.max(0, parseFloat(params.get("t") || "0") || 0);
 const video = $("video");
-let media = video;  // the <video>, or the YouTube player behind the same calls (ytplayer.js)
+let media = video;  // the YouTube player behind a <video>'s calls (ytplayer.js); until it comes, the poster's <video>
 let facts = [];      // {c, speech, fallacy, li}, newest first (those past the end of the video at the top)
 let speakers = [];   // archive doc's speeches: {mp_id, name, party, start_s, end_s}
 let turns = [];      // archive doc's floor turns: {speaker_id, name, party, role, color, photo, chair, start_s, end_s}
@@ -259,20 +258,10 @@ async function load() {
   }));
 
   // The recording plays from YouTube (pfc uploads every archived run there). Until it is up, the poster and every
-  // fact; the player comes as soon as the upload lands. ?yt=<id> plays a given YouTube video (testing); ?player=cdn
-  // our own archive on cdn.vitaradar.hu (which serves only images for now).
-  const yt = params.get("yt") || (params.get("player") === "cdn" ? null : a.youtube);
-  if (yt) {
-    await mountYoutube(yt);
-    return;
-  }
-  if (params.get("player") !== "cdn") {
-    waitForUpload(a);
-    return;
-  }
-  wire(video);
-  await Promise.all([loadHls(), cdnReady()]);  // the recording is on cdn.vitaradar.hu, which needs its cookie
-  play(cdnUrl(a.video));
+  // fact; the player comes as soon as the upload lands. ?yt=<id> plays a given YouTube video (testing).
+  const yt = params.get("yt") || a.youtube;
+  if (yt) await mountYoutube(yt);
+  else waitForUpload(a);
 }
 
 async function mountYoutube(id) {
@@ -282,13 +271,12 @@ async function mountYoutube(id) {
   note(null);
   $("player-note").classList.remove("over-poster");
   tick();
-  if (startAt) media.play();  // a link to a moment plays from there (as the CDN player below)
+  if (startAt) media.play();  // a link to a moment plays from there
 }
 
 // Not on YouTube yet: the poster, every fact listed (none is "said" before the video plays), and the player once the
 // upload lands (archive/{session}.youtube is written when YouTube has processed the video).
 function waitForUpload(a) {
-  video.controls = false;
   if (a.poster) cdnReady().then(() => { video.poster = cdnUrl(a.poster); }).catch(() => {});
   note("a felvétel feltöltése folyamatban, hamarosan itt visszanézhető");
   $("player-note").classList.add("over-poster");
@@ -303,34 +291,10 @@ function waitForUpload(a) {
   }, () => {});
 }
 
-// hls.js (about 100 KB) only for ?player=cdn; Safari plays HLS itself
-const HLS_JS = "https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js";
-function loadHls() {
-  if (window.Hls) return Promise.resolve();
-  return loadScript(HLS_JS).catch((e) => console.warn(e));  // without it Safari can still play it itself
-}
-
 function wire(m) {
   m.addEventListener("timeupdate", tick);
   m.addEventListener("seeked", tick);
   m.addEventListener("pause", () => history.replaceState(null, "", watchHref(session, media.currentTime)));
-}
-
-function play(url) {
-  const start = () => { if (startAt) video.currentTime = startAt; tick(); };
-  if (window.Hls && Hls.isSupported()) {
-    const hls = new Hls({ startPosition: startAt || -1, xhrSetup: cdnXhr });
-    hls.loadSource(url);
-    hls.attachMedia(video);
-    hls.on(Hls.Events.MANIFEST_PARSED, () => { note(null); start(); if (startAt) video.play().catch(() => {}); });
-    hls.on(Hls.Events.ERROR, (_, e) => { if (e.fatal) note("a felvétel most nem érhető el"); });
-  } else if (video.canPlayType("application/vnd.apple.mpegurl")) {  // Safari plays HLS itself
-    video.src = url;
-    video.addEventListener("loadedmetadata", () => { note(null); start(); }, { once: true });
-    video.addEventListener("error", () => note("a felvétel most nem érhető el"), { once: true });
-  } else {
-    note("ez a böngésző nem tudja lejátszani a felvételt");
-  }
 }
 
 $("copy-link").addEventListener("click", async () => {
