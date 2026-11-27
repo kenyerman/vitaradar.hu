@@ -62,8 +62,8 @@ function menuParts(moves) {
   const calls = el("div", "m-menu-calls");
   panel.append(calls);
   moves.add(nav.querySelector(".nav-support"), calls);
-  // what the footer says (phones have no footer): the contact links, the copyright, the source. Not the maker's pages
-  // nor "Mire megy a pénz?": the menu keeps to the site itself (the impresszum has both)
+  // what the footer says (phones have no footer): the contact links, Vitaradar elsewhere, the copyright, the source.
+  // Not "Mire megy a pénz?": the menu keeps to the site itself (the impresszum has it)
   const foot = el("div", "m-menu-foot");
   const line = (...parts) => {
     const p = el("p");
@@ -78,6 +78,8 @@ function menuParts(moves) {
   };
   line(link("mailto:help@vitaradar.hu", "help@vitaradar.hu"),
     link("https://github.com/kenyerman/vitaradar.hu/issues", "hibakövető (GitHub)", true));
+  const social = [...document.querySelectorAll(".site-footer .footer-social a")];  // Facebook, GitHub, … as in the footer
+  if (social.length) line(...social.map((a) => link(a.href, a.textContent, true)));
   const year = document.getElementById("year")?.textContent || String(new Date().getFullYear());
   const source = document.querySelector('.site-footer .footer-row a[href*="github.com"]');
   line(`© ${year} vitaradar.hu`, "Felvétel: Országgyűlés", ...(source ? [link(source.href, "forráskód a GitHubon", true)] : []));
