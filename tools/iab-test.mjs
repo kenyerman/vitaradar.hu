@@ -222,7 +222,7 @@ async function run() {
 
   // in Chrome: the same page, and straight to the install ("Még egy koppintás", before the cookie bar)
   let direct = null;
-  for (let t = Date.now(); !direct && Date.now() - t < 15000; await wait(700)) {
+  for (let t = Date.now(); !direct && Date.now() - t < 35000; await wait(700)) {  // Chrome may offer late after a removal
     direct = screen().find((n) => n.pkg === CHROME && /^még egy koppintás$/i.test(n.label));
   }
   shot("4-chrome");
