@@ -38,6 +38,8 @@
 //
 // ?tw_lead=<ms> overrides the relay's lead, ?debug=1 shows the estimate (and any rebuilds) at the window's top left.
 
+import { loadScript } from "./net.js?v=202611270600";
+
 const EMBED_JS = "https://player.twitch.tv/js/embed/v1.js";
 const CHANNEL = "vitaradar";
 const params = new URLSearchParams(location.search);
@@ -66,17 +68,11 @@ export function useTwitch() {
 
 function loadEmbed() {
   if (window.Twitch && window.Twitch.Player) return Promise.resolve(window.Twitch);
-  return new Promise((resolve, reject) => {
-    const s = document.createElement("script");
-    s.src = EMBED_JS;
-    s.onload = () => resolve(window.Twitch);
-    s.onerror = reject;
-    document.head.append(s);
-  });
+  return loadScript(EMBED_JS).then(() => window.Twitch);  // fails after 20 s without it
 }
 
 export function mountTwitch(box) {
-  return (mounting ||= embed(box));
+  return (mounting ||= embed(box).catch((e) => { mounting = null; throw e; }));  // a failed one may be tried again
 }
 
 async function embed(box) {
