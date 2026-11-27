@@ -2,11 +2,12 @@
 
 import { doc, collection, query, where } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { searchUrl } from "./config.js?v=202611241021";
-import { appCheckHeaders } from "./firebase.js?v=202611272000";
-import { db, getDoc, getDocs, el, factBadge, LABEL, sourceList, setPhoto, hms, huDate, watchLiveNav, loadFailed } from "./common.js?v=202611272000";
+import { appCheckHeaders } from "./firebase.js?v=202611272300";
+import { db, getDoc, getDocs, el, factBadge, LABEL, sourceList, setPhoto, hms, huDate, watchLiveNav, loadFailed } from "./common.js?v=202611272300";
 import { fetchT } from "./net.js?v=202611270600";
-import { mountAccount } from "./account.js?v=202611272000";
-import { factSocial } from "./social.js?v=202611272000";
+import { mountAccount } from "./account.js?v=202611272300";
+import { factSocial } from "./social.js?v=202611272300";
+import { addShare } from "./share.js?v=202611272100";
 import { calendar } from "./calendar.js?v=202611241021";
 import { watchHref } from "./links.js?v=202611241021";
 import { setPageMeta } from "./meta.js?v=202611241124";
@@ -82,7 +83,10 @@ function factItem(c, session) {
     body.append(el("p", "fact-fallacy", `» ${LABEL.fallacy.toLowerCase()} (${c.fallacy.name}): ${c.fallacy.explanation || ""}`));
   }
   body.append(sourceList(c.sources));
-  if (session && c.id && v !== "pending") body.append(factSocial(session, c.id));  // votes and comments (social.js)
+  // votes and comments (social.js), and the share button (share.js; the speaker is this page's MP)
+  if (session && c.id && v !== "pending") {
+    body.append(addShare(factSocial(session, c.id), session, c.id, { speaker: () => $("mp-name").textContent }));
+  }
   det.append(sum, body);
   li.append(det);
   return li;

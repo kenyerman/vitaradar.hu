@@ -7,12 +7,13 @@
 // The video is Twitch's player (twitch.tv/vitaradar), which hides that date: js/twitch.js estimates it.
 
 import { doc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { db, el, factBadge, LABEL, sourceList, setPhoto, mpHref, setLiveNav, loadFailed } from "./common.js?v=202611272000";
-import { mountAccount } from "./account.js?v=202611272000";
-import { factSocial } from "./social.js?v=202611272000";
-import { mountChat } from "./chat.js?v=202611272000";
+import { db, getDoc, el, factBadge, LABEL, sourceList, setPhoto, mpHref, setLiveNav, loadFailed } from "./common.js?v=202611272300";
+import { mountAccount } from "./account.js?v=202611272300";
+import { factSocial } from "./social.js?v=202611272300";
+import { addShare, FOCUS, revealFact, replayUrl } from "./share.js?v=202611272100";
+import { mountChat } from "./chat.js?v=202611272300";
 import { scrollHint } from "./scrollhint.js?v=202611241021";
-import { mountGame } from "./game.js?v=202611272000";
+import { mountGame } from "./game.js?v=202611272300";
 import { mountTwitch, twitchNow } from "./twitch.js?v=202611271700";
 
 const $ = (id) => document.getElementById(id);
@@ -41,6 +42,7 @@ onSnapshot(doc(db, "live", "current"), (snap) => {
   // "no broadcast", so the page keeps waiting instead of saying there is none.
   if (snap.metadata.fromCache && !snap.exists()) { if (!live.player) note("kapcsolódás a szerverhez…"); return; }
   const d = snap.data() || {};
+  if (!snap.metadata.fromCache && focusElsewhere(d)) return;
   live.active = Boolean(d.active);
   setLiveNav(live.active);  // the header's "Élő adás" link (it stays plain until this first answer)
   if (d.session && d.session !== live.session) follow(d.session);
@@ -55,6 +57,22 @@ onSnapshot(doc(db, "live", "current"), (snap) => {
   console.warn("live feed:", err);
   if (!live.player) note("nincs kapcsolat a szerverrel");
 });
+
+// A link to a fact (?s=<session>&f=<claim>, js/share.js): it is opened here while its sitting is the one on air, or
+// over and not yet archived; else on the replay page (another sitting on air, or this one archived). Asked once, on the
+// server's first answer; true: the page goes there.
+let focusAsked = false;
+function focusElsewhere(d) {
+  if (!FOCUS || !FOCUS.session || focusAsked) return false;
+  focusAsked = true;
+  const there = () => location.replace(replayUrl(FOCUS.session, FOCUS.claim));
+  if (d.session !== FOCUS.session) { there(); return true; }
+  if (!d.active) {
+    getDoc(doc(db, "archive", FOCUS.session)).then((a) => { if (a.exists()) there(); }).catch(() => {});
+  }
+  return false;
+}
+const focused = (c) => Boolean(FOCUS && c.id === FOCUS.claim && (!FOCUS.session || FOCUS.session === live.session));
 
 function follow(session) {
   unsub.forEach((u) => u());
@@ -127,7 +145,8 @@ function buildFact(c) {
   const fal = el("p", "fact-fallacy");  // the fallacy said in the same sentence, once it shows
   fal.hidden = true;
   li.append(el("p", "fact-expl"), fal, el("ul", "fact-sources"));
-  const social = factSocial(live.session, c.id);  // votes and comments, once the verdict is in
+  // votes, comments and the share button, once the verdict is in
+  const social = addShare(factSocial(live.session, c.id), live.session, c.id, { live: true });
   social.hidden = true;
   li.append(social);
   return li;
@@ -159,7 +178,7 @@ function render() {
     .filter((c) => now == null || c.show_at <= now)
     .map((c) => game.mask(c, now))  // a challenge's fact stays "being checked" until the game is over
     .sort((a, b) => b.show_at - a.show_at)
-    .slice(0, MAX_SHOWN);
+    .filter((c, i) => i < MAX_SHOWN || focused(c));  // a linked fact (?f=) even when it is older than those
 
   const keep = new Set(visible.map((c) => c.id));
   for (const [id, s] of shown) if (!keep.has(id)) { s.li.remove(); shown.delete(id); }
@@ -208,6 +227,7 @@ function render() {
       s.text = text;
     }
     place(s.li);
+    if (focused(c)) revealFact(s.li);  // once (js/share.js)
   }
   for (const [key, li] of seps) if (!usedSeps.has(key)) li.remove();
   els.empty.hidden = visible.length > 0;

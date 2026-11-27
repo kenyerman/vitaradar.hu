@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="hu">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- A shared fact check (js/share.js): fact.html?s=<session>&f=<claim id>. Share crawlers (Messenger, Facebook,
+       Reddit, X) don't run scripts, so they show these tags; a reader is sent on at once, to the replay, or with &l=1
+       (shared from the live page) to the live page, which open the fact. No og:url or canonical: they would send every
+       share to the bare page. -->
+  <title>Ellenőrzött állítás – Vitaradar</title>
+  <meta name="description" content="Egy állítás az Országgyűlésből és a tényellenőrzése: a minősítés, az indoklás, a források és a videó pillanata.">
+  <meta name="theme-color" content="#040706">
+  <link rel="icon" href="favicon.ico?v=202611271300" sizes="32x32">
+  <link rel="icon" href="img/favicon.svg?v=202611271300" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png?v=202611262356">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Vitaradar">
+  <meta property="og:locale" content="hu_HU">
+  <meta property="og:title" content="Ellenőrzött állítás – Vitaradar">
+  <meta property="og:description" content="Egy állítás az Országgyűlésből és a tényellenőrzése: a minősítés, az indoklás, a források és a videó pillanata.">
+  <meta property="og:image" content="https://vitaradar.hu/img/og.jpg?v=202611271300">
+  <meta property="og:image:type" content="image/jpeg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="vitaradar.hu – az Országgyűlés élőben, tényellenőrzéssel: igaz, részben igaz, félrevezető, hamis, vélemény, ígéret, nem ellenőrizhető, hibás érvelés">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Ellenőrzött állítás – Vitaradar">
+  <meta name="twitter:description" content="Egy állítás az Országgyűlésből és a tényellenőrzése: a minősítés, az indoklás, a források és a videó pillanata.">
+  <meta name="twitter:image" content="https://vitaradar.hu/img/og.jpg?v=202611271300">
+  <meta name="twitter:image:alt" content="vitaradar.hu – az Országgyűlés élőben, tényellenőrzéssel: igaz, részben igaz, félrevezető, hamis, vélemény, ígéret, nem ellenőrizhető, hibás érvelés">
+  <style>html { background: #040706; color: #c5d3cb; font: 15px/1.5 system-ui, sans-serif; } body { margin: 24px 16px; } a { color: #00ff41; }</style>
+  <script>
+    (function () {
+      var q = new URLSearchParams(location.search);
+      var live = q.get("l") === "1";
+      q.delete("l");
+      location.replace((live ? "./" : "watch.html") + "?" + q.toString());
+    })();
+  </script>
+</head>
+<body>
+  <noscript><p>Az állítás megnyitásához be kell kapcsolni a JavaScriptet. <a href="archive.html">Archívum</a></p></noscript>
+</body>
+</html>

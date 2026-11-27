@@ -11,10 +11,10 @@ import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/fire
 import {
   auth, db, appCheckHeaders, signInWithGoogle, signInAgain, readySignIn, signOut, signInLeavesPage, redirectError,
   signInRefused,
-} from "./firebase.js?v=202611272000";
+} from "./firebase.js?v=202611272300";
 import { apiUrl, avatarUrl, photoPrefix } from "./config.js?v=202611241021";
-import { el, initials, huDate } from "./common.js?v=202611272000";
-import { cdnReady, cdnUrl } from "./cdn.js?v=202611272000";
+import { el, initials, huDate } from "./common.js?v=202611272300";
+import { cdnReady, cdnUrl } from "./cdn.js?v=202611272300";
 import { fetchT, withTimeout, sleep } from "./net.js?v=202611270600";
 import { profileHref } from "./links.js?v=202611241021";
 
