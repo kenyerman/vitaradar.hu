@@ -5,19 +5,22 @@
 //
 //   youtubeMedia(box, id, startAt)   -> Promise of that object, the player put into box
 
+import { withTimeout } from "./net.js?v=202611270600";
+
 const API = "https://www.youtube.com/iframe_api";
+const WAIT_MS = 20_000;  // the API, then the player: each fails after this long (watch.js offers Újrapróbálás)
 let api = null;
 
 function loadApi() {
   if (window.YT && window.YT.Player) return Promise.resolve(window.YT);
-  return (api ||= new Promise((resolve, reject) => {
+  return (api ||= withTimeout(new Promise((resolve, reject) => {
     const prev = window.onYouTubeIframeAPIReady;
     window.onYouTubeIframeAPIReady = () => { if (prev) prev(); resolve(window.YT); };
     const s = document.createElement("script");
     s.src = API;
-    s.onerror = () => { api = null; s.remove(); reject(new Error("YouTube API")); };
+    s.onerror = () => { s.remove(); reject(new Error("YouTube API")); };
     document.head.append(s);
-  }));
+  }), WAIT_MS, "YouTube").catch((e) => { api = null; throw e; }));
 }
 
 export async function youtubeMedia(box, id, startAt = 0) {
@@ -28,7 +31,7 @@ export async function youtubeMedia(box, id, startAt = 0) {
   const listeners = new Map();
   const emit = (type) => (listeners.get(type) || []).forEach((fn) => { try { fn(); } catch (e) { console.warn(e); } });
   let timer = null;
-  const player = await new Promise((resolve) => {
+  const player = await withTimeout(new Promise((resolve) => {
     const p = new YT.Player("yt", {
       host: "https://www.youtube-nocookie.com",
       videoId: id,
@@ -49,7 +52,7 @@ export async function youtubeMedia(box, id, startAt = 0) {
         },
       },
     });
-  });
+  }), WAIT_MS, "YouTube");
   return {
     get currentTime() { return player.getCurrentTime() || 0; },
     set currentTime(t) { player.seekTo(t, true); setTimeout(() => emit("seeked"), 300); },

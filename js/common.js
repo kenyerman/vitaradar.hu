@@ -1,14 +1,26 @@
 // Shared by every page: Firebase, the digital rain behind the page, and small helpers.
 
 import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { db, getDoc, getDocs } from "./firebase.js?v=202611270330";
+import { db, getDoc, getDocs } from "./firebase.js?v=202611270600";
 import "./consent.js?v=202611241021";   // the cookie and storage bar at the bottom, on every page
-import "./presence.js?v=202611270330";  // the header's "N online" (visitors included), on every page
+import "./presence.js?v=202611270600";  // the header's "N online" (visitors included), on every page
 import "./menu.js?v=202611241206";      // the hamburger menu on phones, on every page
-import { CDN, cdnReady, cdnUrl } from "./cdn.js?v=202611270330";
+import "./netwatch.js?v=202611270600";  // a bar with "Újrapróbálás" when the server cannot be reached, on every page
+import { CDN, cdnReady, cdnUrl } from "./cdn.js?v=202611270600";
 
 export { db };  // set up once, with App Check, in firebase.js
 export { getDoc, getDocs };  // reads that wait for the server, not Firestore's own (firebase.js says why)
+
+// A load that failed or got no answer in time (js/net.js): what failed, and "Újrapróbálás", which loads the page again
+// (a new connection and a new reCAPTCHA check, what a stuck page needs; in the iPhone app there is no reload button).
+export function loadFailed(box, text) {
+  const b = el("button", "btn ghost", "Újrapróbálás");
+  b.type = "button";
+  b.addEventListener("click", () => { b.disabled = true; location.reload(); });
+  box.classList.add("load-failed");
+  box.replaceChildren(el("span", null, text), b);
+  box.hidden = false;
+}
 
 export const LABEL = {
   true: "IGAZ", partly_true: "RÉSZBEN IGAZ", misleading: "FÉLREVEZETŐ", false: "HAMIS", opinion: "VÉLEMÉNY",
