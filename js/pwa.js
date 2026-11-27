@@ -14,12 +14,15 @@
 //   (another browser, or the app is installed already) nothing is offered; once the dialog was used on a page, the
 //   header button shows where Chrome's menu has the install.
 // - iPhone: Safari has no install dialog, so it shows the steps (Megosztás → Hozzáadás a főképernyőhöz).
-// - Apps' own browsers (Facebook, Messenger, Instagram, TikTok…): nothing can be installed there, so the reader is sent
-//   to Chrome (Android, an intent: link) or Safari (iOS 17+, x-safari-https:). From the apps that allow it this happens
-//   by itself as the page loads, once per tab (sessionStorage vr-escape: never a loop); otherwise, or when it did not
-//   work, the sheet says how to open the page in the browser, with a button to copy its link.
-// The sheet waits for a calm moment: not while the cookie bar asks (it comes first), a game card is open, the reader
-// types or has just touched the screen, the menu or another dialog is open. A game that starts while it shows closes it
+// - Apps' own browsers (Facebook, Messenger, Instagram, TikTok…): nothing can be installed in them, so the same sheet's
+//   Telepítés opens the page in the real browser (Android: an intent: link, iOS: x-safari-https: or the app's own
+//   link; the app asks "open in another app?" first) with ?telepites in its address. Nothing leaves by itself. When the
+//   browser does not come, the sheet says how to open the page from the app's menu, with a button to copy its link.
+// - Arriving with ?telepites (from an app's browser): the mark leaves the address, and the install comes straight away,
+//   before the cookie bar: Android the sheet with the one Telepítés (the browser's dialog needs a tap), iPhone the steps.
+// The sheet waits for a calm moment: not while a game card is open, the reader types or has just touched the screen,
+// the menu or another dialog is open; in a browser also not while the cookie bar asks (it comes first there; in an
+// app's browser the reader is on the way out, so the sheet comes first). A game that starts while it shows closes it
 // (it comes back later on that page).
 //
 // In the installed app (html[data-app="standalone"]) links to other sites open outside it (a new tab: Safari's sheet on
@@ -38,13 +41,24 @@ const STILL = matchMedia("(prefers-reduced-motion: reduce)");
 const FIELD = "input:not([type=checkbox], [type=radio], [type=button], [type=submit], [type=range]), textarea, select, [contenteditable=true]";
 
 const KEY = "vr-install";  // {"v":1,"choice":"installed","at":<ms>}: the app was installed from this browser
-const TRIED = "vr-escape"; // sessionStorage, <ms>: this tab tried to open the page in the browser by itself
+const MARK = "telepites";  // ?telepites: sent here from an app's browser to install
 const FIRST_WAIT = 1500;   // after the page is in: its opening has played
 const RETRY = 2000;        // not calm yet: look again
 const QUIET = 1500;        // no touch, scroll or key for this long before it comes up (never under a finger)
 const BACK = 15000;        // a game closed it: back after this long
 
 const inApp = () => APP.matches || navigator.standalone === true;
+
+// Sent from an app's browser by its Telepítés (?telepites): remembered, and gone from the address (a reload or a shared
+// link does not bring it back). The page's own scripts have read their address by now: this file runs last.
+const ARRIVED = (() => {
+  let u;
+  try { u = new URL(location.href); } catch { return false; }
+  if (!u.searchParams.has(MARK)) return false;
+  u.searchParams.delete(MARK);
+  try { history.replaceState(history.state, "", u.pathname + u.search + u.hash); } catch { /* the mark stays: harmless */ }
+  return true;
+})();
 
 // ------------------------------------------------------------------ the service worker
 function register() {
@@ -82,12 +96,12 @@ if (inApp()) {
 // - "open": window.open of x-safari-https: (Facebook and Messenger take it only this way since March 2026).
 // - "ig" / "threads": the app's own extbrowser link (Instagram and Threads dropped x-safari-https).
 // - "safari": a plain x-safari-https: link (iOS 15 and 17 and later; 16 does not know it).
-// `auto`: tried by itself as the page loads (where the tests found it working); otherwise from a tap.
+// Only ever from a tap (Telepítés): Meta's apps would let a page do it as it loads, but readers did not ask to leave.
 const APPS = [
-  { id: "messenger", name: "Messenger", art: "A", re: /MessengerForiOS|Orca-Android|FB_IAB\/(?:Orca|MESSENGER)/, a: "intent", i: "open", auto: true },
-  { id: "instagram", name: "Instagram", art: "Az", re: /\bInstagram/, a: "intent", i: "ig", auto: true },
+  { id: "messenger", name: "Messenger", art: "A", re: /MessengerForiOS|Orca-Android|FB_IAB\/(?:Orca|MESSENGER)/, a: "intent", i: "open" },
+  { id: "instagram", name: "Instagram", art: "Az", re: /\bInstagram/, a: "intent", i: "ig" },
   { id: "threads", name: "Threads", art: "A", re: /\bBarcelona/, a: "intent", i: "threads" },
-  { id: "facebook", name: "Facebook és a Messenger", art: "A", re: /\bFB[\w_]+\/|FBAN|FBAV/, a: "intent", i: "open", auto: true },
+  { id: "facebook", name: "Facebook és a Messenger", art: "A", re: /\bFB[\w_]+\/|FBAN|FBAV/, a: "intent", i: "open" },
   { id: "tiktok", name: "TikTok", art: "A", re: /musical_ly|Bytedance|TikTok/i, a: "probe", i: null },
   { id: "snapchat", name: "Snapchat", art: "A", re: /Snapchat/i, a: "probe", i: null },
   { id: "reddit", name: "Reddit", art: "A", re: /\bReddit\//i, a: "probe", i: "safari" },
@@ -111,16 +125,14 @@ const VIEW = IOS && !IAB && !IOS_OTHER && SAFARI >= 26 && Number((/Version\/26\.
   && !window.browser;
 
 function escapeUrl(way) {
-  const here = location.href;
+  const u = new URL(location.href);
+  u.searchParams.set(MARK, "1");  // the browser goes straight to the install
+  const here = u.href;
   if (way === "ig") return `instagram://extbrowser/?url=${encodeURIComponent(here)}`;
   if (way === "threads") return `barcelona://extbrowser/?url=${encodeURIComponent(here)}`;
   if (IOS) return `x-safari-${here}`;  // x-safari-https://vitaradar.hu/…
   // the page's path and query (an intent: link has no room for its #part)
-  return `intent://${location.host}${location.pathname}${location.search}#Intent;scheme=${location.protocol.slice(0, -1)};end`;
-}
-
-function tried() {
-  try { return sessionStorage.getItem(TRIED) != null; } catch { return true; }  // cannot remember the try: never by itself
+  return `intent://${u.host}${u.pathname}${u.search}#Intent;scheme=${u.protocol.slice(0, -1)};end`;
 }
 
 // Sends the reader to the browser; resolves true when the page went to the background (the browser came up). Apps ask
@@ -128,7 +140,6 @@ function tried() {
 let lastTry = 0;
 function leave() {
   lastTry = Date.now();
-  try { sessionStorage.setItem(TRIED, String(lastTry)); } catch { /* the tap still works */ }
   return new Promise((done) => {
     let gone = false;
     const hide = () => { if (document.visibilityState === "hidden") gone = true; };
@@ -151,7 +162,7 @@ function leave() {
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState !== "hidden" || !lastTry || Date.now() - lastTry > 30000) return;
   dismissed = true;  // the browser came up: back in the app, the page is left alone
-  if (sheet && sheet.dataset.view === "inapp") close("final");
+  if (sheet) close("final");
 });
 
 // ------------------------------------------------------------------ what can be offered now
@@ -200,7 +211,7 @@ const gameOpen = () => Boolean(document.querySelector('.game-dock > :not([hidden
 function calm() {
   const focus = document.activeElement;
   return document.visibilityState === "visible"
-    && root.dataset.consent !== "open"  // the cookie bar first (js/consent.js): never two sheets at once
+    && (IAB || root.dataset.consent !== "open")  // in a browser the cookie bar first (js/consent.js)
     && !root.classList.contains("menu-open")
     && !document.querySelector("dialog[open]")
     && !gameOpen()
@@ -226,13 +237,24 @@ const DIALOG = typeof HTMLDialogElement === "function" && "showModal" in HTMLDia
 
 function start() {
   started = Date.now();
-  if (!(IOS || ANDROID) || inApp()) return;
-  if (IAB && WAY && IAB.auto && !tried() && !installed()) {
-    // straight to the browser (as the tests did it: a moment after the load); if the app kept the page, the sheet
-    setTimeout(() => leave().then((gone) => { if (gone) dismissed = true; else later(300); }), 1200);
-    return;
-  }
-  if (DIALOG) later(FIRST_WAIT);
+  if (!(IOS || ANDROID) || inApp() || !DIALOG) return;
+  later(FIRST_WAIT);
+}
+
+// Here from an app's browser to install: no question of where, no waiting for the cookie bar. iPhone: the steps.
+// Android: the browser's install dialog needs a tap of its own, so the sheet with just Telepítés, once the browser has
+// offered the install (or, without the offer in 8 s, its menu's steps).
+function arrive() {
+  started = Date.now();
+  if (IOS) { setTimeout(() => { if (!sheet && offer()) open("steps"); }, 600); return; }
+  const t0 = Date.now();
+  const look = () => {
+    if (sheet || dismissed || !PHONE.matches || installed()) return;
+    if (bip) open("direct");
+    else if (Date.now() - t0 > 8000) open("android");
+    else setTimeout(look, 300);
+  };
+  setTimeout(look, 400);
 }
 
 // ------------------------------------------------------------------ the header button (and the phone menu's item)
@@ -294,8 +316,12 @@ function go() {
   if (!DIALOG) { if (o === "inapp" && WAY) leave(); return; }
   if (sheet) close("final");
   clearTimeout(timer);
+  if (o === "inapp") {  // straight to the browser; the app's menu steps only when it does not come
+    if (!WAY) { open("out", true); return; }
+    leave().then((gone) => { if (!gone && !sheet) open("out", true); });
+    return;
+  }
   open(o === "ios" ? "steps" : o, true);
-  if (o === "inapp" && WAY) away();
 }
 
 // ------------------------------------------------------------------ the sheet
@@ -384,9 +410,9 @@ function inappView() {
   const last = `${ANDROID ? "A böngészőben" : "A Safariban"} koppints a <b>Telepítés</b> gombra: a többit a lap megmutatja.`;
   const list = [...iabMenu(), last].map((x) => `<li>${x}</li>`).join("");
   return `<h2 class="is-title" id="is-view-title" tabindex="-1">Nyisd meg ${where}</h2>
-    <p class="is-note">${who} ${own} nem lehet appot telepíteni. ${ANDROID ? "A böngészőben" : "A Safariban"} pár koppintás az egész.</p>
-    ${WAY ? `<button type="button" class="btn is-wide" data-act="leave">${ICON.out}Megnyitás ${where}</button>
-    <p class="is-or">Ha nem nyílik meg:</p>` : ""}
+    <p class="is-note">${who} ${own} nem lehet appot telepíteni${WAY ? ", és most nem nyílt meg magától" : ""}. ${ANDROID ? "A böngészőben" : "A Safariban"} pár koppintás az egész.</p>
+    ${WAY ? `<button type="button" class="btn is-wide" data-act="leave">${ICON.out}Újra: megnyitás ${where}</button>
+    <p class="is-or">Vagy az app menüjéből:</p>` : ""}
     <ol class="is-list">${list}</ol>
     <div class="is-pair">
       <button type="button" class="btn ghost" data-act="copy">${ICON.link}<span>Link másolása</span></button>
@@ -395,12 +421,21 @@ function inappView() {
     <p class="is-copied" role="status" aria-live="polite"></p>`;
 }
 
+// Arrived from an app's browser (Android): the browser's dialog wants a tap of its own
+function directView() {
+  return `<h2 class="is-title" id="is-view-title">Még egy koppintás</h2>
+      <ul class="is-rows">
+        <li class="is-row"><span class="is-ico">${APP_ICON}</span><span class="is-name is-brand">vitaradar<small>app a telefonodon</small></span><button type="button" class="btn is-btn" data-act="install" autofocus>Telepítés</button></li>
+      </ul>`;
+}
+
 function mainView() {
+  const app = IAB ? `a ${ANDROID ? "böngésződ" : "Safari"} nyílik meg hozzá` : "app a telefonodon";
   return `<section class="is-main">
       <h2 class="is-title" id="is-view-title">Hol folytatod?</h2>
       <ul class="is-rows">
         <li class="is-row"><span class="is-ico">${ICON.browser}</span><span class="is-name">Böngésző<small>ebben a lapban</small></span><button type="button" class="btn ghost is-btn" data-act="browser" autofocus>Folytatás</button></li>
-        <li class="is-row"><span class="is-ico">${APP_ICON}</span><span class="is-name is-brand">vitaradar<small>app a telefonodon</small></span><button type="button" class="btn is-btn" data-act="install">Telepítés</button></li>
+        <li class="is-row"><span class="is-ico">${APP_ICON}</span><span class="is-name is-brand">vitaradar<small>${app}</small></span><button type="button" class="btn is-btn" data-act="install">Telepítés</button></li>
       </ul>
     </section>`;
 }
@@ -408,16 +443,18 @@ function mainView() {
 function viewHtml(view) {
   if (view === "steps") return `<section class="is-steps">${steps()}</section>`;
   if (view === "android") return `<section class="is-steps">${androidSteps()}</section>`;
-  if (view === "inapp") return `<section class="is-steps is-iab">${inappView()}</section>`;
+  if (view === "out") return `<section class="is-steps is-iab">${inappView()}</section>`;
+  if (view === "direct") return `<section class="is-main">${directView()}</section>`;
   return mainView();
 }
 
 let guard = 0, back = null;
 
-// `view`: "prompt" (Android with its dialog) and "ios" open on the two rows; "steps", "android", "inapp" on their own.
+// `view`: "prompt" (Android with its dialog), "ios" and "inapp" open on the two rows; "steps", "android", "out" (how to
+// open the page from an app's menu), "direct" (just Telepítés) on their own.
 function open(view, asked = false) {
   back = document.activeElement;
-  const v = view === "prompt" || view === "ios" ? "main" : view;
+  const v = view === "prompt" || view === "ios" || view === "inapp" ? "main" : view;
   const d = sheet = el("dialog", "install-sheet");
   d.setAttribute("aria-labelledby", "is-view-title");
   d.dataset.view = v;
@@ -444,6 +481,17 @@ function onClick(e) {
 }
 
 function install() {
+  if (IAB) {  // to the browser, with the mark; the app's menu steps when it does not come
+    if (!WAY) { swap("out"); return; }
+    const d = sheet, b = d.querySelector('[data-act="install"]');
+    if (b) { b.disabled = true; b.textContent = "Nyílik…"; }
+    leave().then((gone) => {
+      if (sheet !== d) return;
+      if (gone) close("final");
+      else swap("out");
+    });
+    return;
+  }
   if (IOS) { swap("steps"); return; }
   ask();
 }
@@ -531,4 +579,6 @@ function close(why) {
 
 // ------------------------------------------------------------------ go (the page is parsed: modules run after it)
 mountButton();
-if (document.readyState === "complete") start(); else addEventListener("load", start, { once: true });
+if (ARRIVED && !IAB && (IOS || ANDROID) && !inApp() && DIALOG) arrive();  // no waiting for the whole page to load
+else if (document.readyState === "complete") start();
+else addEventListener("load", start, { once: true });

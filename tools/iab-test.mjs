@@ -1,12 +1,12 @@
 #!/usr/bin/env node
-// Tests the way out of Facebook's and Messenger's own browsers (js/pwa.js) on an Android emulator or phone, over adb:
-// opens a Facebook post or a Messenger chat that holds a vitaradar.hu link, taps the link, answers Meta's "open in
-// another app?" (and Android's app chooser), and checks that Chrome came up with the same page (path and query), and
-// what the page shows there (the install sheet, the header button, the cookie bar). Screenshots of each step and a
-// result.json go to --out. Node 22+ (fetch, WebSocket), no packages.
+// Tests the install from Facebook's and Messenger's own browsers (js/pwa.js) on an Android emulator or phone, over adb:
+// opens a Facebook post or a Messenger chat that holds a vitaradar.hu link, taps the link, waits for our install sheet
+// in the app's browser and taps its Telepítés, answers Meta's "open in another app?" (and Android's app chooser), and
+// checks that Chrome came up with the same page (path and query, the ?telepites mark already gone) and our "Még egy
+// koppintás" sheet; with --install also its Telepítés, Chrome's own install dialog and the installed app (removed again
+// unless --keep). Screenshots of each step and a result.json go to --out. Node 22+ (fetch, WebSocket), no packages.
 //
-// The app's own interruptions ("Save your login info?") get the answer that changes nothing (Not now); Chrome's cookie
-// bar on vitaradar.hu gets "Elutasítom" (necessary only), so the install sheet can come.
+// The apps' own interruptions ("Save your login info?") get the answer that changes nothing (Not now).
 //
 // One-time setup (an emulator with Google Play, or a phone with USB debugging):
 //   1. Sign in to Google Play, install Facebook and Messenger, sign in to both; open Chrome once (its welcome screens).
@@ -14,11 +14,11 @@
 //      and a message to yourself in Messenger with a vitaradar.hu link (the query tells the runs apart in Chrome; the
 //      site ignores it).
 // Run (emulator: ~/Library/Android/sdk/emulator/emulator -avd <name>):
-//   node tools/iab-test.mjs --app facebook  --open fb://profile --scroll 5 --link iabtest=facebook
-//   node tools/iab-test.mjs --app messenger --open app --chat "<your name>" --link vitaradar.hu
+//   node tools/iab-test.mjs --app facebook  --open fb://profile --scroll 5 --link iabtest=facebook [--install]
+//   node tools/iab-test.mjs --app messenger --open app --chat "<your name>" --link vitaradar.hu [--install]
 //   --open <URL> opens a post or chat by its link instead; --here tests from the screen as it is.
 //   node tools/iab-test.mjs --dump   (the screen's elements, to see what the apps call things today)
-// Exit code 0: Chrome came up with the page. Meta changes its apps every week: run it after their updates.
+// Exit code 0: Chrome came up with the page and the sheet (and with --install, the app got installed). Meta changes its apps every week: run it after their updates.
 // Port 9341 on the Mac is forwarded to Chrome's DevTools on the device (--port to change it).
 
 import { execFileSync } from "node:child_process";
@@ -38,8 +38,8 @@ const PORT = Number(args.port || 9341);  // on the Mac, forwarded to Chrome's De
 const OUT = args.out || path.join(os.tmpdir(), `iab-test-${new Date().toISOString().replace(/[:.]/g, "-")}`);
 // Meta's question before another app opens, and Android's chooser (English and Hungarian; --dump shows today's words)
 const YES = /^(open|megnyitás|continue|folytatás|leave|kilépés|ok|open link|link megnyitása|just once|csak egyszer|always|mindig|chrome)$/i;
-// our own sheet's button (js/pwa.js), when the page could not leave by itself
-const OURS = /^megnyitás a böngészőben$/i;
+// our own sheet's buttons in the app's browser (js/pwa.js): Telepítés, and "Újra: megnyitás…" if the browser did not come
+const OURS = /^(telepítés|újra: megnyitás .*)$/i;
 
 const adb = (...a) => execFileSync(ADB, [...SERIAL, ...a], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
 const shell = (cmd) => adb("shell", cmd);
@@ -162,53 +162,83 @@ async function run() {
   tap(link);
   const tapped = Date.now();
 
-  // in the app's browser: our page asks Meta by itself (pwa.js, ~1.2 s after its load); Meta asks; we say yes
-  let ours = false;
+  // in the app's browser: our sheet comes (js/pwa.js); its Telepítés asks Meta to open the browser; Meta asks; yes
+  let ours = 0;
   for (;;) {
     const f = focus();
     if (f.startsWith(CHROME)) { step(`Chrome is in front after ${((Date.now() - tapped) / 1000).toFixed(1)} s`); break; }
-    if (Date.now() - tapped > 35000) { step(`no Chrome after 35 s (in front: ${f || "?"})`); shot("2-stuck"); return finish(result, 1); }
+    if (f.startsWith("org.chromium.webapk")) { step(`the installed app came up (${f}): the page opened in it, not in Chrome`); result.installedApp = f; return finish(result, 0); }
+    if (Date.now() - tapped > 45000) { step(`no Chrome after 45 s (in front: ${f || "?"})`); shot("2-stuck"); return finish(result, 1); }
     const nodes = screen();
     const yes = nodes.find((n) => YES.test(n.label) && /Button|TextView/.test(n.cls));
     if (yes) {
-      shot(`2-asked-${result.steps.length}`);
+      shot(`3-asked-${result.steps.length}`);
       step(`answering "${nodes.filter((n) => n.label && n.pkg === yes.pkg).map((n) => n.label).slice(0, 6).join(" | ")}" with ${yes.label}`);
       result.asked = (result.asked || []).concat(yes.label);
       tap(yes);
       await wait(1500);
       continue;
     }
-    const mine = nodes.find((n) => OURS.test(n.label));
-    if (mine && !ours && Date.now() - tapped > 9000) {
-      ours = true;
-      shot("2-our-sheet");
-      step("the page did not leave by itself: tapping our sheet's \"Megnyitás a böngészőben\"");
+    const mine = ours < 2 && nodes.find((n) => OURS.test(n.label) && n.cls.endsWith("Button"));
+    if (mine) {
+      ours++;
+      shot(`2-our-sheet-${ours}`);
+      step(`${((Date.now() - tapped) / 1000).toFixed(1)} s: our sheet in the app's browser, tapping "${mine.label}"`);
+      if (ours === 1) result.sheetAfter = Math.round((Date.now() - tapped) / 100) / 10;
       tap(mine);
+      await wait(2500);
+      continue;
     }
     await wait(800);
   }
-  result.auto = !ours;
+  result.tappedSheet = ours;
 
-  // in Chrome: the same page? what does it show?
-  await wait(9000);  // the page's own start, the cookie bar, the sheet's wait
-  shot("3-chrome");
+  // in Chrome: the same page, and straight to the install ("Még egy koppintás", before the cookie bar)
+  let direct = null;
+  for (let t = Date.now(); !direct && Date.now() - t < 15000; await wait(700)) {
+    direct = screen().find((n) => n.pkg === CHROME && /^még egy koppintás$/i.test(n.label));
+  }
+  shot("4-chrome");
   const all = await tabs();
   const tab = all.find((t) => t.url.includes(args.link) && !before.has(t.id)) || all.find((t) => t.url.includes(args.link));
   if (!tab) { step(`Chrome has no tab with "${args.link}" (${all.map((t) => t.url).join(", ") || "DevTools not reachable"})`); return finish(result, 1); }
   result.url = tab.url;
   result.newTab = !before.has(tab.id);
-  // the cookie bar comes first, the sheet after it: answer it "Elutasítom" (necessary only) and give the sheet its time
-  result.page = await evaluate(tab, `(async () => {
-    const no = [...document.querySelectorAll(".consent button")].find((b) => /elutas/i.test(b.textContent));
-    if (no) { no.click(); for (let i = 0; i < 80 && !document.querySelector(".install-sheet[open]"); i++) await new Promise((r) => setTimeout(r, 100)); }
+  result.page = await evaluate(tab, `(() => {
     const d = document.querySelector(".install-sheet[open]"), b = document.querySelector(".hdr-install");
-    return { url: location.href, ua: navigator.userAgent, consentAnswered: Boolean(no), consentBar: document.documentElement.dataset.consent === "open",
-      sheet: d ? d.dataset.view : null, headerButton: b ? !b.hidden : null, headerForm: document.querySelector(".header-row")?.dataset.inst || null,
-      standalone: matchMedia("(display-mode: standalone)").matches };
+    return { url: location.href, marked: new URLSearchParams(location.search).has("telepites"),
+      consentBar: document.documentElement.dataset.consent === "open", sheet: d ? d.dataset.view : null,
+      headerButton: b ? !b.hidden : null, ua: navigator.userAgent };
   })()`);
-  shot("4-chrome-after");
   step(`Chrome tab ${result.newTab ? "(new)" : "(already open)"}: ${tab.url}`);
   step(`page: ${JSON.stringify(result.page)}`);
+  if (!direct) { step("no \"Még egy koppintás\" sheet in Chrome"); return finish(result, 1); }
+
+  // --install: its Telepítés, Chrome's own "Install app", and the app on the phone (removed again unless --keep)
+  if (args.install) {
+    const apks = () => new Set(shell("pm list packages").split(/\s+/).filter((x) => x.includes("webapk")));
+    const had = apks();
+    const go = screen().find((n) => n.pkg === CHROME && /^telepítés$/i.test(n.label) && n.cls.endsWith("Button"));
+    if (!go) { step("no Telepítés on the sheet"); return finish(result, 1); }
+    tap(go);
+    let ok = null;
+    for (let t = Date.now(); !ok && Date.now() - t < 10000; await wait(700)) {
+      const nodes = screen();
+      if (nodes.some((n) => /^még egy koppintás$/i.test(n.label))) continue;  // our sheet still closing
+      ok = nodes.find((n) => n.pkg === CHROME && /^(install|telepítés)$/i.test(n.label) && n.cls.endsWith("Button"));
+    }
+    shot("5-install-dialog");
+    if (!ok) { step("Chrome's install dialog did not come"); return finish(result, 1); }
+    step("Chrome's install dialog: tapping " + ok.label);
+    tap(ok);
+    let added = [];
+    for (let t = Date.now(); !added.length && Date.now() - t < 40000; await wait(2000)) added = [...apks()].filter((x) => !had.has(x));
+    shot("6-installed");
+    if (!added.length) { step("no app was installed in 40 s"); return finish(result, 1); }
+    result.installed = added[0].replace(/^package:/, "");
+    step(`installed: ${result.installed}`);
+    if (!args.keep) { adb("uninstall", result.installed); step("removed it again (--keep keeps it)"); }
+  }
   return finish(result, 0);
 }
 
