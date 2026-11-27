@@ -2044,8 +2044,7 @@ body.m-watch:is([data-m-tab="speakers"], [data-m-tab="transcript"]) .m-ai #show-
   .arch-chips { flex-wrap: nowrap; overflow-x: auto; margin: 10px -16px 0; padding: 0 16px; scrollbar-width: none; }
   .arch-chips::-webkit-scrollbar { display: none; }
   .arch-chip { min-height: 36px; }
-  .arch-totals ul { display: flex; flex-wrap: wrap; gap: 0 12px; font-size: 12px; line-height: 1.5; }
-  .arch-totals li + li::before { content: "·"; margin-right: 12px; color: var(--line); }
+  .arch-totals ul { display: flex; flex-wrap: wrap; gap: 2px 16px; font-size: 12px; line-height: 1.5; }  /* spaced, no dots: a wrapped line never starts with one */
   /* each day's head: the date and weekday, the numbers under them */
   .arch-day { grid-template-columns: minmax(0, 1fr); }
   .arch-day > .count-line { margin-top: 3px; white-space: normal; }
