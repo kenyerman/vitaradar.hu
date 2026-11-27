@@ -11,7 +11,7 @@
 // js/share.js): at its moment, the video waiting for a tap, the card opened and framed.
 
 import { doc, onSnapshot, collection, query, where } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { db, getDoc, getDocs, el, factBadge, LABEL, sourceList, setPhoto, hms, huDate, mpHref, watchLiveNav, loadFailed } from "./common.js?v=202611270600";
+import { db, getDoc, getDocs, el, factBadge, LABEL, sourceList, setPhoto, hms, huDate, mpHref, watchLiveNav, loadFailed } from "./common.js?v=202611272300";
 import { mountAccount } from "./account.js?v=202611270330";
 import { factSocial } from "./social.js?v=202611270330";
 import { addShare, FOCUS, revealFact, liveUrl } from "./share.js?v=202611272100";

@@ -9,7 +9,7 @@
 // disappear for the user who blocked them.
 
 import { collection, query, where, orderBy, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { db, el } from "./common.js?v=202611270600";
+import { db, el } from "./common.js?v=202611272300";
 import { account, onAccount, onBlocks, isBlocked, api, needAccount, avatar, dialog, toast, blockUser } from "./account.js?v=202611270330";
 import { userCard } from "./usercard.js?v=202611270330";
 
