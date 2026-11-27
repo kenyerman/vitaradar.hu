@@ -6,7 +6,7 @@
 // with the images, and renews it before the hour is up. Elsewhere (localhost) the addresses are left as they were.
 
 import { apiUrl } from "./config.js?v=202611241021";
-import { appCheckHeaders } from "./firebase.js?v=202611270600";
+import { appCheckHeaders } from "./firebase.js?v=202611272000";
 import { fetchT } from "./net.js?v=202611270600";
 
 export const CDN = "https://cdn.vitaradar.hu/";

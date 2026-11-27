@@ -13,11 +13,11 @@ import { collection, doc, query, orderBy, limit, onSnapshot, writeBatch, serverT
 import { FieldPath, deleteField } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";  // reactions
 import { getToken } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check.js";
 import { getIdToken, getIdTokenResult } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-import { appCheck } from "./firebase.js?v=202611270600";
-import { db, el, getDoc } from "./common.js?v=202611270600";
-import { account, onAccount, onBlocks, isBlocked, avatar, toast, blockUser } from "./account.js?v=202611270600";
-import { userCard } from "./usercard.js?v=202611270600";
-import { linkify, locked, LOREM, LOREM_NICKS } from "./social.js?v=202611270600";
+import { appCheck } from "./firebase.js?v=202611272000";
+import { db, el, getDoc } from "./common.js?v=202611272000";
+import { account, onAccount, onBlocks, isBlocked, avatar, toast, blockUser } from "./account.js?v=202611272000";
+import { userCard } from "./usercard.js?v=202611272000";
+import { linkify, locked, LOREM, LOREM_NICKS } from "./social.js?v=202611272000";
 import { fetchT, withTimeout } from "./net.js?v=202611270600";
 
 const MAX = 300;

@@ -1,0 +1,42 @@
+# Keeps __/auth/ (Firebase's Google sign-in helper, served from vitaradar.hu for the iPhone app) the same as Firebase's
+# own copy: Firebase fixes these files now and then and asks self-hosted copies to follow (tools/auth-helper.sh). Every
+# Monday, and by hand from the Actions tab ("Run workflow").
+name: auth-helper
+
+on:
+  schedule:
+    - cron: "41 5 * * 1"  # Mondays 05:41 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write  # commit __/auth/
+  pages: write     # ask GitHub Pages to rebuild after that commit
+
+concurrency:
+  group: auth-helper
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch Firebase's helper files
+        run: sh tools/auth-helper.sh
+
+      - name: Commit and publish if they changed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -z "$(git status --porcelain -- __/auth)" ]; then
+            echo "__/auth unchanged"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git add -- __/auth
+          git commit -m "__/auth: Firebase's sign-in helper refreshed" -- __/auth
+          git push origin HEAD:${{ github.ref_name }}
+          # a push made with the workflow's token may not start a Pages build by itself
+          gh api -X POST "repos/${{ github.repository }}/pages/builds" --silent

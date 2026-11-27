@@ -10,10 +10,11 @@ import {
 import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import {
   auth, db, appCheckHeaders, signInWithGoogle, signInAgain, readySignIn, signOut, signInLeavesPage, redirectError,
-} from "./firebase.js?v=202611270600";
+  signInRefused,
+} from "./firebase.js?v=202611272000";
 import { apiUrl, avatarUrl, photoPrefix } from "./config.js?v=202611241021";
-import { el, initials, huDate } from "./common.js?v=202611270600";
-import { cdnReady, cdnUrl } from "./cdn.js?v=202611270600";
+import { el, initials, huDate } from "./common.js?v=202611272000";
+import { cdnReady, cdnUrl } from "./cdn.js?v=202611272000";
 import { fetchT, withTimeout, sleep } from "./net.js?v=202611270600";
 import { profileHref } from "./links.js?v=202611241021";
 
@@ -119,8 +120,46 @@ export function needAccount() {
 }
 
 export async function signIn() {
+  if (signInRefused) { signInElsewhere(); return; }
   try { await signInWithGoogle(); }
   catch (e) { if (e.code !== "auth/popup-closed-by-user" && e.code !== "auth/cancelled-popup-request") toast(`Nem sikerült belépni (${e.code || e.message}).`); }
+}
+
+// Apps' own browsers (Facebook, Instagram, Messenger…): Google signs no one in there (js/firebase.js), so instead of
+// Google's refusal the reader learns how to open the page in the browser, where the sign-in works.
+function signInElsewhere() {
+  const android = /Android/.test(navigator.userAgent);
+  const note = el("p", "dlg-text");
+  note.setAttribute("role", "status");
+  const dlg = dialog("Belépés a böngészőben", [
+    el("p", "dlg-text", "Az appok saját böngészőjéből (Facebook, Instagram, Messenger…) a Google nem enged belépni."),
+    el("p", "dlg-text", `Nyisd meg az oldalt ${android ? "a böngésződben" : "a Safariban"}: az app menüjében (${android ? "⋮" : "•••"})`
+      + " válaszd a Megnyitás böngészőben (Open in browser) pontot, vagy másold ki a linket. Ott be tudsz lépni."),
+    note,
+  ], [
+    { label: "Link másolása", onClick: (e) => copyLink(e.currentTarget, note, dlg.el) },
+    { label: "Rendben", primary: true, onClick: () => dlg.close() },
+  ]);
+}
+
+// The old way first, inside the tap (apps' browsers often refuse the clipboard API); then the API; else the link shown.
+async function copyLink(button, note, box) {
+  const url = location.href;
+  let ok = false;
+  const t = el("textarea");
+  t.value = url;
+  t.setAttribute("readonly", "");
+  t.style.cssText = "position:fixed;opacity:0;pointer-events:none";
+  box.append(t);  // in the dialog: the page behind it is inert
+  t.select();
+  t.setSelectionRange(0, url.length);
+  try { ok = document.execCommand("copy"); } catch { ok = false; }
+  t.remove();
+  button.focus({ preventScroll: true });
+  if (!ok) {
+    try { await navigator.clipboard.writeText(url); ok = true; } catch { /* shown below to copy by hand */ }
+  }
+  note.textContent = ok ? "Kimásolva. Illeszd be a böngésző címsorába." : `A link: ${url}`;
 }
 
 // the iPhone app signs in by leaving the page (js/firebase.js): a sign-in that failed there is told when it is back

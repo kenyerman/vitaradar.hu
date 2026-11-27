@@ -48,6 +48,10 @@ parliament's stream ──► fact-check pipeline (GPU VM) ──► HLS video p
 - **Accounts** (`js/account.js`): Google sign-in only; a profile (name, nick, picture) after a one-time registration,
   16+ only. E-mail and birth date are visible to their owner only. The sign-in popup runs on `auth.vitaradar.hu`
   (Firebase Hosting, connected to the project, DNS a CNAME at DotRoll), so Google's account chooser names our domain.
+  The iPhone app signs in by a redirect through `vitaradar.hu/__/auth/` instead: Firebase's own helper files, copied
+  by `tools/auth-helper.sh` and refreshed every week by `.github/workflows/auth-helper.yml` (Safari keeps a helper on
+  another address apart from the page's storage, and the redirect's result never arrived). Apps' own browsers
+  (Facebook, Instagram…) say how to open the page in the browser: Google refuses sign-ins inside them.
   "Fiók törlése" on one's own profile deletes the account with everything it left (the user API's `/account/delete`),
   after the user typed TÖRLÉS and, if their last sign-in is over 5 minutes old, signed in again with Google.
 - **Votes and comments** (`js/social.js`): thumbs up/down on every fact check and comment; comments (250 characters,
@@ -68,7 +72,8 @@ parliament's stream ──► fact-check pipeline (GPU VM) ──► HLS video p
   browser tab (Android: the browser's install dialog; iPhone: the Share → Add to Home Screen steps), at a calm moment,
   and not again for 30 days after "Folytatás". The service worker only shows `offline.html` when a page cannot load:
   pages come from the network, everything else (scripts, Firestore, sign-in, video, Twitch, YouTube) never passes
-  through it. In the iPhone app Google sign-in is a redirect instead of a popup. Icons: `tools/app-icons.py`.
+  through it. In the iPhone app Google sign-in is a redirect (through `__/auth/`, see Accounts) instead of a popup.
+  Icons: `tools/app-icons.py`.
 - **Protected:** the page uses Firebase App Check with reCAPTCHA Enterprise (invisible, score-based), so only this
   site, not scripts, can use the search; Firestore's security rules make the public data read-only for browsers. The
   Firebase config and the reCAPTCHA site key in `js/config.js` are public by design.

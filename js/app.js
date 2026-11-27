@@ -7,12 +7,12 @@
 // The video is Twitch's player (twitch.tv/vitaradar), which hides that date: js/twitch.js estimates it.
 
 import { doc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { db, el, factBadge, LABEL, sourceList, setPhoto, mpHref, setLiveNav, loadFailed } from "./common.js?v=202611270600";
-import { mountAccount } from "./account.js?v=202611270600";
-import { factSocial } from "./social.js?v=202611270600";
-import { mountChat } from "./chat.js?v=202611270600";
+import { db, el, factBadge, LABEL, sourceList, setPhoto, mpHref, setLiveNav, loadFailed } from "./common.js?v=202611272000";
+import { mountAccount } from "./account.js?v=202611272000";
+import { factSocial } from "./social.js?v=202611272000";
+import { mountChat } from "./chat.js?v=202611272000";
 import { scrollHint } from "./scrollhint.js?v=202611241021";
-import { mountGame } from "./game.js?v=202611270600";
+import { mountGame } from "./game.js?v=202611272000";
 import { mountTwitch, twitchNow } from "./twitch.js?v=202611271700";
 
 const $ = (id) => document.getElementById(id);
