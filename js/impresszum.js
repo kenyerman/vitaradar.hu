@@ -4,8 +4,8 @@
 // phones fold them to their names, the first one open. Sections lower down come in as they are scrolled to (css,
 // motion). Without this script every item is open, nothing is marked and nothing waits to come in.
 
-import { watchLiveNav } from "./common.js?v=202611272300";
-import { mountAccount } from "./account.js?v=202611280100";
+import { watchLiveNav } from "./common.js?v=202611281400";
+import { mountAccount } from "./account.js?v=202611281400";
 
 watchLiveNav();
 mountAccount();

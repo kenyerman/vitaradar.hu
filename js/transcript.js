@@ -6,7 +6,7 @@
 // The document: {text, words: [{w, s, e}], t0, t1, duration_s, model, word_times, ...}.
 
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { db } from "./common.js?v=202611272300";
+import { db } from "./common.js?v=202611281400";
 
 export const AI_NOTE = "automatikus (AI) leirat – tévedhet";
 

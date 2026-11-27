@@ -6,8 +6,8 @@
 // the page goes to Google and comes back (below, at "sign-in").
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-import { initializeAppCheck, ReCaptchaEnterpriseProvider, getToken } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check.js";
-import { getFirestore, onSnapshot, disableNetwork, enableNetwork } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { initializeAppCheck, ReCaptchaEnterpriseProvider, getToken, onTokenChanged } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check.js";
+import { initializeFirestore, onSnapshot, disableNetwork, enableNetwork } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import {
   initializeAuth, indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence,
   browserPopupRedirectResolver, GoogleAuthProvider, signInWithPopup, reauthenticateWithPopup, signOut as fbSignOut,
@@ -46,6 +46,7 @@ class SiteCheck extends ReCaptchaEnterpriseProvider {
   constructor(key) {
     super(key);
     this.failedCalls = 0;
+    this.lastFailure = null;  // { at, why } of the last call that got no token (siteCheckFailure below)
   }
 
   initialize(app) {
@@ -71,9 +72,26 @@ class SiteCheck extends ReCaptchaEnterpriseProvider {
     const hold = HOLD_MS[Math.min(this.failedCalls, HOLD_MS.length - 1)];
     this.failedCalls += 1;
     this._throttleData = { backoffCount: this.failedCalls, allowRequestsAfter: Date.now() + hold, httpStatus: 0 };
-    console.warn(`app check: no token after ${TRY_AFTER.length} tries, next try in ${hold / 1000} s:`, error);
+    this.lastFailure = { at: Date.now(), why: failureKind(error) };
+    console.warn(`app check: no token after ${TRY_AFTER.length} tries (${this.lastFailure.why}), next try in ${hold / 1000} s:`, error);
     throw error;
   }
+}
+
+// What the last try of a failed call ran into, for the page's words (js/netwatch.js) and the console:
+//   "timeout"   reCAPTCHA or the exchange did not answer in TRY_MS (a slow or stalled connection, a script not loaded);
+//   "score"     the exchange answered 403: reCAPTCHA rated the visitor under the project's minimum score;
+//   "token"     the exchange answered 401: reCAPTCHA gave a broken token (its "browser_error": it could not run);
+//   "recaptcha" Google's script failed while making the token;
+//   "other"     anything else (another HTTP status, an error of the SDK).
+// Rate limits would show as "other" with HTTP 429: none seen (27 Nov 2026: the exchange answered 200, 401 and 403 only).
+function failureKind(e) {
+  if (e?.code === "timeout") return "timeout";
+  const status = Number(e?.customData?.httpStatus);
+  if (status === 403) return "score";
+  if (status === 401) return "token";
+  if (e?.code === "appCheck/recaptcha-error") return "recaptcha";
+  return status ? `other (HTTP ${status})` : `other (${e?.code || e?.message || e})`;
 }
 
 // The SDK's script tag runs the SDK's setup from its onload, and has no onerror. When it fails, the same onload goes
@@ -103,12 +121,40 @@ function reloadRecaptchaOnError() {
   watch(first);
 }
 
+const siteCheck = new SiteCheck(recaptchaSiteKey);
 export const appCheck = initializeAppCheck(app, {
-  provider: new SiteCheck(recaptchaSiteKey),
+  provider: siteCheck,
   isTokenAutoRefreshEnabled: true,
 });
 
-export const db = getFirestore(app);
+// The last failed site check of this page ({ at, why }, why as in failureKind), or null when none failed. A refused
+// Firestore read of a public document (permission-denied) after one means the read went out without a valid token.
+export function siteCheckFailure() {
+  return siteCheck.lastFailure;
+}
+
+// fn() once App Check has a valid token: at once if it has one now, otherwise when the next check passes (SiteCheck's
+// next round, which the header's heartbeat and Firebase's token refresh start). Returns the function that stops waiting.
+export function onSiteCheckPassed(fn) {
+  let stop = null, done = false;
+  stop = onTokenChanged(appCheck, () => {
+    if (done) return;
+    done = true;
+    stop?.();
+    fn();
+  });
+  if (done) stop();
+  return () => { done = true; stop?.(); };
+}
+
+// On iPhones and iPads Firestore's default connection (a streamed response, with auto-detection of a fallback) held
+// the data back for about 30 seconds: measured on an iPhone with iOS 18.7.12 in the home-screen app (27 Nov 2026),
+// reading the 203 MPs took 31.7 and 31.3 s with the default against 1.4 and 1.5 s with long-polling, on the same
+// device, connection and App Check token. Pages there waited past the 12 s "Nem érjük el a szervert" bar and the
+// 25 s read limit below (the MPs page's "az adatok most nem tölthetők be"). So on iOS (every browser there is WebKit,
+// and iPadOS calls itself a Mac with a touch screen) Firestore uses long-polling from the start. Elsewhere the default.
+const IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+export const db = initializeFirestore(app, IOS ? { experimentalForceLongPolling: true } : {});
 
 // One read of a document or a query, as the server has it: the pages' getDoc and getDocs (js/common.js passes them
 // on). Firestore's own settle for the local cache once the server has not answered for 10 seconds; on a fresh page
