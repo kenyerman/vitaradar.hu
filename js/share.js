@@ -11,13 +11,23 @@
 // the reader to the other one when the fact is there: the live page to the replay once the sitting is archived, the
 // replay to the live page while the sitting has no archive yet. There the fact is opened, brought into view and
 // framed (revealFact).
+//
+// Next to it, a flag opens the fact-correction form on GitHub (.github/ISSUE_TEMPLATE/fact-correction.yml) with the
+// fact's link, sitting, speaker, quote and verdict filled in (correctionUrl).
 
 const SHARE_ICON = {  // Feather icons (MIT): share (Apple's box and arrow), share-2 (the three dots everyone else uses)
   apple: "M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13",
   other: "M21 5a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM9 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM21 19a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM8.59 13.51l6.83 3.98M15.41 6.51l-6.82 3.98",
 };
+const FLAG_ICON = "M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1zM4 22v-7";  // Feather "flag" (MIT)
 const APPLE = /iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent);
 const MAX_QUOTE = 240;  // characters of what was said, in the shared text
+
+// The fact-correction form (an issue form: its fields are filled in from the address, by their ids)
+export const CORRECTION_FORM = "https://github.com/kenyerman/vitaradar.hu/issues/new?template=fact-correction.yml";
+const FORM_QUOTE = 600;  // characters of the quote at most; fewer while the address is longer than FORM_URL
+const FORM_URL = 4000;  // characters of the whole address (GitHub and in-app browsers take this much safely)
+const FORM_TITLE_QUOTE = 70;  // characters of the quote in the issue's title
 
 // The fact a link opened (?f=, with its sitting ?s=), or null.
 const params = new URLSearchParams(location.search);
@@ -143,9 +153,56 @@ export function shareButton(session, claim, { speaker, live } = {}) {
   return b;
 }
 
-// The share button in a fact's votes row (js/social.js factSocial's box), at its end; the box, for chaining.
+// The fact-correction form, filled in: fact link, sitting (its day and time), speaker, quote, verdict, and a title.
+// Long quotes are cut (at a word) until the address fits FORM_URL.
+export function correctionUrl({ link, sitting, speaker, quote, verdict } = {}) {
+  const said = clean(quote);
+  const head = [clean(speaker), said && `„${shorten(said, FORM_TITLE_QUOTE)}”`].filter(Boolean).join(": ");
+  const fields = { title: `Helyesbítés: ${head || "állítás"}`, fact_link: link, sitting, speaker, verdict };
+  const base = Object.entries(fields).filter(([, v]) => clean(v))
+    .map(([k, v]) => `&${k}=${encodeURIComponent(clean(v))}`).join("");
+  for (let max = FORM_QUOTE; ; max = Math.floor(max * 0.75)) {
+    const url = `${CORRECTION_FORM}${base}${said ? `&quote=${encodeURIComponent(shorten(said, max))}` : ""}`;
+    if (url.length <= FORM_URL || max < 60) return url;
+  }
+}
+
+// What the form gets from one card, read as the reader sees it (as shareData does); sitting: the day and time of
+// the fact (a function, as the page knows them).
+function correctionData(li, session, claim, { speaker, live, sitting } = {}) {
+  const verdict = clean((li.querySelector(".verdict") || {}).textContent).replace(/^\[\s*|\s*\]$/g, "");
+  return {
+    link: factUrl(session, claim, live),
+    sitting: typeof sitting === "function" ? sitting() : sitting,
+    speaker: (typeof speaker === "function" ? speaker() : speaker) || (li.querySelector(".fact-who") || {}).textContent,
+    quote: (li.querySelector(".fact-claim") || li.querySelector(".fact-bullet") || {}).textContent,
+    verdict,
+  };
+}
+
+// The flag of one fact: a link to the form, filled in from the card at the moment it is used (the card's verdict and
+// fallacy come in later on the live page), in a new tab.
+export function correctionLink(session, claim, opts = {}) {
+  const a = document.createElement("a");
+  a.className = "share-btn fix-btn";
+  a.target = "_blank";
+  a.rel = "noopener";
+  a.title = "Hibát jelzek";
+  a.setAttribute("aria-label", "Hiba jelzése ennél az állításnál (GitHub, új lapon nyílik)");
+  a.href = CORRECTION_FORM;
+  a.append(icon(FLAG_ICON));
+  const fill = () => {
+    const li = a.closest("li.fact") || a.closest(".fact");
+    if (li) a.href = correctionUrl(correctionData(li, session, claim, opts));
+  };
+  for (const ev of ["pointerdown", "focus", "click", "contextmenu"]) a.addEventListener(ev, fill);
+  return a;
+}
+
+// The flag and the share button in a fact's votes row (js/social.js factSocial's box), at its end; the box, for
+// chaining. opts: speaker, live (see shareButton), sitting (correctionData).
 export function addShare(box, session, claim, opts) {
-  (box.querySelector(".social-bar") || box).append(shareButton(session, claim, opts));
+  (box.querySelector(".social-bar") || box).append(correctionLink(session, claim, opts), shareButton(session, claim, opts));
   return box;
 }
 

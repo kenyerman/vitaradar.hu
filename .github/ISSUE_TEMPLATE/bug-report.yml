@@ -1,0 +1,55 @@
+name: Bug report
+description: Something on vitaradar.hu doesn't work or looks broken.
+title: "Bug: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! You can write in English or Hungarian.
+
+        A wrong fact check (verdict, speaker, quote or time) has its own form: [Tényellenőrzés helyesbítése](https://github.com/kenyerman/vitaradar.hu/issues/new?template=fact-correction.yml).
+
+        Reports are public, so please leave out personal data.
+  - type: textarea
+    id: what_happened
+    attributes:
+      label: What happened?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open …
+        2. Tap …
+        3. See …
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+  - type: input
+    id: page
+    attributes:
+      label: Page or URL
+      placeholder: https://vitaradar.hu/watch.html?s=…
+  - type: input
+    id: device
+    attributes:
+      label: Device and browser
+      placeholder: "iPhone 15, iOS 26.1, Safari / Windows 11, Chrome 142"
+  - type: dropdown
+    id: app_or_browser
+    attributes:
+      label: Installed app or browser?
+      options:
+        - In a browser
+        - The installed app (added to the home screen)
+        - Inside another app (Facebook, Messenger, Instagram …)
+        - Not sure
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots or recordings
+      description: Drag images or videos here, or paste them.

@@ -16,7 +16,7 @@ import { doc, onSnapshot, collection, query, where } from "https://www.gstatic.c
 import { db, getDoc, getDocs, el, factBadge, LABEL, sourceList, setPhoto, hms, huDate, mpHref, watchLiveNav, loadFailed } from "./common.js?v=202611281400";
 import { mountAccount } from "./account.js?v=202611281800";
 import { factSocial } from "./social.js?v=202611281800";
-import { addShare, FOCUS, revealFact, liveUrl } from "./share.js?v=202611272100";
+import { addShare, FOCUS, revealFact, liveUrl } from "./share.js?v=202611291437";
 import { watchHref } from "./links.js?v=202611241021";
 import { cdnReady, cdnUrl } from "./cdn.js?v=202611281400";
 import { scrollHint } from "./scrollhint.js?v=202611241021";
@@ -39,6 +39,7 @@ let turns = [];      // archive doc's floor turns: {speaker_id, name, party, rol
 const mps = new Map();  // mp id -> mps doc (photo, colour, role)
 let showAll = false;  // the "összes állítás" toggle
 let focus = null;     // the fact a link opened (?f=, js/share.js): shown whatever the video's time, and framed
+let day = "";         // the sitting's day (archive doc's date), for the correction form (js/share.js)
 
 function note(text) {
   $("player-note").hidden = !text;
@@ -98,8 +99,9 @@ function factItem(f) {
     li.append(el("p", "fact-fallacy", `» ${LABEL.fallacy.toLowerCase()} (${fallacy.name}): ${fallacy.explanation || ""}`));
   }
   li.append(sourceList(c.sources));
-  // votes and comments, as on the MP page, and the share button
-  if (c.id && v !== "pending") li.append(addShare(factSocial(session, c.id), session, c.id));
+  // votes and comments, as on the MP page, the correction flag and the share button
+  const sitting = () => [huDate(day), c.video_s != null && `a felvételen ${hms(c.video_s)}`].filter(Boolean).join(", ");
+  if (c.id && v !== "pending") li.append(addShare(factSocial(session, c.id), session, c.id, { sitting }));
   return li;
 }
 
@@ -292,6 +294,7 @@ async function load() {
     if (cur && cur.session === session) { location.replace(liveUrl(session, FOCUS.claim)); return; }
   }
   if (!a) { $("w-title").textContent = "Nincs ilyen adás"; note("ez az adás nincs az archívumban"); return; }
+  day = a.date || "";
   setPageMeta({
     title: `Ülés visszanézése: ${huDate(a.date)} – Vitaradar`,
     description: `Az Országgyűlés ülésének felvétele (${huDate(a.date)}) ${a.claims || 0} ellenőrzött állítással: ` +

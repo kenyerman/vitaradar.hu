@@ -10,7 +10,7 @@ import { doc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/
 import { db, getDoc, el, factBadge, LABEL, sourceList, setPhoto, mpHref, setLiveNav, loadFailed } from "./common.js?v=202611281400";
 import { mountAccount } from "./account.js?v=202611281800";
 import { factSocial } from "./social.js?v=202611281800";
-import { addShare, FOCUS, revealFact, replayUrl } from "./share.js?v=202611272100";
+import { addShare, FOCUS, revealFact, replayUrl } from "./share.js?v=202611291437";
 import { mountChat } from "./chat.js?v=202611281800";
 import { scrollHint } from "./scrollhint.js?v=202611241021";
 import { mountGame } from "./game.js?v=202611281800";
@@ -128,6 +128,10 @@ function clock(ms) {
   return new Date(ms).toLocaleTimeString("hu-HU", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 }
 
+// a fact's day and moment for the correction form (js/share.js), Budapest time: "2026. november 27. 14:03:12"
+const sittingAt = (ms) => (ms == null ? "" : new Date(ms).toLocaleString("hu-HU", { timeZone: "Europe/Budapest",
+  year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit" }));
+
 function buildFact(c) {
   const li = el("li", "fact");
   const top = el("div", "fact-top");
@@ -145,8 +149,8 @@ function buildFact(c) {
   const fal = el("p", "fact-fallacy");  // the fallacy said in the same sentence, once it shows
   fal.hidden = true;
   li.append(el("p", "fact-expl"), fal, el("ul", "fact-sources"));
-  // votes, comments and the share button, once the verdict is in
-  const social = addShare(factSocial(live.session, c.id), live.session, c.id, { live: true });
+  // votes, comments, the correction flag and the share button, once the verdict is in
+  const social = addShare(factSocial(live.session, c.id), live.session, c.id, { live: true, sitting: () => sittingAt(c.show_at) });
   social.hidden = true;
   li.append(social);
   return li;
