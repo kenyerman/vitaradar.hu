@@ -2664,6 +2664,13 @@ html:has(.install-sheet[open]) { overflow: hidden; }  /* the page behind does no
   body.m-pulled .m-top > :is(.stage, .player) { position: absolute; left: 0; right: 0; top: var(--m-vtop, 0px); z-index: 0; }
   body.m-pulled .m-top > :not(.stage, .player) { position: relative; z-index: 1; }
   body.m-pulled .m-top > .m-strip { display: none; }
+  /* while dragged (js/mobile.js sets the parts' transforms and the block's clip): the strip under the moving parts too,
+     where it is with the video shown, and the block's clip, not its edge, keeps the video above the panel */
+  body.m-pulled.m-drag .m-top { overflow: visible; }
+  body.m-pulled.m-drag .m-top > .m-strip { display: flex; position: absolute; left: 0; right: 0; z-index: 0;
+    top: calc(var(--m-vtop, 0px) + var(--m-vh, 0px)); }
+  body.m-drag .m-top > :not(.stage, .player, .m-strip), body.m-drag main > :is(.below, .m-chat-slot, .m-game-slot) {
+    will-change: transform; }
   body.m-pulled .m-audio { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 32px; margin: 0; padding: 0 14px;
     background: #0f1814; border: 0; border-bottom: 1px solid var(--line-dim); color: #8af5b4; font: 700 10.5px/1 var(--display);
     letter-spacing: 1.2px; text-align: left; text-transform: uppercase; cursor: pointer; }
