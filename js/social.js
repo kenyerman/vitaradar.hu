@@ -10,8 +10,8 @@
 
 import { collection, query, where, orderBy, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { db, el } from "./common.js?v=202611272300";
-import { account, onAccount, onBlocks, isBlocked, api, needAccount, avatar, dialog, toast, blockUser } from "./account.js?v=202611270343";
-import { userCard } from "./usercard.js?v=202611270343";
+import { account, onAccount, onBlocks, isBlocked, api, needAccount, avatar, dialog, toast, blockUser } from "./account.js?v=202611280100";
+import { userCard } from "./usercard.js?v=202611280100";
 
 export const MAX_COMMENT = 250;
 const MAX_DEPTH = 2;          // a comment, a reply, a reply to the reply
