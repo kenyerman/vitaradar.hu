@@ -219,8 +219,9 @@ main.wrap { padding-top: 32px; padding-bottom: 56px; }  /* main.wrap: beats .wra
 .c-fallacy { color: var(--fallacy); text-shadow: 0 0 8px rgba(199, 125, 255, .45); }
 
 /* a verdict bar: true | partly true | misleading | false | opinion | promise | unverifiable | fallacy (js/archive.js,
-   js/mps.js, js/mp.js) */
-.bar { display: flex; height: 8px; background: rgba(0, 255, 65, .06); border: 1px solid var(--line-dim); }
+   js/mps.js, js/mp.js). One weight on every page and width: a solid 2px line, no outline (the places below set only
+   where it sits) */
+.bar { display: flex; height: 2px; background: rgba(61, 240, 130, .1); border: 0; }
 .bar span { display: block; height: 100%; }
 .bar .b-true { background: var(--true); } .bar .b-unverifiable { background: var(--unverifiable); }
 .bar .b-false { background: var(--false); } .bar .b-fallacy { background: var(--fallacy); }
@@ -1936,7 +1937,7 @@ body.m-watch[data-m-tab="speakers"] .m-ai #show-all { visibility: hidden; }
 .arch-body { display: flex; flex-direction: column; gap: 4px; min-width: 0; padding: 0; }
 .arch-body h3 { margin: 0; font-size: 13px; }
 .arch-who { margin: 0; font-size: 11.5px; }
-.arch-body .bar { height: 3px; margin: 2px 0 0; }
+.arch-body .bar { margin: 2px 0 0; }
 .arch-body .mp-stats { display: none; }
 .arch-body .empty { margin: 0; font-size: 11.5px; }
 /* what only the wider screens show (below), and the wrappers around a row's parts: no boxes on phones */
@@ -1949,7 +1950,6 @@ body.m-watch[data-m-tab="speakers"] .m-ai #show-all { visibility: hidden; }
    a filter by MP name and by party, the totals. Each run a row in columns: the picture, the time and length, the
    speakers' photos (the party's colour under each) and names, the claims, the bar with true / false / fallacy. */
 @media (min-width: 861px) {
-  body:not(.m-live):not(.m-watch) > main.wrap.arch-main { max-width: 1200px; }
   .arch-layout { display: grid; grid-template-columns: 272px minmax(0, 1fr); align-items: start; gap: 0 36px; margin-top: 22px; }
   .arch-list { display: block; min-width: 0; }
   .arch-side:not([hidden]) { position: sticky; top: calc(var(--m-hdr, 57px) + 20px); display: grid; gap: 18px; }
@@ -1965,7 +1965,7 @@ body.m-watch[data-m-tab="speakers"] .m-ai #show-all { visibility: hidden; }
     background: none; color: #2f4a3b; font: 600 12px/1 var(--display); }
   .arch-cal-day.today { color: #e9f2ed; text-decoration: underline; text-underline-offset: 3px; }
   .arch-cal-day.has { background: #16231d; color: #e9f2ed; font-weight: 700; cursor: pointer; }
-  .arch-cal-day .bar { width: calc(100% - 8px); height: 3px; margin: 0; border: 0; }  /* the day's verdicts */
+  .arch-cal-day .bar { width: calc(100% - 8px); margin: 0; }  /* the day's verdicts */
   .arch-cal-day.has:hover, .arch-cal-day.has:focus-visible { outline: 2px solid var(--line); outline-offset: -2px; }
   .arch-cal-day.has[aria-pressed="true"] { outline: 2px solid #e9f2ed; outline-offset: -2px; }
   .arch-cal-day.has.off { color: #4d6a5a; }  /* the filter leaves nothing of the day */
@@ -1974,7 +1974,7 @@ body.m-watch[data-m-tab="speakers"] .m-ai #show-all { visibility: hidden; }
   .arch-cal-pick { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line-dim); }
   .arch-cal-pick-h { margin: 0; color: var(--green); font: 700 12px/1.2 var(--display); letter-spacing: 1.2px; text-transform: uppercase; }
   .arch-cal-pick-meta { margin: 5px 0 0; color: #c5d3cb; font: 400 12px/1.3 var(--sans); }
-  .arch-cal-pick .bar { height: 3px; margin-top: 8px; border: 0; }
+  .arch-cal-pick .bar { margin-top: 8px; }
   /* the filter */
   .arch-filter .field { width: 100%; }
   .arch-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
@@ -2015,7 +2015,7 @@ body.m-watch[data-m-tab="speakers"] .m-ai #show-all { visibility: hidden; }
   .arch-who { font-size: 12.5px; color: #c5d3cb; }
   .arch-n { display: block; text-align: right; color: var(--muted); font: 400 11.5px/1.2 var(--sans); }
   .arch-n b { display: block; color: #e9f2ed; font: 700 18px/1.1 var(--display); }
-  .arch-body .bar { height: 3px; margin: 0; border: 0; }  /* thin, as the phones' */
+  .arch-body .bar { margin: 0; }
   .arch-mini { display: flex; gap: 10px; margin: 5px 0 0; color: var(--muted); font: 600 10.5px/1 var(--display); letter-spacing: .5px; }
   .arch-mini b { font-weight: 700; text-shadow: none; }
   .arch-body .empty { font-size: 12px; }
@@ -2063,7 +2063,7 @@ body.m-watch[data-m-tab="speakers"] .m-ai #show-all { visibility: hidden; }
 .mp-body .mp-party { display: flex; align-items: center; gap: 5px; }
 .mp-body .mp-party::before { content: ""; flex: none; width: 7px; height: 7px; background: var(--party, var(--green)); }
 .mp-body .mp-role::before { content: " · "; white-space: pre; }
-.mp-body .bar { grid-column: 1 / -1; height: 3px; margin: 2px 0 0; }
+.mp-body .bar { grid-column: 1 / -1; margin: 2px 0 0; }
 .mp-body .mp-stats { display: none; }
 .mp-total { display: flex; flex-direction: column; align-items: flex-end; margin: 0; }
 .mp-total b { color: #e9f2ed; font: 700 16px/1 var(--display); font-variant-numeric: tabular-nums; }
@@ -2176,7 +2176,7 @@ body.m-watch[data-m-tab="speakers"] .m-ai #show-all { visibility: hidden; }
 .mp-head .scores dd { display: grid; grid-column: 2 / -1; grid-template-columns: minmax(0, 1fr) 34px 34px;
   grid-template-columns: subgrid; column-gap: 10px; align-items: center; justify-items: end; margin: 0;
   font: 700 13px/1.3 var(--display); font-variant-numeric: tabular-nums; text-shadow: none; }
-.mp-head .scores .score-bar { display: flex; justify-self: stretch; height: 6px; border: 0; background: #16231d; overflow: hidden; }
+.mp-head .scores .score-bar { display: flex; justify-self: stretch; height: 2px; border: 0; background: #16231d; overflow: hidden; }  /* the bars' one weight */
 .mp-head .scores .score-bar > span { min-width: 2px; }
 .mp-head .scores small { margin: 0; color: var(--muted); font: 400 11.5px/1.3 var(--sans); }
 .mp-head #mp-bar { display: none; }
@@ -2202,7 +2202,7 @@ body.m-watch[data-m-tab="speakers"] .m-ai #show-all { visibility: hidden; }
 .replay-counts { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 8px; color: var(--muted);
   font: 600 10.5px/1.2 var(--display); letter-spacing: 1px; text-transform: uppercase; }
 .replay-counts b { margin-left: 5px; font-size: 12px; }
-.replay-sum .bar { grid-column: 1 / -1; height: 3px; margin: 6px 0 0; }
+.replay-sum .bar { grid-column: 1 / -1; margin: 6px 0 0; }
 /* its speeches: rows under the head, each opening its replay */
 .replay-list { list-style: none; margin: 0; padding: 0 14px 6px; }
 .replay-list > li { border-top: 1px solid rgba(61, 240, 130, .1); }
@@ -2537,10 +2537,10 @@ html:not([data-loaded]) #mps:empty { background-image: url("data:image/svg+xml,%
   .speech-tally dt { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 }
 /* ------------------------------------------------------------------ wider screens: the other pages
-   The phones' design, in a column in the middle; the header edge to edge, as on the live page. */
+   One width for all of them and their footer (1200px), in the middle; the header edge to edge, as on the live page. */
 @media (min-width: 861px) {
   .site-header > .wrap { max-width: none; }
-  body:not(.m-live):not(.m-watch) > main.wrap, body:not(.m-live):not(.m-watch) > .site-footer > .wrap { max-width: 760px; }
+  body:not(.m-live):not(.m-watch) > main.wrap, body:not(.m-live):not(.m-watch) > .site-footer > .wrap { max-width: 1200px; }
 }
 /* the account in the header (wider screens), as in the phone menu: Belépés green, Regisztráció dark beside it */
 .site-header .acct { gap: 8px; }
