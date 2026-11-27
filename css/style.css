@@ -1825,6 +1825,7 @@ body:is(.m-live, .m-watch):not(.m-ready) > main { visibility: hidden; animation:
   font: 700 10px/1 var(--display); letter-spacing: 1px; text-transform: uppercase; }
 .m-whead #copied[hidden] { display: none; }
 /* the tabs and the notice line */
+.m-tabs-3 .m-tab { gap: 4px; padding: 0 4px; font-size: 11px; letter-spacing: .7px; }  /* the replay's three tabs on a narrow screen */
 .m-tab-count { display: inline; color: var(--muted); font-weight: 600; letter-spacing: .4px; }
 .m-tab[aria-selected="true"] .m-tab-count { color: var(--green); }
 .m-tab-count:empty { display: none; }

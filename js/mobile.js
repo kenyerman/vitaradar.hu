@@ -705,7 +705,9 @@ function replayParts(top, moves, side) {
   const count = document.getElementById("fact-count"), list = document.getElementById("speakers");
   const title = document.getElementById("w-title");
   const sync = () => {
-    facts.n.textContent = (count?.textContent || "").replace(/[[\]]/g, "").replace(/\b0+(\d)/g, "$1");  // "[05/30]": "5/30"
+    const said = (count?.textContent || "").replace(/[[\]]/g, "").replace(/\b0+(\d)/g, "$1");  // "[05/30]": "5/30"
+    facts.n.textContent = said.split("/")[0];  // three tabs are narrow: only how many were said by now, "5 / 30" in its title
+    facts.b.title = said ? `${said.replace("/", " / ")} állítás` : "";
     speakers.n.textContent = list && list.children.length ? String(list.children.length) : "";
     if (!title) return;
     const t = title.textContent;
