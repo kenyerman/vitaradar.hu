@@ -989,11 +989,17 @@ function pullUp(top, player, remeasure) {
   // tabs, the notice and the open panel), which are moved down by y px with transforms: 0 is pulled up, D the video
   // shown, each the same picture as its layout, so nothing jumps when a drag starts or ends. The block's clip follows
   // the parts' foot, so the video never shows over the panel below them; the line fades out towards the video's end.
-  let drag = null;  // { D, y, parts, anims }
+  // y is kept to whole screen pixels (a part at a fraction of one showed the video through a hairline at its edges),
+  // and the settle is drawn frame by frame here, the clip with the parts: as css animations the clip ran on another
+  // clock than the transforms on iPhone, and the video or the page showed through between them for a few frames.
+  let drag = null;  // { D, y, parts, raf }
+  const dpr = () => window.devicePixelRatio || 1;
+  const whole = (y) => Math.round(y * dpr()) / dpr();
   const moving = () => [line, ...[...top.children].filter((c) => c !== player && c !== strip && c !== line
     && (strip.compareDocumentPosition(c) & Node.DOCUMENT_POSITION_FOLLOWING)),
     ...panels().filter((p) => p.getClientRects().length)];
   const paint = (y) => {
+    y = whole(y);
     drag.y = y;
     for (const p of drag.parts) p.style.transform = y ? `translateY(${y}px)` : "";
     line.style.opacity = String(1 - y / drag.D);
@@ -1008,7 +1014,7 @@ function pullUp(top, player, remeasure) {
     const D = vh + strip.offsetHeight - line.offsetHeight;
     if (D < 40) { document.body.classList.remove("m-drag"); document.body.classList.toggle("m-pulled", up); return null; }
     top.style.setProperty("--m-vh", `${vh}px`);
-    drag = { D, y: 0, parts: moving(), anims: [] };
+    drag = { D, y: 0, parts: moving(), raf: 0 };
     paint(up ? 0 : D);
     return drag;
   };
@@ -1016,7 +1022,7 @@ function pullUp(top, player, remeasure) {
     const d = drag;
     if (!d) return;
     drag = null;
-    for (const a of d.anims) a.cancel();
+    cancelAnimationFrame(d.raf);
     for (const p of d.parts) p.style.transform = "";
     line.style.opacity = "";
     top.style.clipPath = "";
@@ -1031,12 +1037,17 @@ function pullUp(top, player, remeasure) {
     if (!d) return;
     const to = up ? 0 : d.D;
     if (calm.matches || Math.abs(to - d.y) < 1) { finish(up); return; }
-    const opts = { duration: Math.round(180 + 160 * Math.abs(to - d.y) / d.D), easing: "cubic-bezier(.22, 1, .36, 1)", fill: "forwards" };
-    d.anims = [...d.parts.map((p) => p.animate([{ transform: `translateY(${d.y}px)` }, { transform: `translateY(${to}px)` }], opts)),
-      line.animate([{ opacity: 1 - d.y / d.D }, { opacity: 1 - to / d.D }], opts),
-      top.animate([{ clipPath: `inset(0 0 ${-d.y}px 0)` }, { clipPath: `inset(0 0 ${-to}px 0)` }], opts)];
-    d.anims[0].finished.then(() => { if (drag === d) finish(up); }, () => {});
-    setTimeout(() => { if (drag === d) finish(up); }, opts.duration + 150);  // a page in the background runs no animations
+    const from = d.y, duration = Math.round(180 + 160 * Math.abs(to - from) / d.D);
+    const t0 = performance.now();
+    const step = (now) => {
+      if (drag !== d) return;
+      const k = Math.min(1, Math.max(0, (now - t0) / duration));
+      paint(from + (to - from) * (1 - (1 - k) ** 5));  // the rows' easing, cubic-bezier(.22, 1, .36, 1) ("ease out quint")
+      if (k < 1) d.raf = requestAnimationFrame(step);
+      else finish(up);
+    };
+    d.raf = requestAnimationFrame(step);
+    setTimeout(() => { if (drag === d) finish(up); }, duration + 150);  // a page in the background draws no frames
   };
   const toggle = (up) => {
     if (drag || up === isUp() || (up && !PHONE.matches)) return;

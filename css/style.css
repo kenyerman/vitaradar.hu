@@ -2869,6 +2869,9 @@ html:has(.install-sheet[open]) { overflow: hidden; }  /* the page behind does no
     top: calc(var(--m-vtop, 0px) + var(--m-vh, 0px)); }
   body.m-drag .m-top > :not(.stage, .player, .m-strip), body.m-drag main > :is(.below, .m-chat-slot, .m-game-slot) {
     will-change: transform; }
+  /* the block's 1px foot (its border) stays where the layout has it while the parts move: the tabs and the notice carry
+     a line of its colour under them, or the video showed through that pixel between them and the panel */
+  body.m-drag .m-top > :is(.m-tabs, .m-ai) { box-shadow: 0 1px 0 color-mix(in srgb, #3df082 20%, var(--bg)); }
   body.m-pulled .m-audio { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 32px; margin: 0; padding: 0 14px;
     background: #0f1814; border: 0; border-bottom: 1px solid var(--line-dim); color: #8af5b4; font: 700 10.5px/1 var(--display);
     letter-spacing: 1.2px; text-align: left; text-transform: uppercase; cursor: pointer; }
