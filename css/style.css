@@ -1956,6 +1956,10 @@ body.m-watch[data-m-tab="speakers"] .m-ai #show-all { visibility: hidden; }
   .arch-layout { display: grid; grid-template-columns: 272px minmax(0, 1fr); align-items: start; gap: 0 36px; margin-top: 22px; }
   .arch-list { display: block; min-width: 0; }
   .arch-side:not([hidden]) { position: sticky; top: calc(var(--m-hdr, 57px) + 20px); display: grid; gap: 18px; }
+  /* taller than the window (a laptop's 768px, the filter's chips): it scrolls by itself, so its foot is in reach
+     before the list ends */
+  .arch-side:not([hidden]) { max-height: calc(100vh - var(--m-hdr, 57px) - 40px); overflow-y: auto; overscroll-behavior: contain;
+    scrollbar-width: thin; }
   .arch-box { padding: 14px; border: 1px solid var(--line-dim); background: var(--panel); }
   .arch-h { margin: 0 0 10px; color: var(--green); font: 700 11px/1 var(--display); letter-spacing: 1.6px; text-transform: uppercase; }
   /* the calendar */
