@@ -7,7 +7,7 @@
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import { initializeAppCheck, ReCaptchaEnterpriseProvider, getToken, onTokenChanged } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check.js";
-import { getFirestore, onSnapshot, disableNetwork, enableNetwork } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { initializeFirestore, onSnapshot, disableNetwork, enableNetwork } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import {
   initializeAuth, indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence,
   browserPopupRedirectResolver, GoogleAuthProvider, signInWithPopup, reauthenticateWithPopup, signOut as fbSignOut,
@@ -147,7 +147,14 @@ export function onSiteCheckPassed(fn) {
   return () => { done = true; stop?.(); };
 }
 
-export const db = getFirestore(app);
+// On iPhones and iPads Firestore's default connection (a streamed response, with auto-detection of a fallback) held
+// the data back for about 30 seconds: measured on an iPhone with iOS 18.7.12 in the home-screen app (27 Nov 2026),
+// reading the 203 MPs took 31.7 and 31.3 s with the default against 1.4 and 1.5 s with long-polling, on the same
+// device, connection and App Check token. Pages there waited past the 12 s "Nem érjük el a szervert" bar and the
+// 25 s read limit below (the MPs page's "az adatok most nem tölthetők be"). So on iOS (every browser there is WebKit,
+// and iPadOS calls itself a Mac with a touch screen) Firestore uses long-polling from the start. Elsewhere the default.
+const IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+export const db = initializeFirestore(app, IOS ? { experimentalForceLongPolling: true } : {});
 
 // One read of a document or a query, as the server has it: the pages' getDoc and getDocs (js/common.js passes them
 // on). Firestore's own settle for the local cache once the server has not answered for 10 seconds; on a fresh page
