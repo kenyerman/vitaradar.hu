@@ -387,6 +387,77 @@ const NICK_RE = /^[0-9A-Za-zÁÉÍÓÖŐÚÜŰáéíóöőúüű_.-]{3,40}$/;
 const VIEWS = { main: "Profil szerkesztése", privacy: "Ki látja?", blocked: "Letiltott felhasználók" };
 let editing = null;  // the open editor, {close}
 
+// Phones: pulled down, the editor's sheet follows the finger, as the install sheet does (js/pwa.js draggable(); that file
+// keeps its own copy, since it imports nothing by design): from its head and grab at any time, from its body when that
+// is not scrolled down; down only. Let go past a third of its height, or flicked down, it slides away and closes as
+// Mégse does (nothing is saved); otherwise it slides back. With changes not saved yet it follows only a little and
+// always slides back (as a tap on the page behind closes it only when nothing is lost). Not while saving, not from a
+// text field nor while one has the keyboard: there the finger moves the caret or the text. A tap is still a tap.
+const PHONE = matchMedia("(max-width: 860px)");
+const STILL = matchMedia("(prefers-reduced-motion: reduce)");
+const TEXT = "input:not([type=checkbox], [type=radio], [type=file], [type=button], [type=submit]), textarea, select, [contenteditable=true]";
+const EASE = "cubic-bezier(.22, 1, .36, 1)";
+
+function dragToClose(d, { body, close, keep, busy }) {
+  let t = null;  // { x, y, live, dy, inBody, track }
+  const typing = () => Boolean(document.activeElement?.matches?.(TEXT) && d.contains(document.activeElement));
+  d.addEventListener("touchstart", (e) => {
+    t = null;
+    if (!PHONE.matches || e.touches.length !== 1 || !d.open || busy() || typing() || e.target.closest?.(TEXT)) return;
+    const p = e.touches[0];
+    t = { x: p.clientX, y: p.clientY, live: false, dy: 0, inBody: body.contains(e.target), track: [] };
+  }, { passive: true });
+  d.addEventListener("touchmove", (e) => {
+    if (!t) return;
+    const p = e.touches[0], dx = p.clientX - t.x, dy = p.clientY - t.y;
+    if (!t.live) {
+      if ((t.inBody && body.scrollTop > 0) || dy < -4) { t = null; return; }  // the body's own scroll
+      if (dy < 8 || dy < Math.abs(dx)) { if (Math.abs(dx) > 16) t = null; return; }
+      t.live = true;
+      t.y = p.clientY;  // it follows from here: no jump by the distance it took to tell a drag
+      for (const a of d.getAnimations()) a.finish();  // still coming up: there at once
+    }
+    if (e.cancelable) e.preventDefault();  // the body does not scroll or bounce meanwhile
+    const raw = Math.max(0, p.clientY - t.y), h = d.offsetHeight;
+    t.dy = keep() ? h * (1 - 1 / (raw * 0.55 / h + 1)) * 0.35 : raw;  // held back while there are changes
+    d.style.transform = t.dy ? `translateY(${t.dy}px)` : "";
+    d.style.setProperty("--is-dim", String(Math.max(0, 1 - t.dy / h)));
+    t.track.push([e.timeStamp, raw]);
+    if (t.track.length > 6) t.track.shift();
+  }, { passive: false });
+  const lift = (e) => {
+    const s = t;
+    t = null;
+    if (!s || !s.live || !d.open) return;
+    // a flick decides by its way (none when the finger had stopped before it lifted); a slow pull by how far it went
+    const last = s.track[s.track.length - 1];
+    const recent = s.track.filter(([ts]) => ts >= last[0] - 100);
+    const [t0, y0] = recent[0], [t1, y1] = recent[recent.length - 1];
+    const v = t1 > t0 && e.timeStamp - last[0] < 80 ? (y1 - y0) / (t1 - t0) : 0;  // px per ms, down positive
+    const h = d.offsetHeight, from = s.dy;
+    if (!keep() && !busy() && (v > 0.35 || (v > -0.35 && from > h / 3))) {  // away, from where it is
+      if (STILL.matches) { close(); return; }
+      const out = { duration: 220, easing: "ease-in", fill: "forwards" };
+      const a = d.animate([{ transform: `translateY(${from}px)` }, { transform: `translateY(${h + 24}px)` }], out);
+      d.animate([{ "--is-dim": String(Math.max(0, 1 - from / h)) }, { "--is-dim": "0" }], out);
+      let done = false;
+      const end = () => { if (!done) { done = true; close(); } };
+      a.finished.then(end, end);
+      setTimeout(end, 400);  // a page in the background draws no frames
+      return;
+    }
+    d.style.transform = "";
+    d.style.removeProperty("--is-dim");
+    if (from && !STILL.matches) {
+      const back = { duration: 240, easing: EASE };
+      d.animate([{ transform: `translateY(${from}px)` }, { transform: "none" }], back);
+      d.animate([{ "--is-dim": String(Math.max(0, 1 - from / h)) }, { "--is-dim": "1" }], back);
+    }
+  };
+  d.addEventListener("touchend", lift, { passive: true });
+  d.addEventListener("touchcancel", lift, { passive: true });
+}
+
 export function openProfileEditor() {
   if (editing) return editing;
   if (!account.registered) return null;
@@ -553,6 +624,7 @@ export function openProfileEditor() {
   });
   for (const b of [cancel, cancelFoot, x]) b.addEventListener("click", close);
   back.addEventListener("click", (e) => go("main", e));
+  dragToClose(d, { body, close, keep: changed, busy: () => busy });
   d.addEventListener("cancel", (e) => { if (busy) e.preventDefault(); });  // Escape closes, and the changes go
   d.addEventListener("click", (e) => { if (e.target === d && !busy && !changed()) close(); });  // the page behind: when nothing is lost
   d.addEventListener("close", () => {

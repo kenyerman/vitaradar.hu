@@ -83,7 +83,20 @@
   </header>
 
   <main class="wrap">
-    <div id="prof" class="prof"><p class="empty">betöltés…</p></div>
+    <div id="prof" class="prof">
+      <!-- until the profile is in: its shape in grey, with a sweep (css .ps; js/profile.js keeps it until the head is drawn) -->
+      <div class="ps prof-skel" role="status" aria-label="A profil betöltése">
+        <span class="ps-label" aria-hidden="true">Betöltés</span>
+        <div class="ps-head" aria-hidden="true"><i class="ps-pic"></i><span><i class="ps-nick"></i><i class="ps-line"></i><i class="ps-line ps-short"></i></span></div>
+        <div class="ps-tiles" aria-hidden="true"><i></i><i></i><i></i></div>
+        <div class="ps-tabs" aria-hidden="true"><i></i><i></i></div>
+        <ol class="ps-rows" aria-hidden="true">
+          <li><i class="ps-tag"></i><i class="ps-line"></i><i class="ps-line ps-short"></i></li>
+          <li><i class="ps-tag"></i><i class="ps-line"></i><i class="ps-line ps-short"></i></li>
+          <li><i class="ps-tag"></i><i class="ps-line"></i><i class="ps-line ps-short"></i></li>
+        </ol>
+      </div>
+    </div>
   </main>
   <footer class="site-footer">
     <div class="wrap footer-top">

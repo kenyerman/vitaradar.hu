@@ -32,6 +32,20 @@ mountAccount();
 const PAGE = 20;  // comments per page (the API's pages are as long)
 const box = document.getElementById("prof");
 const wanted = new URLSearchParams(location.search).get("id") || "";
+// The loading placeholder (profile.html: the profile's shape in grey, css .ps): kept until the head is drawn, and shown
+// again when another profile is opened. Rows in the same look while a list's first page loads.
+const SKEL = box.querySelector(":scope > .prof-skel");
+const skeleton = () => (SKEL ? SKEL.cloneNode(true) : el("p", "empty", "betöltés…"));
+function skeletonRows(n = 3) {
+  const ol = el("ol", "ps ps-rows");
+  ol.setAttribute("aria-hidden", "true");
+  for (let i = 0; i < n; i++) {
+    const li = el("li");
+    li.append(el("i", "ps-tag"), el("i", "ps-line"), el("i", "ps-line ps-short"));
+    ol.append(li);
+  }
+  return ol;
+}
 const num = (v) => Number(v || 0).toLocaleString("hu-HU");
 const ONLY_YOU = "csak te látod";
 
@@ -200,13 +214,19 @@ function pagedList({ title, more: moreLabel, empty, failed, fetchPage, render, n
   const more = el("button", "btn ghost small pc-more", moreLabel);
   more.type = "button";
   more.hidden = true;
-  sec.append(head, list, msg, more);
+  const wait = skeletonRows();  // the first page on its way (not a button: nothing appears under a finger)
+  wait.hidden = true;
+  sec.append(head, list, wait, msg, more);
 
   let cursor = null, busy = false, gen = 0;
   async function next() {
     if (busy) return;
     busy = true;
     more.disabled = true;
+    const first = !list.children.length;
+    wait.hidden = !first;
+    if (first) msg.hidden = true;
+    else more.textContent = "betöltés…";  // the next page: on the button that asked for it
     const mine = gen;
     try {
       const page = await fetchPage(cursor);
@@ -226,6 +246,7 @@ function pagedList({ title, more: moreLabel, empty, failed, fetchPage, render, n
       more.textContent = "Újrapróbálás";  // the same page again
       more.hidden = false;
     } finally {
+      if (mine === gen) wait.hidden = true;
       busy = false;
       more.disabled = false;
     }
@@ -233,7 +254,9 @@ function pagedList({ title, more: moreLabel, empty, failed, fetchPage, render, n
   more.addEventListener("click", next);
   return {
     el: sec, head, next,
-    message(text) { gen++; list.replaceChildren(); cursor = null; more.hidden = true; msg.hidden = false; msg.textContent = text; },
+    message(text) {
+      gen++; list.replaceChildren(); cursor = null; wait.hidden = more.hidden = true; msg.hidden = false; msg.textContent = text;
+    },
     reset() { gen++; busy = false; list.replaceChildren(); cursor = null; msg.hidden = true; next(); },
   };
 }
@@ -546,7 +569,8 @@ function draw(v) {
   drawHead(v);
   drawSections(v);
   shown.tabs.counts(v.stats);
-  shown.sectionBox.hidden = shown.tabs.el.hidden = false;  // shown with the head, so nothing moves (CLS)
+  box.querySelector(":scope > .prof-skel")?.remove();  // the placeholder goes as the profile comes, in one frame
+  shown.headBox.hidden = shown.sectionBox.hidden = shown.tabs.el.hidden = false;  // shown with the head, so nothing moves (CLS)
 }
 
 function show(uid, own) {
@@ -558,8 +582,8 @@ function show(uid, own) {
   const headBox = el("section", "prof-head panel");
   const sectionBox = el("div", "prof");
   const tabs = listTabs(sectionBox, own);
-  sectionBox.hidden = tabs.el.hidden = true;
-  box.replaceChildren(headBox, tabs.el, sectionBox);
+  headBox.hidden = sectionBox.hidden = tabs.el.hidden = true;  // the placeholder until the profile is in (draw)
+  box.replaceChildren(box.querySelector(":scope > .prof-skel") || skeleton(), headBox, tabs.el, sectionBox);
   shown = { uid, own, headBox, sectionBox, tabs, sections: null, sig: null, last: null, stop: () => {} };
 
   const unavailable = () => { close(); gate("Profil", "Ez a profil nem érhető el."); };
