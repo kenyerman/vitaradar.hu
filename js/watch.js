@@ -16,7 +16,7 @@ import { doc, onSnapshot, collection, query, where } from "https://www.gstatic.c
 import { db, getDoc, getDocs, el, factBadge, LABEL, sourceList, setPhoto, hms, huDate, mpHref, watchLiveNav, loadFailed } from "./common.js?v=202611281400";
 import { mountAccount } from "./account.js?v=202611281800";
 import { factSocial } from "./social.js?v=202611281800";
-import { addShare, FOCUS, revealFact, liveUrl } from "./share.js?v=202611272100";
+import { addShare, FOCUS, revealFact, liveUrl } from "./share.js?v=202611291437";
 import { watchHref } from "./links.js?v=202611241021";
 import { cdnReady, cdnUrl } from "./cdn.js?v=202611281400";
 import { scrollHint } from "./scrollhint.js?v=202611241021";
