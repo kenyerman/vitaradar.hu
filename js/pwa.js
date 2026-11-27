@@ -29,6 +29,10 @@
 //
 // In the installed app (html[data-app="standalone"]) links to other sites open outside it (a new tab: Safari's sheet on
 // iPhone, a Chrome tab on Android), so the app itself never leaves vitaradar.hu.
+//
+// Counting (js/stats.js, anonymous, nothing stored): each page load in the app, a browser or an app's browser, visits
+// begun (in the app: launches), and what the sheet did: shown, Telepítés, Folytatás, closed, the steps, Android's
+// dialog and its answer, the browser's "installed", the way out of an app's browser.
 
 const root = document.documentElement;
 const UA = navigator.userAgent;
@@ -125,6 +129,46 @@ const WAY = !IAB ? null : ANDROID ? IAB.a : IAB.i && (IAB.i !== "safari" && IAB.
 // one), which has a Safari button but no Add to Home Screen. Only the steps' wording follows it (it may be wrong).
 const VIEW = IOS && !IAB && !IOS_OTHER && SAFARI >= 26 && Number((/Version\/26\.(\d+)/.exec(UA) || [])[1] || 99) >= 4
   && !window.browser;
+
+// ------------------------------------------------------------------ counting (js/stats.js)
+// Anonymous: which page loads in the app or a browser, visits begun, and what the sheet did, as plain words; nothing
+// is stored for it and no id goes with it (js/stats.js says what is sent). The module comes only when there is
+// something to count, and nothing here waits for it: if it does not load, nothing is counted.
+const OS = IOS || /iPad/.test(UA) || (/Macintosh/.test(UA) && navigator.maxTouchPoints > 1) ? "ios"
+  : /Android/.test(UA) ? "android" : /Windows|Macintosh|Linux|CrOS/.test(UA) ? "desktop" : "other";
+
+function stat(event, page) {
+  const context = { mode: inApp() ? "app" : IAB ? "inapp" : "browser", platform: OS };
+  import("./stats.js?v=202611290100").then((m) => m.count(event, context, page)).catch(() => { /* not counted */ });
+}
+
+const SHOWN = { steps: "ios_steps", android: "android_steps", out: "iab_stuck" };
+function shown(view, asked) {
+  const e = view === "main" ? (asked ? "sheet_menu" : "sheet_auto") : SHOWN[view];
+  if (e) stat(e);
+}
+
+function pageKind() {
+  const p = (location.pathname.split("/").pop() || "index").replace(/\.html$/, "");
+  return p === "index" ? "live" : ["mps", "mp", "archive", "watch", "fact", "profile", "impresszum"].includes(p) ? p : "other";
+}
+
+// A visit begins when no page of this site came before in this tab: a link from elsewhere, a typed address, the
+// installed app's icon (a launch). Reloads and back/forward stay the same visit.
+function visitBegins() {
+  const nav = performance.getEntriesByType ? performance.getEntriesByType("navigation")[0] : null;
+  if (nav && nav.type !== "navigate") return false;
+  try { return !document.referrer || new URL(document.referrer).origin !== location.origin; } catch { return true; }
+}
+
+function countPage() {
+  stat("view", pageKind());
+  if (!visitBegins()) return;
+  stat("visit");
+  // the installed app before any cookie choice (js/consent.js shows its bar): on iPhone the home-screen app has its
+  // own storage, so this is mostly its first launch, the only sign of an iPhone install
+  if (inApp() && root.dataset.consent === "open") stat("app_new");
+}
 
 function escapeUrl(way) {
   const u = new URL(location.href);
@@ -227,7 +271,13 @@ addEventListener("beforeinstallprompt", (e) => {
   if (installed()) try { localStorage.removeItem(KEY); } catch { /* the browser offers it: not installed (any more) */ }
   sync();
 });
-addEventListener("appinstalled", () => { remember("installed"); bip = null; sync(); if (sheet) close("final"); });
+addEventListener("appinstalled", () => {
+  stat("installed");
+  remember("installed");
+  bip = null;
+  sync();
+  if (sheet) close("final");
+});
 
 // ------------------------------------------------------------------ when the sheet comes
 let sheet = null, dismissed = false, timer = 0, since = 0, lastTouch = 0, started = 0;
@@ -276,6 +326,7 @@ function start() {
 // offered the install (or, without the offer in 8 s, its menu's steps).
 function arrive() {
   started = Date.now();
+  stat("arrived");
   if (IOS) { setTimeout(() => { if (!sheet && offer()) open("steps"); }, 600); return; }
   const t0 = Date.now();
   // a stored install does not stop it: the app may have been removed since, and then the browser offers it again,
@@ -503,9 +554,10 @@ function open(view, asked = false) {
   d.append(el("div", "is-body", `<span class="is-grab" aria-hidden="true"></span>${viewHtml(v)}`));
   document.body.append(d);
   d.addEventListener("click", onClick);
-  d.addEventListener("cancel", (e) => { e.preventDefault(); if (sheet === d) close("dismiss"); });
+  d.addEventListener("cancel", (e) => { e.preventDefault(); if (sheet === d) { stat("sheet_close"); close("dismiss"); } });
   draggable(d);
   d.showModal();
+  shown(v, asked);
   if (v !== "main") { const t = d.querySelector(".is-title"); if (t) t.focus({ preventScroll: true }); }
   play();
   since = asked ? 0 : Date.now();
@@ -547,7 +599,7 @@ function draggable(d) {
     const recent = s.track.filter(([ts]) => ts >= last[0] - 100);
     const [t0, y0] = recent[0], [t1, y1] = recent[recent.length - 1];
     const v = t1 > t0 && e.timeStamp - last[0] < 80 ? (y1 - y0) / (t1 - t0) : 0;  // px per ms, down positive
-    if (v > 0.35 || (v > -0.35 && s.dy > d.offsetHeight / 3)) { close("dismiss"); return; }  // down from where it is
+    if (v > 0.35 || (v > -0.35 && s.dy > d.offsetHeight / 3)) { stat("sheet_close"); close("dismiss"); return; }  // down from where it is
     const from = s.dy;
     d.style.transform = "";
     d.style.removeProperty("--is-dim");
@@ -563,13 +615,13 @@ function draggable(d) {
 
 function onClick(e) {
   if (!sheet || sheet !== e.currentTarget) return;  // closing already
-  if (e.target === sheet) { close("dismiss"); return; }  // the dim part beside it
+  if (e.target === sheet) { stat("sheet_close"); close("dismiss"); return; }  // the dim part beside it
   const b = e.target instanceof Element ? e.target.closest("button[data-act]") : null;
   if (!b || Date.now() - since < 500) return;  // a tap meant for the page, landing as it came up
   const act = b.dataset.act;
-  if (act === "browser") { remember("browser"); close("dismiss"); }  // Folytatás, Maradok itt: not by itself again
+  if (act === "browser") { stat("sheet_browser"); remember("browser"); close("dismiss"); }  // Folytatás, Maradok itt: not by itself again
   else if (act === "done") close("dismiss");
-  else if (act === "install") install();
+  else if (act === "install") { stat("sheet_install"); install(); }
   else if (act === "leave") away();
   else if (act === "copy") copy(b);
 }
@@ -580,6 +632,7 @@ function install() {
     const d = sheet, b = d.querySelector('[data-act="install"]');
     if (b) { b.disabled = true; b.textContent = "Nyílik…"; }
     leave().then((gone) => {
+      if (gone) stat("iab_out");
       if (sheet !== d) return;
       if (gone) close("final");
       else swap("out");
@@ -597,6 +650,7 @@ function swap(view) {
   sheet.dataset.view = view;
   next.querySelector(".is-title").focus({ preventScroll: true });
   play();
+  shown(view, true);
 }
 
 // Android's install dialog (straight from a tap: browsers want that). It comes once per page; after a no the menu's
@@ -611,13 +665,19 @@ function ask() {
   dismissed = true;
   sync();
   Promise.resolve(asked).then(() => p.userChoice)
-    .then((r) => { if (r && r.outcome === "accepted") { remember("installed"); sync(); } })
+    .then((r) => {
+      stat(r && r.outcome === "accepted" ? "prompt_yes" : "prompt_no");
+      if (r && r.outcome === "accepted") { remember("installed"); sync(); }
+    })
     .catch(() => { /* asked: nothing to keep */ });
 }
 
 // To the browser from a tap; the sheet stays for when it does not open (and closes when it did).
 function away() {
-  leave().then((gone) => { if (gone && sheet) close("final"); });
+  leave().then((gone) => {
+    if (gone) stat("iab_out");
+    if (gone && sheet) close("final");
+  });
 }
 
 // The old way first, still inside the tap (apps' browsers often refuse the clipboard API, and after waiting for it the
@@ -674,6 +734,7 @@ function close(why) {
 }
 
 // ------------------------------------------------------------------ go (the page is parsed: modules run after it)
+countPage();
 mountItem();
 if (ARRIVED && !IAB && (IOS || ANDROID) && !inApp() && DIALOG) arrive();  // no waiting for the whole page to load
 else if (document.readyState === "complete") start();
