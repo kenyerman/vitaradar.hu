@@ -19,7 +19,7 @@
 import {
   doc, onSnapshot, collection, query, where, orderBy, limit, startAfter,
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { db, getDoc, getDocs, el, badge, huDate, watchLiveNav, mpHref } from "./common.js?v=202611270600";
+import { db, getDoc, getDocs, el, badge, huDate, watchLiveNav, mpHref } from "./common.js?v=202611272300";
 import {
   account, onAccount, onBlocks, isBlocked, avatar, openProfileEditor, mountAccount, signIn, openRegister, blockUser, api, toast,
 } from "./account.js?v=202611270327";

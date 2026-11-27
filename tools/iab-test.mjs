@@ -190,7 +190,7 @@ async function run() {
       step(`${((Date.now() - tapped) / 1000).toFixed(1)} s: our sheet in the app's browser, tapping Telepítés`);
       if (ours === 1) result.sheetAfter = Math.round((Date.now() - tapped) / 100) / 10;
       tap(install);
-      await wait(2500);
+      await wait(700);  // a person answers the app's question in a second or two
       continue;
     }
     const again = nodes.find((n) => /^újra: megnyitás/i.test(n.label) && n.cls.endsWith("Button"));
