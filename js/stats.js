@@ -7,13 +7,13 @@
 // different readers came that day, through a hash with a key of that day that it throws away the next day; it keeps
 // only the totals. What the backend keeps is in its functions/api/stats.py.
 //
-// Counting never holds the page up: events wait a second to go together, and a failed send is simply not counted.
+// Counting never holds the page up: events of the same moment go together, and a failed send is simply not counted.
 
 import { appCheckHeaders } from "./firebase.js?v=202611281400";
 import { fetchT } from "./net.js?v=202611270600";
 import { apiUrl } from "./config.js?v=202611241021";
 
-const WAIT = 1000;  // events of the same moment go in one request
+const WAIT = 300;   // events of the same moment go in one request (a page load's view and visit, a tap's two events)
 const MAX = 20;     // per request (the API looks at no more)
 
 let queue = [], ctx = null, timer = 0;
@@ -27,7 +27,8 @@ export function count(event, context, page) {
   if (!timer) timer = setTimeout(send, WAIT);
 }
 
-async function send() {
+// `leaving`: the page is going away; keepalive lets the request outlive it
+async function send(leaving = false) {
   clearTimeout(timer);
   timer = 0;
   const events = queue, context = ctx;
@@ -40,9 +41,12 @@ async function send() {
       method: "POST",
       headers: { ...check, "Content-Type": "application/json" },
       body: JSON.stringify({ mode: context.mode, platform: context.platform, events }),
+      keepalive: leaving,
     }, 15000);
   } catch { /* not counted */ }
 }
 
 // leaving the page (or the app going to the background): what is waiting goes now
-document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden" && queue.length) send(); });
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden" && queue.length) send(true);
+});
