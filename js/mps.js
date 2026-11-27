@@ -276,4 +276,8 @@ getDocs(collection(db, "mps")).then((snap) => {
   mps = snap.docs.map((d) => d.data());
   parties();
   render();
-}).catch((e) => { loadFailed(empty, "az adatok most nem tölthetők be"); console.warn(e); });
+}).catch((e) => {
+  strip.hidden = chips.hidden = true;  // the room kept for them (css) goes
+  loadFailed(empty, "az adatok most nem tölthetők be");
+  console.warn(e);
+});

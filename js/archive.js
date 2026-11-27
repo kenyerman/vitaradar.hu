@@ -373,4 +373,5 @@ getDocs(collection(db, "archive")).then((snap) => {
   }));
   empty.hidden = all.length > 0;
   if (all.length) sidebar(dayList, sections);
-}).catch((e) => { loadFailed(empty, "az archívum most nem tölthető be"); console.warn(e); });
+  else side.hidden = true;  // nothing to filter: the room kept for it (css) goes
+}).catch((e) => { side.hidden = true; loadFailed(empty, "az archívum most nem tölthető be"); console.warn(e); });
