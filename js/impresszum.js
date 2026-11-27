@@ -76,35 +76,49 @@ if (sections.length) {
 }
 
 // ------------------------------------------------------------------ sections coming in
-// Each section, and each row in one, waits out of sight until it is well on the screen (its top above a line 15% up
-// from the bottom), then comes in. Not the section's rows with it: in a tall section the lower rows came in below the
-// screen, and the reader only saw them standing. Rows that come in together follow one after another (--d); one that
-// comes in alone does not wait. Those already that high on the first screen come up with the page.
+// Each section, and each row in one, comes in on its own. While the page scrolls, once it is well on the screen (its
+// top above a line 15% up from the bottom), so the reader sees it come: tied to its section, the lower rows of a tall
+// one came in below the screen and were only seen standing. When the page stands (at load, or once a scroll stops),
+// everything on the screen at all, so nothing in view is left as an empty gap at the foot of the screen. Rows that
+// come in together follow one after another (--d); one that comes in alone does not wait.
 const ROWS = ".imp-contact > div, .imp-people > .imp-me, .imp-steps > li, .imp-legend > li, .imp-pledge li, .imp-callout";
-const LINE = 0.85;  // of the screen's height, from the top
+const LINE = 0.85;  // of the screen's height, from the top, while scrolling
 const items = [...document.querySelectorAll(`.imp-sec, ${ROWS}`)];
+const waiting = new Set();
 
 function show(batch) {
   let n = 0;
   for (const el of batch) {
+    if (!waiting.delete(el)) continue;
     if (!el.matches(".imp-sec")) el.style.setProperty("--d", `${Math.min(n++, 8) * 70}ms`);
     el.classList.add("imp-in");
   }
 }
 
+// everything waiting with any part on the screen, in page order
+function inView() {
+  return items.filter((el) => waiting.has(el) && el.getBoundingClientRect().top < innerHeight - 2);
+}
+
 if (items.length && "IntersectionObserver" in window && !CALM.matches) {
+  for (const el of items) waiting.add(el);
   const seen = new IntersectionObserver((entries) => {
     const batch = entries.filter((e) => e.isIntersecting).map((e) => e.target);
     batch.sort((a, b) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1));  // page order
     for (const el of batch) seen.unobserve(el);
     show(batch);
   }, { rootMargin: `0px 0px -${Math.round((1 - LINE) * 100)}% 0px` });
-  const now = [];
-  for (const el of items) {
-    if (el.getBoundingClientRect().top < innerHeight * LINE) now.push(el);
-    else seen.observe(el);
-  }
-  show(now);
+  show(inView());  // the first screen comes up with the page
+  for (const el of waiting) seen.observe(el);
+  let still = 0;
+  const settle = () => { clearTimeout(still); still = setTimeout(() => show(inView()), 160); };
+  addEventListener("scroll", settle, { passive: true });
+  addEventListener("resize", settle);
+  document.fonts?.ready.then(() => show(inView()));  // the fonts can move rows up onto the screen
+  // and so does the page's own entrance (it rises from 32px lower): once it is done
+  const main = document.querySelector("main");
+  main?.addEventListener("animationend", (e) => { if (e.target === main) show(inView()); });
+  setTimeout(() => show(inView()), 1500);
   root.classList.add("imp-anim");
 }
 
