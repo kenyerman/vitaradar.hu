@@ -137,15 +137,39 @@ function escapeUrl(way) {
   return `intent://${u.host}${u.pathname}${u.search}#Intent;scheme=${u.protocol.slice(0, -1)};end`;
 }
 
-// Sends the reader to the browser; resolves true when the page went to the background (the browser came up). Apps ask
-// first ("open in another app?"): an answer after the 1.6 s still counts, the sheet goes then (see below).
+// Sends the reader to the browser; resolves true when the page went to the background (the browser came up), false
+// when it stayed. Apps ask first ("You're leaving our app…"), a native dialog over the page: while it is up the page has
+// no focus, so the answer is waited for (up to 30 s); the page getting its focus back and staying in front means "no"
+// (Go back). Without such a question within 4 s, it did not work. An answer after that still counts: the sheet goes
+// when the page goes to the background (see below).
 let lastTry = 0;
 function leave() {
   lastTry = Date.now();
   return new Promise((done) => {
-    let gone = false;
-    const hide = () => { if (document.visibilityState === "hidden") gone = true; };
-    document.addEventListener("visibilitychange", hide);
+    const t0 = Date.now();
+    let asked = false, over = false, tick = 0;
+    const finish = (gone) => {
+      if (over) return;
+      over = true;
+      clearInterval(tick);
+      document.removeEventListener("visibilitychange", onShow);
+      removeEventListener("blur", onBlur);
+      removeEventListener("focus", onFocus);
+      done(gone);
+    };
+    const onShow = () => { if (document.visibilityState === "hidden") finish(true); };
+    const onBlur = () => { asked = true; };
+    const onFocus = () => {  // the question went: a yes takes the page to the background in a moment, a no leaves it here
+      if (asked) setTimeout(() => { if (document.visibilityState === "visible") finish(false); }, 1200);
+    };
+    document.addEventListener("visibilitychange", onShow);
+    addEventListener("blur", onBlur);
+    addEventListener("focus", onFocus);
+    tick = setInterval(() => {
+      if (!document.hasFocus()) asked = true;
+      const t = Date.now() - t0;
+      if ((!asked && t > 4000) || t > 30000) finish(false);
+    }, 250);
     const url = escapeUrl(WAY);
     try {
       if (WAY === "open") window.open(url, "_blank");
@@ -157,7 +181,6 @@ function leave() {
         setTimeout(() => f.remove(), 3000);
       } else location.href = url;
     } catch { /* the app refused it: the steps */ }
-    setTimeout(() => { document.removeEventListener("visibilitychange", hide); done(gone); }, 1600);
   });
 }
 
