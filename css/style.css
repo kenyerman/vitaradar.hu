@@ -2273,6 +2273,11 @@ body.m-watch:is([data-m-tab="speakers"], [data-m-tab="transcript"]) .m-ai #show-
 .mp-total { display: flex; flex-direction: column; align-items: flex-end; margin: 0; }
 .mp-total b { color: #e9f2ed; font: 700 16px/1 var(--display); font-variant-numeric: tabular-nums; }
 .mp-total span { color: var(--muted); font: 400 10px/1.4 var(--sans); }
+/* sorted by something else than the facts: that number, in its column's colour on wider screens (js/mps.js) */
+.mp-total-true_share b { color: var(--true); }
+.mp-total-false_share b { color: var(--false); }
+.mp-total-fallacy b { color: var(--fallacy); }
+.mp-total-recent b { font-size: 14px; }
 
 /* ------------------------------------------------------------------ a profile (the phones' design, every width)
    A short head (the photo, the nick, the name and since when, ✎ for one's own editor), the counts as three tiles
@@ -2753,43 +2758,67 @@ html:not([data-loaded]) #mps:empty { background-image: url("data:image/svg+xml,%
    them the parties side by side, everything their MPs said added up, and by the search the same parties as chips: a
    click on either shows one party's MPs. Phones have none of it: their rows, sort and search are as they were. */
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }  /* read, not seen */
-.mp-parties, .mp-chips, .mp-thead, .mp-rank, .mp-cols, .mp-grid > li.mp-sep { display: none; }
+.mp-parties, .mp-chips { display: none; }  /* until js/mps.js has them (their :not([hidden]) rules below) */
+.mp-thead, .mp-rank, .mp-cols { display: none; }  /* the table: wider screens only */
+/* ------------------------------------------------------------------ the MPs' parties, chips and the no-data line (every width)
+   Phones: the parties a row to swipe and the chips one scrolling line under the search; wider screens (below): the
+   parties side by side and the chips beside the search. */
+.mp-parties:not([hidden]) { display: block; margin: 20px 0 18px; }
+.mp-parties-h { margin: 0 0 10px; color: var(--green); font: 700 11px/1 var(--display); letter-spacing: 1.6px; text-transform: uppercase; }
+.mp-parties-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; }
+.mp-party-card { display: flex; flex-direction: column; gap: 10px; min-width: 0; margin: 0; padding: 14px 16px; text-align: left;
+  background: #0a110e; border: 1px solid var(--line-dim); border-left: 4px solid var(--party, var(--green)); color: #e9f2ed;
+  font: inherit; cursor: pointer; }
+.mp-party-card:is(:hover, :focus-visible) { border-color: var(--line); border-left-color: var(--party, var(--green)); }
+.mp-party-card[aria-pressed="true"] { background: rgba(61, 240, 130, .07); border-color: var(--green); border-left-color: var(--party, var(--green)); }
+.mp-party-top { display: flex; align-items: baseline; gap: 10px; }
+.mp-party-top b { font: 700 15px/1 var(--display); letter-spacing: 1.2px; text-transform: uppercase; }
+.mp-party-top span { margin-left: auto; color: var(--muted); font: 400 12px/1 var(--sans); white-space: nowrap; }
+.mp-party-card .bar { height: 2px; margin: 0; border: 0; background: rgba(61, 240, 130, .1); }  /* every bar: a solid 2px line */
+.mp-party-nums { display: flex; flex-wrap: wrap; gap: 8px 22px; }
+.mp-party-nums > span { display: flex; flex-direction: column; gap: 5px; }
+.mp-party-nums b { color: #e9f2ed; font: 700 19px/1 var(--display); font-variant-numeric: tabular-nums; }
+.mp-party-nums small { color: var(--muted); font: 600 9.5px/1 var(--display); letter-spacing: 1.1px; text-transform: uppercase; }
+.mp-party-nums .c-true b { color: var(--true); }
+.mp-party-nums .c-false b { color: var(--false); }
+.mp-party-nums .c-fallacy b { color: var(--fallacy); }
+.mp-chips:not([hidden]) { display: flex; flex-wrap: wrap; gap: 6px; }
+.mp-chip { display: inline-flex; align-items: center; gap: 7px; min-height: 36px; margin: 0; padding: 0 10px;
+  border: 1px solid transparent; background: #16231d; color: #e9f2ed; font: 700 10.5px/1 var(--display); letter-spacing: 1px;
+  text-transform: uppercase; cursor: pointer; }
+.mp-chip:not([data-party="*"])::before { content: ""; flex: none; width: 7px; height: 7px; background: var(--party, var(--muted)); }
+.mp-chip:is(:hover, :focus-visible) { background: #1d2d26; }
+.mp-chip[aria-pressed="true"] { background: rgba(61, 240, 130, .14); border-color: var(--green); color: var(--green); }
+.mp-chip-n { color: var(--muted); font-weight: 600; }
+.mp-page .mp-grid > li.mp-sep { display: block; padding: 18px 16px 8px; color: var(--muted); font: 700 10.5px/1.2 var(--display);
+  letter-spacing: 1.3px; text-transform: uppercase; }
+@media (max-width: 860px) {
+  .mp-parties:not([hidden]) { margin: 16px 0 12px; }
+  .mp-parties-h { margin-bottom: 8px; }
+  .mp-parties-grid { display: flex; gap: 10px; overflow-x: auto; margin: 0 -16px; padding: 0 16px 2px; scroll-snap-type: x mandatory;
+    scroll-padding: 0 16px; overscroll-behavior-x: contain; scrollbar-width: none; }
+  .mp-parties-grid::-webkit-scrollbar, .mp-chips::-webkit-scrollbar { display: none; }
+  .mp-party-card { flex: 0 0 236px; gap: 9px; padding: 12px 14px; scroll-snap-align: start; }
+  .mp-party-top b { font-size: 14px; }
+  .mp-party-top span { font-size: 11px; }
+  .mp-party-nums { display: grid; grid-template-columns: repeat(4, auto); justify-content: space-between; gap: 6px; }
+  .mp-party-nums > span { gap: 4px; }
+  .mp-party-nums b { font-size: 16px; }
+  .mp-party-nums small { font-size: 8.5px; letter-spacing: .8px; }
+  .mp-chips:not([hidden]) { flex: 1 1 100%; flex-wrap: nowrap; overflow-x: auto; margin: 0 -16px; padding: 0 16px;
+    overscroll-behavior-x: contain; scrollbar-width: none; }
+  .mp-chip { flex: none; white-space: nowrap; }
+  .mp-page .mp-grid > li.mp-sep { padding: 16px 16px 8px; font-size: 10px; letter-spacing: 1.2px; }
+  .mp-card.no-data .mp-total b { color: var(--muted); }
+}
 @media (min-width: 861px) {
   body:not(.m-live):not(.m-watch) > main.mp-page { max-width: 1200px; }  /* every page's width there (feat/archive-desktop) */
   .mp-page { --mp-bar: clamp(150px, 19vw, 260px); --mp-cols: 26px 40px minmax(0, 1fr) 64px 52px 56px 70px 88px 52px 70px; }
-  /* the parties */
-  .mp-parties:not([hidden]) { display: block; margin: 20px 0 18px; }
-  .mp-parties-h { margin: 0 0 10px; color: var(--green); font: 700 11px/1 var(--display); letter-spacing: 1.6px; text-transform: uppercase; }
-  .mp-parties-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; }
-  .mp-party-card { display: flex; flex-direction: column; gap: 10px; min-width: 0; margin: 0; padding: 14px 16px; text-align: left;
-    background: #0a110e; border: 1px solid var(--line-dim); border-left: 4px solid var(--party, var(--green)); color: #e9f2ed;
-    font: inherit; cursor: pointer; }
-  .mp-party-card:is(:hover, :focus-visible) { border-color: var(--line); border-left-color: var(--party, var(--green)); }
-  .mp-party-card[aria-pressed="true"] { background: rgba(61, 240, 130, .07); border-color: var(--green); border-left-color: var(--party, var(--green)); }
-  .mp-party-top { display: flex; align-items: baseline; gap: 10px; }
-  .mp-party-top b { font: 700 15px/1 var(--display); letter-spacing: 1.2px; text-transform: uppercase; }
-  .mp-party-top span { margin-left: auto; color: var(--muted); font: 400 12px/1 var(--sans); white-space: nowrap; }
-  .mp-party-card .bar { height: 2px; margin: 0; border: 0; background: rgba(61, 240, 130, .1); }  /* every bar: a solid 2px line */
-  .mp-party-nums { display: flex; flex-wrap: wrap; gap: 8px 22px; }
-  .mp-party-nums > span { display: flex; flex-direction: column; gap: 5px; }
-  .mp-party-nums b { color: #e9f2ed; font: 700 19px/1 var(--display); font-variant-numeric: tabular-nums; }
-  .mp-party-nums small { color: var(--muted); font: 600 9.5px/1 var(--display); letter-spacing: 1.1px; text-transform: uppercase; }
-  .mp-party-nums .c-true b { color: var(--true); }
-  .mp-party-nums .c-false b { color: var(--false); }
-  .mp-party-nums .c-fallacy b { color: var(--fallacy); }
   /* the search, the chips, and the switch at the right; the table's head sorts (the dropdown is the phones') */
   .mp-page .toolbar { align-items: center; }
   .mp-page .toolbar #filter { flex: 0 1 300px; min-height: 36px; }
   .mp-page .toolbar #sort { display: none; }
   .mp-page .toolbar #only-data { margin-left: auto; }
-  .mp-chips:not([hidden]) { display: flex; flex-wrap: wrap; gap: 6px; }
-  .mp-chip { display: inline-flex; align-items: center; gap: 7px; min-height: 36px; margin: 0; padding: 0 10px;
-    border: 1px solid transparent; background: #16231d; color: #e9f2ed; font: 700 10.5px/1 var(--display); letter-spacing: 1px;
-    text-transform: uppercase; cursor: pointer; }
-  .mp-chip:not([data-party="*"])::before { content: ""; flex: none; width: 7px; height: 7px; background: var(--party, var(--muted)); }
-  .mp-chip:is(:hover, :focus-visible) { background: #1d2d26; }
-  .mp-chip[aria-pressed="true"] { background: rgba(61, 240, 130, .14); border-color: var(--green); color: var(--green); }
-  .mp-chip-n { color: var(--muted); font-weight: 600; }
   /* the head */
   .mp-thead:not([hidden]) { display: grid; grid-template-columns: var(--mp-cols); align-items: center; gap: 0 14px; margin: 0 -16px;
     padding: 4px 16px; position: sticky; top: var(--m-hdr, 0px); z-index: 3; background: var(--bg);
@@ -2805,8 +2834,6 @@ html:not([data-loaded]) #mps:empty { background-image: url("data:image/svg+xml,%
   .mp-th-who { grid-column: 2 / 4; display: grid; grid-template-columns: minmax(0, 1fr) var(--mp-bar); align-items: center; }
   .mp-th-who .mp-th { justify-self: start; }
   /* the rows */
-  .mp-page .mp-grid > li.mp-sep { display: block; padding: 18px 16px 8px; color: var(--muted); font: 700 10.5px/1.2 var(--display);
-    letter-spacing: 1.3px; text-transform: uppercase; }
   .mp-page .mp-card { grid-template-columns: var(--mp-cols); gap: 0 14px; padding: 8px 16px; }
   .mp-page .mp-card:is(:hover, :focus-visible) { background: rgba(61, 240, 130, .04); }
   .mp-rank { display: block; justify-self: end; color: var(--muted); font: 600 12px/1 var(--display); font-variant-numeric: tabular-nums; }

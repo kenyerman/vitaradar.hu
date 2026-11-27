@@ -1,9 +1,10 @@
 // vitaradar.hu MP list: everyone whose speeches were fact-checked, with their totals.
 //
-// Phones: one row per MP (the photo, the name, the party and the role, the bar of the verdicts, the number of facts),
-// the search, the sort as a dropdown and the "only those with data" switch. Wider screens (css, 861px and up): the same
-// rows as a table, every count in its own column and a click on a column's head sorts by it; above them the parties
-// side by side, and chips that show one party's MPs only.
+// Every width: the parties (what their MPs said, added up), chips that show one party's MPs only, the search and the
+// "only those with data" switch, then the MPs, those we have no data on yet after a line. Phones: the parties a row to
+// swipe, the chips one scrolling line, one row per MP (the photo, the name, the party and the role, the bar of the
+// verdicts, one number) and the sort as a dropdown. Wider screens (css, 861px and up): the parties side by side and
+// the MPs as a table, every count in its own column and a click on a column's head sorts by it.
 
 import { collection } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { dropdown } from "./dropdown.js?v=202611241021";
@@ -12,7 +13,7 @@ import { mountAccount } from "./account.js?v=202611281400";
 
 watchLiveNav();
 mountAccount();
-const WIDE = matchMedia("(min-width: 861px)");  // the table, the parties and the chips (as in the css)
+const WIDE = matchMedia("(min-width: 861px)");  // the table (as in the css)
 const list = document.getElementById("mps"), empty = document.getElementById("mps-empty");
 const filter = document.getElementById("filter");
 const head = document.getElementById("mps-head"), chips = document.getElementById("party");
@@ -28,7 +29,7 @@ const sort = dropdown(document.getElementById("sort"), {
 const onlyData = document.getElementById("only-data"), count = document.getElementById("mps-count");
 let mps = [];
 let by = "claims", dir = 1;  // the sort, and its direction: 1 as the column means it (most first, A to Z), -1 the other way
-let party = null;            // wider screens: one party's MPs only ("" those without a party), or everyone
+let party = null;            // one party's MPs only ("" those without a party), or everyone
 const hasData = (m) => m.has_data ?? (m.speeches || 0) > 0;
 
 // The verdicts, in the live page's tally order: the bar and the count list beside it. The first four always show;
@@ -38,6 +39,9 @@ const BASE = new Set(["true", "false", "unverifiable", "fallacy"]);
 const NAMES = { true: "igaz", partly_true: "részben igaz", misleading: "félrevezető", false: "hamis", opinion: "vélemény",
   promise: "ígéret", unverifiable: "nem ellenőrizhető", fallacy: "hibás érvelés" };
 const listed = (t) => BAR.filter((k) => BASE.has(k) || t[k] > 0);
+
+// The search ignores accents and the kind of dash ("gulyas" finds Gulyás, "fidesz-kdnp" Fidesz–KDNP), as the archive's
+const fold = (s) => (s || "").normalize("NFD").replace(/\p{Diacritic}/gu, "").replace(/[‐-―−]/g, "-").toLowerCase();
 
 const pct = (x) => x == null ? "–" : `${Math.round(x * 100)}%`;
 const minutes = (s) => `${Math.round((s || 0) / 60)} p`;
@@ -119,21 +123,24 @@ function card(m, rank) {
     c.append(el("span", "sr", `${said}: `), hasData(m) ? value(m) : "–");
     cells.append(c);
   }
-  const total = el("p", "mp-total");  // phones: the number of facts on the right (the table is for wider screens)
-  total.append(el("b", null, String(m.claims || 0)), el("span", null, "állítás"));
+  // phones: one number on the right (the table is for wider screens): the number of facts, or what the list is sorted
+  // by, so the order reads ("8%" "hamis arány" when the false share leads)
+  const shown = by !== "claims" && by !== "name" && COLS.find(([key]) => key === by);
+  const total = el("p", shown ? `mp-total mp-total-${by}` : "mp-total");
+  if (shown) total.append(el("b", null, hasData(m) ? shown[3](m) : "–"), el("span", null, shown[2]));
+  else total.append(el("b", null, hasData(m) ? String(m.claims || 0) : "–"), el("span", null, "állítás"));
   a.append(no, thumb, body, cells, total);
   li.append(a);
   return li;
 }
 
 function render() {
-  const q = filter.value.trim().toLowerCase();
+  const q = fold(filter.value.trim());
   const only = onlyData.getAttribute("aria-pressed") === "true";
-  const one = WIDE.matches ? party : null;  // the chips are for wider screens only
   const shown = mps
-    .filter((m) => !q || `${m.name} ${m.party} ${m.faction} ${m.role}`.toLowerCase().includes(q))
+    .filter((m) => !q || fold(`${m.name} ${m.party} ${m.faction} ${m.role}`).includes(q))
     .filter((m) => !only || hasData(m))
-    .filter((m) => one == null || (m.party || "") === one)
+    .filter((m) => party == null || (m.party || "") === party)
     .sort((a, b) => {
       if (hasData(a) !== hasData(b)) return hasData(a) ? -1 : 1;  // those we have data on first
       if (by === "name") return dir * a.name.localeCompare(b.name, "hu");
@@ -146,7 +153,7 @@ function render() {
   const rows = [];
   let n = 0;
   for (const m of shown) {
-    if (!hasData(m) && n === rows.length) {  // wider screens: a line before those we have no data on yet (css)
+    if (!hasData(m) && n === rows.length) {  // a line before those we have no data on yet
       const sep = el("li", "mp-sep", `// ${shown.length - n} képviselőről még nincs ellenőrzött felszólalás`);
       sep.setAttribute("aria-hidden", "true");
       if (n) rows.push(sep);
@@ -191,7 +198,7 @@ function marks() {
   for (const b of document.querySelectorAll("[data-party]")) b.setAttribute("aria-pressed", String(b.dataset.party === (party ?? "*")));
 }
 
-// Wider screens: the parties side by side, everything their MPs said added up, and the chips. The true and false
+// The parties (side by side on wider screens, a row to swipe on phones), everything their MPs said added up, and the chips. The true and false
 // shares are the MPs' own (true_share, false_share: true or false facts per the facts they count), taken together:
 // each MP's count over that base, which their share gives back (an MP whose shares are both 0 adds nothing to it).
 function parties() {
@@ -260,8 +267,7 @@ onlyData.addEventListener("click", () => {
   onlyData.setAttribute("aria-pressed", String(onlyData.getAttribute("aria-pressed") !== "true"));
   render();
 });
-// the chips' choice holds on wider screens only; on a phone the sort is the dropdown's (it has no direction, nor the
-// table's other columns)
+// on a phone the sort is the dropdown's (it has no direction, nor the table's other columns); the party chosen holds
 WIDE.addEventListener("change", () => {
   if (!WIDE.matches) { by = sort.value; dir = 1; }
   render();
