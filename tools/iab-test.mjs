@@ -38,8 +38,8 @@ const PORT = Number(args.port || 9341);  // on the Mac, forwarded to Chrome's De
 const OUT = args.out || path.join(os.tmpdir(), `iab-test-${new Date().toISOString().replace(/[:.]/g, "-")}`);
 // Meta's question before another app opens, and Android's chooser (English and Hungarian; --dump shows today's words)
 const YES = /^(open|megnyitás|continue|folytatás|leave|kilépés|ok|open link|link megnyitása|just once|csak egyszer|always|mindig|chrome)$/i;
-// our own sheet's buttons in the app's browser (js/pwa.js): Telepítés, and "Újra: megnyitás…" if the browser did not come
-const OURS = /^(telepítés|újra: megnyitás .*)$/i;
+// a question from the app (or Android) about leaving it: only then a YES button is pressed
+const ASK = /leaving|external app|another app|open with|elhagy|kilép|másik alkalmaz|külső alkalmaz|megnyitás ezzel|just once|csak egyszer/i;
 
 const adb = (...a) => execFileSync(ADB, [...SERIAL, ...a], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
 const shell = (cmd) => adb("shell", cmd);
@@ -162,15 +162,18 @@ async function run() {
   tap(link);
   const tapped = Date.now();
 
-  // in the app's browser: our sheet comes (js/pwa.js); its Telepítés asks Meta to open the browser; Meta asks; yes
-  let ours = 0;
+  // in the app's browser: our sheet comes (js/pwa.js; after a "stay in the browser" only from ☰ → App telepítése); its
+  // Telepítés asks the app to open the browser; the app asks "leaving?"; yes. Only a real question gets the yes: our
+  // own sheet has a FOLYTATÁS button too.
+  let ours = 0, retry = 0, viaMenu = false;
   for (;;) {
     const f = focus();
     if (f.startsWith(CHROME)) { step(`Chrome is in front after ${((Date.now() - tapped) / 1000).toFixed(1)} s`); break; }
     if (f.startsWith("org.chromium.webapk")) { step(`the installed app came up (${f}): the page opened in it, not in Chrome`); result.installedApp = f; return finish(result, 0); }
-    if (Date.now() - tapped > 45000) { step(`no Chrome after 45 s (in front: ${f || "?"})`); shot("2-stuck"); return finish(result, 1); }
+    if (Date.now() - tapped > 60000) { step(`no Chrome after 60 s (in front: ${f || "?"})`); shot("2-stuck"); return finish(result, 1); }
     const nodes = screen();
-    const yes = nodes.find((n) => YES.test(n.label) && /Button|TextView/.test(n.cls));
+    const asking = nodes.some((n) => ASK.test(n.label));
+    const yes = asking && nodes.find((n) => YES.test(n.label) && /Button|TextView/.test(n.cls));
     if (yes) {
       shot(`3-asked-${result.steps.length}`);
       step(`answering "${nodes.filter((n) => n.label && n.pkg === yes.pkg).map((n) => n.label).slice(0, 6).join(" | ")}" with ${yes.label}`);
@@ -179,15 +182,39 @@ async function run() {
       await wait(1500);
       continue;
     }
-    const mine = ours < 2 && nodes.find((n) => OURS.test(n.label) && n.cls.endsWith("Button"));
-    if (mine) {
+    const sheetUp = nodes.some((n) => /^az appban jobb$/i.test(n.label));
+    const install = sheetUp && nodes.find((n) => /^telepítés$/i.test(n.label) && n.cls.endsWith("Button"));
+    if (install && ours < 2) {
       ours++;
       shot(`2-our-sheet-${ours}`);
-      step(`${((Date.now() - tapped) / 1000).toFixed(1)} s: our sheet in the app's browser, tapping "${mine.label}"`);
+      step(`${((Date.now() - tapped) / 1000).toFixed(1)} s: our sheet in the app's browser, tapping Telepítés`);
       if (ours === 1) result.sheetAfter = Math.round((Date.now() - tapped) / 100) / 10;
-      tap(mine);
+      tap(install);
       await wait(2500);
       continue;
+    }
+    const again = nodes.find((n) => /^újra: megnyitás/i.test(n.label) && n.cls.endsWith("Button"));
+    if (again && retry < 1) {
+      retry++;
+      shot("2-out-view");
+      step(`the browser did not come: tapping "${again.label}"`);
+      tap(again);
+      await wait(2500);
+      continue;
+    }
+    if (!sheetUp && !again && !viaMenu && Date.now() - tapped > 12000) {  // no sheet by itself: from the page's menu
+      const menu = nodes.find((n) => /^menü/i.test(n.label) && n.cls.endsWith("Button"));
+      if (menu) {
+        viaMenu = true;
+        result.viaMenu = true;
+        step("no sheet by itself (the reader chose the browser before): ☰ → App telepítése");
+        tap(menu);
+        await wait(1500);
+        const item = screen().find((n) => /^app telepítése/i.test(n.label));
+        if (item) tap(item); else step("no \"App telepítése\" in the menu");
+        await wait(1500);
+        continue;
+      }
     }
     await wait(800);
   }
