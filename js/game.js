@@ -13,7 +13,7 @@
 
 import { collection, doc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { db, el } from "./common.js?v=202611272300";
-import { account, onAccount, api, needAccount, toast } from "./account.js?v=202611270341";
+import { account, onAccount, api, needAccount, toast } from "./account.js?v=202611270343";
 
 const TRUTH = { true: "IGAZ", false: "HAMIS" };
 const MASKED = "Hibás érvelés?";
