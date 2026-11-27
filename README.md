@@ -62,6 +62,11 @@ parliament's stream ──► fact-check pipeline (GPU VM) ──► HLS video p
   (`users/{uid}.points`). The answer key never reaches the browser before the window closes: the pipeline keeps it,
   the user API accepts answers only in time (8 seconds past the lock on the stream's clock, about a player's delay),
   and the pipeline settles each game the moment the answers close. Visitors can play along, unscored.
+- **App** (`js/pwa.js`, `manifest.webmanifest`, `sw.js`): installable on phones. A bottom sheet offers it on phones in a
+  browser tab (Android: the browser's install dialog; iPhone: the Share → Add to Home Screen steps), at a calm moment,
+  and not again for 30 days after "Folytatás". The service worker only shows `offline.html` when a page cannot load:
+  pages come from the network, everything else (scripts, Firestore, sign-in, video, Twitch, YouTube) never passes
+  through it. In the iPhone app Google sign-in is a redirect instead of a popup. Icons: `tools/app-icons.py`.
 - **Protected:** the page uses Firebase App Check with reCAPTCHA Enterprise (invisible, score-based), so only this
   site, not scripts, can use the search; Firestore's security rules make the public data read-only for browsers. The
   Firebase config and the reCAPTCHA site key in `js/config.js` are public by design.

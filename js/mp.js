@@ -2,10 +2,11 @@
 
 import { doc, collection, query, where } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { searchUrl } from "./config.js?v=202611241021";
-import { appCheckHeaders } from "./firebase.js?v=202611260345";
-import { db, getDoc, getDocs, el, factBadge, LABEL, sourceList, setPhoto, hms, huDate, watchLiveNav } from "./common.js?v=202611262350";
-import { mountAccount } from "./account.js?v=202611262350";
-import { factSocial } from "./social.js?v=202611262350";
+import { appCheckHeaders } from "./firebase.js?v=202611270600";
+import { db, getDoc, getDocs, el, factBadge, LABEL, sourceList, setPhoto, hms, huDate, watchLiveNav, loadFailed } from "./common.js?v=202611270600";
+import { fetchT } from "./net.js?v=202611270600";
+import { mountAccount } from "./account.js?v=202611270600";
+import { factSocial } from "./social.js?v=202611270600";
 import { calendar } from "./calendar.js?v=202611241021";
 import { watchHref } from "./links.js?v=202611241021";
 import { setPageMeta } from "./meta.js?v=202611241124";
@@ -352,8 +353,8 @@ $("search").addEventListener("submit", async (ev) => {
   note.hidden = false;
   note.textContent = "keresés…";
   try {
-    const r = await fetch(`${searchUrl}?mp=${encodeURIComponent(id)}&q=${encodeURIComponent(q)}`,
-      { headers: await appCheckHeaders() });  // only the site may search: App Check (reCAPTCHA Enterprise)
+    const r = await fetchT(`${searchUrl}?mp=${encodeURIComponent(id)}&q=${encodeURIComponent(q)}`,
+      { headers: await appCheckHeaders() }, 20000);  // only the site may search: App Check (reCAPTCHA Enterprise)
     if (!r.ok) throw new Error(String(r.status));
     const data = await r.json();
     note.textContent = data.hits.length ? `${data.hits.length} találat, a legközelebbi jelentésűek elöl` : "nincs találat";
@@ -381,4 +382,10 @@ $("search").addEventListener("submit", async (ev) => {
 $("expand-all").addEventListener("click", () => setAll(true));
 $("collapse-all").addEventListener("click", () => setAll(false));
 
-load().catch((e) => { $("mp-name").textContent = "Az adatok most nem tölthetők be"; console.warn(e); });
+load().catch((e) => {
+  $("mp-name").textContent = "Nem sikerült betölteni";
+  const p = el("p", "empty");
+  $("mp-name").after(p);
+  loadFailed(p, "a képviselő adatai most nem tölthetők be");
+  console.warn(e);
+});

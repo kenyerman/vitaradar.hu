@@ -6,7 +6,8 @@
 // with the images, and renews it before the hour is up. Elsewhere (localhost) the addresses are left as they were.
 
 import { apiUrl } from "./config.js?v=202611241021";
-import { appCheckHeaders } from "./firebase.js?v=202611260345";
+import { appCheckHeaders } from "./firebase.js?v=202611270600";
+import { fetchT } from "./net.js?v=202611270600";
 
 export const CDN = "https://cdn.vitaradar.hu/";
 const ENABLED = true;
@@ -26,9 +27,9 @@ let pending = null;
 let timer = 0;
 
 async function fetchCookie() {
-  const r = await fetch(apiUrl + "/cdn", {
+  const r = await fetchT(apiUrl + "/cdn", {  // with a limit: the player and the pictures wait for this
     method: "POST", headers: { ...(await appCheckHeaders()), "Content-Type": "application/json" }, body: "{}",
-  });
+  }, 15000);
   if (!r.ok) throw new Error(`cdn cookie: ${r.status}`);
   const { name, value, expires: exp } = await r.json();
   document.cookie = `${name}=${value}; Domain=vitaradar.hu; Path=/; Expires=${new Date(exp * 1000).toUTCString()}; `
@@ -38,8 +39,9 @@ async function fetchCookie() {
   timer = setTimeout(() => { pending = null; cdnReady(); }, Math.max(60, exp - Date.now() / 1000 - RENEW_S) * 1000);
 }
 
-// Resolves once the cookie is in place (true), or at once off the site (false). Never rejects: a failure leaves the
-// media to fail visibly (the player's own error handling, the avatars' initials).
+// Resolves once the cookie is in place (true), or at once off the site (false). Never rejects, and never waits for
+// long (App Check and the request have limits): a failure leaves the media to fail visibly (the player's own error
+// handling, the avatars' initials), and the next call asks again.
 export function cdnReady() {
   if (!ON_SITE) return Promise.resolve(false);
   if (fresh()) return Promise.resolve(true);

@@ -9,15 +9,17 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import {
-  auth, db, appCheckHeaders, signInWithGoogle, signInAgain, readySignIn, signOut,
-} from "./firebase.js?v=202611260345";
+  auth, db, appCheckHeaders, signInWithGoogle, signInAgain, readySignIn, signOut, signInLeavesPage, redirectError,
+} from "./firebase.js?v=202611270600";
 import { apiUrl, avatarUrl, photoPrefix } from "./config.js?v=202611241021";
-import { el, initials, huDate } from "./common.js?v=202611262350";
-import { cdnReady, cdnUrl } from "./cdn.js?v=202611260345";
+import { el, initials, huDate } from "./common.js?v=202611270600";
+import { cdnReady, cdnUrl } from "./cdn.js?v=202611270600";
+import { fetchT, withTimeout, sleep } from "./net.js?v=202611270600";
 import { profileHref } from "./links.js?v=202611241021";
 
 export const account = {
   user: null, registered: false, a18: false, profile: null, private: null, ready: false,
+  failed: false,         // signed in, but the account did not load (/me): pages say so, and do not ask to register
   blocked: {},           // uid -> nick: users whose comments and chat messages this user does not see
   points: null,          // the game points (users/{uid}.points), shown on the header's avatar
   flagged: new Set(),    // comment ids this user flagged
@@ -76,7 +78,17 @@ export class ApiError extends Error {
 async function authHeaders(force = false) {
   const user = auth.currentUser;
   if (!user) throw new ApiError("signin", "Jelentkezz be.");
-  return { ...(await appCheckHeaders()), Authorization: `Bearer ${await getIdToken(user, force)}` };
+  const token = await withTimeout(getIdToken(user, force), 15000, "bejelentkezés").catch((e) => {
+    throw new ApiError(e.code === "timeout" ? "timeout" : "signin", "A bejelentkezésedet most nem sikerült ellenőrizni. Próbáld újra.");
+  });
+  return { ...(await appCheckHeaders()), Authorization: `Bearer ${token}` };
+}
+
+// Every call to our API has a limit: a request that gets no answer (a stalled phone connection) fails with this.
+const TIMEOUT_TEXT = "A szerver nem válaszolt időben. Próbáld újra.";
+async function post(url, options, ms) {
+  try { return await fetchT(url, options, ms); }
+  catch (e) { throw e.code === "timeout" ? new ApiError("timeout", TIMEOUT_TEXT) : e; }
 }
 
 async function readReply(r) {
@@ -87,9 +99,9 @@ async function readReply(r) {
 }
 
 export async function api(path, body = {}) {
-  const r = await fetch(apiUrl + path, {
+  const r = await post(apiUrl + path, {
     method: "POST", headers: { ...(await authHeaders()), "Content-Type": "application/json" }, body: JSON.stringify(body),
-  });
+  }, 20000);
   return readReply(r);
 }
 
@@ -100,6 +112,7 @@ export function safePhoto(url) {  // only the picture addresses our server write
 // Signed in but not registered: ask to sign in or to finish the registration first. Returns true if ready.
 export function needAccount() {
   if (account.registered) return true;
+  if (account.failed) { toast("A fiókodat most nem sikerült betölteni. Töltsd újra az oldalt."); return false; }
   if (!account.user) signIn();
   else openRegister({});
   return false;
@@ -110,6 +123,11 @@ export async function signIn() {
   catch (e) { if (e.code !== "auth/popup-closed-by-user" && e.code !== "auth/cancelled-popup-request") toast(`Nem sikerült belépni (${e.code || e.message}).`); }
 }
 
+// the iPhone app signs in by leaving the page (js/firebase.js): a sign-in that failed there is told when it is back
+redirectError().then((e) => {
+  if (e && e.code !== "auth/redirect-cancelled-by-user") toast(`Nem sikerült belépni (${e.code || e.message}).`);
+});
+
 async function load(user) {
   const me = await api("/me");
   if (me.refresh) await getIdToken(user, true);  // new age claims: the rules (comments, chat) read them
@@ -119,15 +137,21 @@ async function load(user) {
 }
 
 onAuthStateChanged(auth, async (user) => {
-  Object.assign(account, { user, registered: false, a18: false, profile: null, private: null });
+  Object.assign(account, { user, registered: false, a18: false, profile: null, private: null, failed: false });
   if (!user) { watchPrivate(null); emit(); return; }
   try {
-    const me = await load(user);
+    // a second try after a failed first (a dropped request); a refusal (4xx) is not tried again
+    const me = await load(user).catch(async (e) => {
+      if (e.data?.status >= 400 && e.data?.status < 500 && e.data.status !== 401) throw e;
+      await sleep(2000);
+      return load(user);
+    });
     watchPrivate(me.registered ? user.uid : null);
     emit();
     if (!me.registered) openRegister(me.suggest || {});
   } catch (e) {
     console.warn("account:", e);
+    account.failed = true;
     toast(e.message || "A fiók most nem érhető el.");
     emit();
   }
@@ -515,7 +539,7 @@ export function openProfileEditor() {
       if (pending) {
         let data;
         try {
-          const r = await fetch(avatarUrl, { method: "POST", headers: { ...(await authHeaders()), "Content-Type": pending.type }, body: pending });
+          const r = await post(avatarUrl, { method: "POST", headers: { ...(await authHeaders()), "Content-Type": pending.type }, body: pending }, 60000);
           data = await readReply(r);
         } catch (err) {
           throw new ApiError(err.code || "photo", PHOTO_ERRORS[err.data?.status] || err.message);
@@ -583,7 +607,8 @@ export async function deleteAccount() {
   const word = input("text", { name: "confirm", autocomplete: "off", autocapitalize: "characters", spellcheck: "false" });
   const list = el("ul", "dlg-list");
   for (const t of DELETED) list.append(el("li", null, t));
-  const again = el("p", "dlg-text", "Biztonsági okból a törlés előtt még egyszer be kell lépned a Google-fiókoddal.");
+  const again = el("p", "dlg-text", "Biztonsági okból a törlés előtt még egyszer be kell lépned a Google-fiókoddal."
+    + (signInLeavesPage ? " Az appban ehhez a Google oldalára lépsz; ha visszatértél, kezdd újra a törlést." : ""));
   again.hidden = fresh;
   const dlg = dialog("Fiók törlése", [
     el("p", "dlg-text", "A fiókoddal együtt minden adatodat véglegesen töröljük:"), list,

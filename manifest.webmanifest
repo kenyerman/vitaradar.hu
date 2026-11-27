@@ -1,0 +1,20 @@
+{
+  "id": "/",
+  "name": "vitaradar",
+  "short_name": "vitaradar",
+  "description": "Az Országgyűlés élőben, automatikus tényellenőrzéssel: a képviselők állításai és minősítéseik a videóval együtt.",
+  "lang": "hu",
+  "dir": "ltr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#040706",
+  "theme_color": "#040706",
+  "categories": ["news", "politics"],
+  "icons": [
+    { "src": "/img/app/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/img/app/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/img/app/maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/img/app/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

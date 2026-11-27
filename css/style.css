@@ -157,6 +157,8 @@ main.wrap { padding-top: 32px; padding-bottom: 56px; }  /* main.wrap: beats .wra
 .fact[data-verdict="misleading"] { border-left-color: var(--misleading); }
 .fact[data-verdict="opinion"] { border-left-color: var(--opinion); }
 .fact[data-verdict="promise"] { border-left-color: var(--promise); }
+/* a MEGALAPOZATLAN conclusion: orange, as its badge (.verdict[data-kind="conclusion"]) */
+.fact[data-verdict="false"]:has(.verdict[data-kind="conclusion"]) { border-left-color: var(--misleading); }
 .fact-fallacy { margin: 6px 0 0; color: var(--fallacy); font-size: 13px; }
 .fact.flash { animation: glitch .7s steps(2) 1, flash 1.2s ease-out; }
 @keyframes pop { from { opacity: 0; transform: translateX(-12px); } to { opacity: 1; transform: none; } }
@@ -1182,7 +1184,7 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
    button), so the video never scrolls away and nothing covers it. The phone layout itself is in the phone blocks;
    the parts the desktop layout shares (the speaker card, the fact rows, the tabs, the chat, the games) are outside
    them, for every width: only the live and replay pages have them. */
-.m-top, .m-chat-slot, .m-game-slot, .m-new, .m-onair, .m-logo, .m-speech-tally { display: none; }
+.m-top, .m-chat-slot, .m-game-slot, .m-new, .m-game-note, .m-onair, .m-logo, .m-speech-tally { display: none; }
 .nav a.nav-imp { display: none; }  /* the impresszum is in the footer there; the phone menu shows it */
 .m-sep { display: none; }
 @media (max-width: 860px) {
@@ -1361,6 +1363,17 @@ html[data-acct="reg"] .tagline { display: none; }  /* "Regisztráció befejezés
   min-height: 44px; padding: 0 18px; background: var(--green); border: 0; color: #000; font: 700 13px/1 var(--mono);
   letter-spacing: .6px; white-space: nowrap; cursor: pointer; box-shadow: 0 8px 24px rgba(0, 0, 0, .6); }
 .m-new[hidden] { display: none; }
+/* a game open while the facts are shown, on phones: a note at the foot of the screen (js/mobile.js), centred without a
+   transform, so its entrance can move it */
+.m-game-note { display: inline-flex; align-items: center; gap: 8px; position: fixed; z-index: 30; left: 0; right: 0;
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px)); width: max-content; max-width: calc(100% - 32px); margin: 0 auto;
+  min-height: 44px; padding: 0 18px; background: var(--panel-solid); border: 1px solid var(--green); color: var(--green);
+  font: 700 13px/1 var(--display); letter-spacing: 1.2px; text-transform: uppercase; white-space: nowrap; cursor: pointer;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .6); }
+html[data-consent="open"] .m-game-note { bottom: calc(var(--consent-h, 0px) + 12px); }  /* above the cookie bar (js/consent.js) */
+.m-game-note::before { content: ""; flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
+.m-game-note:focus-visible { outline: 1px solid var(--green); outline-offset: 3px; }
+.m-game-note[hidden], body.m-typing .m-game-note { display: none; }
 
 /* the tabs under the pinned block: Állítások, Chat, Játék (js/mobile.js) */
 .m-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--line-dim);
@@ -1701,6 +1714,9 @@ html.menu-open .menu-btn::before { content: "\2715"; font: 700 18px/1 var(--disp
 .verdict { padding: 4px 10px 4px 8px; color: #021108; font-size: 11px; letter-spacing: 1px;
   clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%); }
 .verdict[data-v="false"] { color: #1a0402; }
+/* a conclusion's verdict (js/common.js badge): MEGALAPOZATLAN is the stream's orange, because unfounded is not false;
+   MEGALAPOZOTT and NEM ELDÖNTHETŐ keep the green and the amber */
+.verdict[data-kind="conclusion"][data-v="false"] { background: var(--misleading); color: #021108; }
 /* a fact still being checked: a small dot before ELLENŐRZÉS (it sends out radar rings, like the logo's dot) */
 .verdict[data-v="pending"] { display: inline-flex; align-items: center; gap: 6px; }
 .verdict[data-v="pending"]::before { content: ""; flex: none; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
@@ -1892,6 +1908,19 @@ body.m-watch[data-m-tab="speakers"] .m-ai #show-all { visibility: hidden; }
 .toast { border: 0; border-left: 3px solid var(--green); background: var(--panel); font-family: var(--sans); box-shadow: 0 10px 30px rgba(0, 0, 0, .6); }
 .consent { background: var(--panel); border-top: 1px solid var(--line); font-family: var(--sans); }
 .consent-actions a { color: var(--muted); font-family: var(--sans); }
+/* js/netwatch.js: the server cannot be reached (a bar under the header), and a load that failed (an inline note);
+   both with "Újrapróbálás" */
+.net-alert { position: fixed; z-index: 85; top: calc(var(--m-hdr, 64px) + 10px); left: 50%; translate: -50% 0;
+  width: min(560px, calc(100% - 24px)); display: flex; align-items: center; gap: 14px; padding: 12px 12px 12px 16px;
+  background: var(--panel-solid); border-left: 3px solid var(--unverifiable); box-shadow: 0 14px 34px rgba(0, 0, 0, .7);
+  font: 13px/1.45 var(--sans); color: var(--text); }
+.net-alert[data-state="refused"] { border-left-color: var(--false); }
+.net-alert > div { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.net-alert strong { color: #e9f2ed; font: 600 12px/1.4 var(--display); letter-spacing: 1.2px; text-transform: uppercase; }
+.net-alert .btn, .load-failed .btn { flex: none; min-height: 40px; padding: 0 12px; font-size: 11px; }
+.load-failed { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.load-failed::before { content: none; }
+.player-note.load-failed { justify-content: center; pointer-events: auto; }
 /* the old prompt marks before headings: the design has none */
 :is(.section-head h2, .imp-sec h2, .chat-head h2, .talk)::before { content: none; }
 .imp-sec h2 { font-family: var(--display); letter-spacing: 1.2px; text-transform: uppercase; }
@@ -2135,6 +2164,7 @@ html:not([data-loaded]) #mps:empty { background-image: url("data:image/svg+xml,%
   @keyframes m-fade { from { opacity: 0; } }
   @keyframes m-shove { from { transform: translate(-12px, -12px); box-shadow: 12px 12px 0 var(--green); } }
   @keyframes m-up { from { transform: translateY(100%); } }
+  @keyframes m-rise { from { transform: translateY(24px); } }
   .prof-sheet[open] { animation: m-up .38s var(--m-out); }
   .prof-sheet[open]::backdrop { animation: m-fade .3s ease-out; }
   @keyframes m-from-left { from { opacity: 0; transform: translateX(-32px); } }
@@ -2231,6 +2261,7 @@ html:not([data-loaded]) #mps:empty { background-image: url("data:image/svg+xml,%
   .m-live .fact.flash:has(.verdict[data-v="false"]) { --frame: var(--false); }
   .m-live .fact.flash:has(.verdict[data-v="unverifiable"]) { --frame: var(--unverifiable); }
   .m-live .fact.flash:has(.verdict[data-v="fallacy"]) { --frame: var(--fallacy); }
+  .m-live .fact.flash:has(.verdict[data-kind="conclusion"][data-v="false"]) { --frame: var(--misleading); }
   :is(.m-strip, .d-side) .tally dd { display: inline-block; padding: 0 2px; }
   :is(.m-strip, .d-side) .tally dd.m-bump { animation: m-invert 1s ease-out; }
 
@@ -2240,6 +2271,8 @@ html:not([data-loaded]) #mps:empty { background-image: url("data:image/svg+xml,%
   .m-strip .speaker.m-swap :is(.speaker-party, .speaker-role) { animation: m-fade .35s ease-out .4s backwards; }
   /* the "Élő" tag and the other live dots stay still: the red says it, and the logo beside it moves already */
   .m-new:not([hidden]) { animation: m-fade .2s ease-out, m-shove .5s var(--m-out); }
+  .m-game-note:not([hidden]) { animation: m-fade .2s ease-out, m-rise .4s var(--m-out); }  /* up from the foot */
+  .m-game-note::before { animation: blink 1s steps(1) infinite; }
 
   .replay-day[open] > .replay-list { animation: m-page .35s var(--m-out); }  /* a day's speeches come down into view */
   /* the lists on the other pages: the cards come in one after the other, with the hard shadow sliding away */
@@ -2517,3 +2550,97 @@ html:not([data-loaded]) #mps:empty { background-image: url("data:image/svg+xml,%
 html[data-live="off"] .nav-live[data-live="loading"] .live-on { visibility: hidden; }
 html[data-live="off"] .nav-live[data-live="loading"] .live-off { visibility: visible; }
 @media (min-width: 861px) { html[data-live="on"] .site-header .nav-live[data-live="loading"] .live-dot { display: inline-block; } }
+
+/* ------------------------------------------------------------------ the install sheet (js/pwa.js), phones in a browser tab
+   The familiar "where to go on" sheet from the bottom, in the profile editor's sheet look (the corners, the grab, the
+   rows): the browser and the app, a button each (Folytatás dark, Telepítés green); on iPhone Telepítés turns it into the
+   steps. A modal dialog: over everything, the page behind it inert; 44px to tap. */
+.install-sheet { position: fixed; inset: auto 0 0; width: 100%; max-width: 520px; max-height: calc(100dvh - 24px); margin: 0 auto;
+  padding: 0; border: 0; border-top: 1px solid var(--line); border-radius: 14px 14px 0 0; background: #0b130f; color: var(--text);
+  overflow: auto; overscroll-behavior: contain; font-family: var(--sans); }
+.install-sheet::backdrop { background: rgba(0, 0, 0, .6); }
+html:has(.install-sheet[open]) { overflow: hidden; }  /* the page behind does not scroll under a finger on the dim part */
+.is-body { position: relative; padding: 22px 16px calc(16px + env(safe-area-inset-bottom, 0px)); }
+.is-grab { position: absolute; top: 6px; left: 50%; width: 36px; height: 4px; margin-left: -18px; border-radius: 2px; background: #3a403d; }
+.is-title { margin: 0 0 8px; color: #e9f2ed; font: 700 13px/1.2 var(--display); letter-spacing: 1.2px; text-transform: uppercase; }
+.is-title:focus { outline: none; }  /* the steps' title takes the focus so a screen reader starts there */
+.is-rows { margin: 0 -16px; padding: 0; list-style: none; }
+.is-row { display: flex; align-items: center; gap: 12px; min-height: 68px; padding: 12px 16px; border-top: 1px solid rgba(61, 240, 130, .08); }
+.is-ico { display: grid; place-items: center; flex: none; width: 44px; height: 44px; overflow: hidden; border-radius: 10px;
+  background: #16231d; color: #e9f2ed; }
+.install-sheet svg { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.install-sheet svg.is-fill { fill: currentColor; stroke: none; }
+.is-ico svg { width: 26px; height: 26px; }
+.is-app { display: block; width: 44px; height: 44px; border-radius: 10px; }
+.is-name { display: grid; flex: 1; min-width: 0; color: #e9f2ed; font: 600 15px/1.25 var(--sans); }
+.is-name small { color: var(--muted); font: 400 12.5px/1.35 var(--sans); }
+.is-brand { color: var(--green); font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace; font-weight: 700; }  /* the wordmark */
+.is-btn { flex: none; min-width: 112px; }
+/* the iPhone steps: a picture of the taps (Share, Add to Home Screen, the app's icon) over the numbered steps */
+.is-pic { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 10px 0 14px; padding: 14px 8px;
+  border-radius: 10px; background: #111b16; }
+.is-tile { display: grid; place-items: center; flex: none; width: 52px; height: 52px; overflow: hidden; border-radius: 12px;
+  background: #16231d; color: #e9f2ed; }
+.is-tile svg { width: 26px; height: 26px; }
+.is-tile .is-app { width: 52px; height: 52px; border-radius: 12px; }
+.is-home { box-shadow: 0 0 0 2px var(--green); }
+.is-arrow { color: var(--muted); font: 700 18px/1 var(--display); }
+.is-list { display: grid; gap: 10px; margin: 0 0 16px; padding-left: 22px; font: 400 14.5px/1.45 var(--sans); }
+.is-list b { color: #e9f2ed; font-weight: 600; }
+.is-list li::marker { color: var(--green); font-family: var(--display); font-weight: 700; }
+.is-i { display: inline-block; width: 20px; height: 20px; color: var(--green); vertical-align: -4px; }
+.is-i svg { display: block; width: 20px; height: 20px; }
+.is-done { width: 100%; }
+@media (prefers-reduced-motion: no-preference) {  /* up as the profile editor comes, down a little faster; still with less motion */
+  .install-sheet[open] { animation: m-up .38s var(--m-out); }
+  .install-sheet[open]::backdrop { animation: m-fade .3s ease-out; }
+  .install-sheet[data-closing] { animation: is-down .22s ease-in forwards; }
+  .install-sheet[data-closing]::backdrop { animation: is-out .22s ease-in forwards; }
+  .is-steps { animation: m-fade .25s ease-out; }
+  @keyframes is-down { to { transform: translateY(100%); } }
+  @keyframes is-out { to { opacity: 0; } }
+}
+
+/* ------------------------------------------------------------------ Telepítés in the phone header (js/pwa.js)
+   Between the name (with the "Élő" tag) and the heart, whenever the app is not installed. js/pwa.js picks the widest
+   form the row has room for, ☰ always on the line (.header-row[data-inst]): "label" a green TELEPÍTÉS tag cut like the
+   verdicts, "icon" the phone icon over a small APP (44px, as the heart and ☰), "bare" the same in the heart's place
+   (the menu has the support link), "menu" not in the header: the phone menu's "App telepítése" then. */
+.hdr-install, .nav a.nav-install { display: none; }
+.nav a.nav-install[hidden] { display: none !important; }
+@media (max-width: 860px) {
+  .site-header .hdr-install:not([hidden]) { order: 1; display: inline-flex; align-items: center; justify-content: center; flex: none;
+    margin-left: auto; padding: 0; border: 0; background: none; color: var(--green); cursor: pointer; }
+  .site-header .header-row[data-inst] > .hdr-support { margin-left: 0; }
+  .site-header .header-row[data-inst]:not([data-inst="menu"]) > .menu-btn { margin-left: 0; }
+  .hdr-install .hi-ico { display: block; flex: none; width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.7;
+    stroke-linecap: round; stroke-linejoin: round; }
+  .hdr-install:focus-visible { outline: 1px solid var(--green); outline-offset: 0; }
+  .hdr-install .hi-short { display: none; }
+  .site-header .header-row[data-inst="label"] > .hdr-install { gap: 6px; height: 32px; padding: 0 12px 0 9px; background: var(--green);
+    color: #021108; font: 700 11px/1 var(--display); letter-spacing: 1.2px; text-transform: uppercase;
+    clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 0 100%); }
+  .site-header .header-row[data-inst="label"] > .hdr-install .hi-ico { width: 16px; height: 16px; stroke-width: 2.1; }
+  .site-header .header-row[data-inst="label"] > .hdr-install:active { background: #5df59a; }
+  .site-header .header-row:is([data-inst="icon"], [data-inst="bare"]) > .hdr-install { flex-direction: column; gap: 3px; width: 44px; height: 44px; }
+  .site-header .header-row:is([data-inst="icon"], [data-inst="bare"]) .hi-label { display: none; }
+  .site-header .header-row:is([data-inst="icon"], [data-inst="bare"]) .hi-short { display: block; font: 700 8.5px/1 var(--display);
+    letter-spacing: 1.2px; text-transform: uppercase; }
+  .site-header .header-row[data-inst="bare"] > .hdr-support { display: none !important; }
+  .site-header .header-row[data-inst="menu"] > .hdr-install { display: none; }
+  .menu-panel .nav a.nav-install:not([hidden]) { display: flex; }
+}
+
+/* the sheet in apps' own browsers (Facebook, Messenger…): why, the way out (green), the app's menu steps, the link */
+.is-note { margin: 0 0 14px; color: #b9c7c0; font: 400 14.5px/1.45 var(--sans); }
+.is-wide { width: 100%; gap: 10px; }
+.is-wide svg { flex: none; width: 19px; height: 19px; stroke-width: 2; }
+.is-or { margin: 16px 0 8px; color: var(--muted); font: 600 11px/1.2 var(--display); letter-spacing: 1.2px; text-transform: uppercase; }
+.is-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.is-pair .btn { gap: 8px; padding: 0 10px; }
+.is-pair svg { flex: none; width: 18px; height: 18px; }
+.is-copied { margin: 10px 0 0; color: var(--green); font: 400 13px/1.4 var(--sans); }
+.is-copied:empty { display: none; }
+.is-copied.is-raw { color: #e9f2ed; overflow-wrap: anywhere; -webkit-user-select: all; user-select: all; }
+.is-hidden-copy { position: fixed; top: 0; left: 0; width: 1px; height: 1px; padding: 0; border: 0; opacity: 0; font-size: 16px; }
+.is-en { color: var(--muted); font-size: 13px; }

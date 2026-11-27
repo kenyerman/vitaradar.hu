@@ -13,11 +13,12 @@ import { collection, doc, query, orderBy, limit, onSnapshot, writeBatch, serverT
 import { FieldPath, deleteField } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";  // reactions
 import { getToken } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check.js";
 import { getIdToken, getIdTokenResult } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-import { appCheck } from "./firebase.js?v=202611260345";
-import { db, el, getDoc } from "./common.js?v=202611262350";
-import { account, onAccount, onBlocks, isBlocked, avatar, toast, blockUser } from "./account.js?v=202611262350";
-import { userCard } from "./usercard.js?v=202611262350";
-import { linkify, locked, LOREM, LOREM_NICKS } from "./social.js?v=202611262350";
+import { appCheck } from "./firebase.js?v=202611270600";
+import { db, el, getDoc } from "./common.js?v=202611270600";
+import { account, onAccount, onBlocks, isBlocked, avatar, toast, blockUser } from "./account.js?v=202611270600";
+import { userCard } from "./usercard.js?v=202611270600";
+import { linkify, locked, LOREM, LOREM_NICKS } from "./social.js?v=202611270600";
+import { fetchT, withTimeout } from "./net.js?v=202611270600";
 
 const MAX = 300;
 const GAP = 2000;            // ms between two messages (the rules allow one every 2 s)
@@ -33,7 +34,7 @@ let skew = 0;
 async function measureSkew() {
   try {
     const t0 = Date.now();
-    const r = await fetch(`/robots.txt?clock=${t0}`, { method: "HEAD", cache: "no-store" });
+    const r = await fetchT(`/robots.txt?clock=${t0}`, { method: "HEAD", cache: "no-store" }, 8000);
     const t1 = Date.now();
     const server = Date.parse(r.headers.get("Date") || "");
     if (!Number.isFinite(server)) return null;
@@ -163,13 +164,17 @@ export function mountChat(stage) {
   let state = null, stop = null;
   onAccount((a) => {
     const uid = a.registered && a.a18 && a.user ? a.user.uid : null;
-    const next = uid || `off:${Boolean(a.user)}:${a.registered}`;
+    const next = uid || `off:${Boolean(a.user)}:${a.registered}:${a.failed}`;
     if (next === state) return;
     state = next;
     if (stop) { stop(); stop = null; }
     col.replaceChildren(head(fold.close));
     if (uid) { stop = liveChat(col, uid, fold); return; }
     fold.messages([], null, true);  // a visitor can't read the chat: nothing to count
+    if (a.failed) {  // signed in, but the account did not load (js/account.js): not a registration to finish
+      col.append(locked(fakeChat(), "A fiókodat most nem sikerült betölteni.", "Újrapróbálás", () => location.reload()));
+      return;
+    }
     const text = a.registered ? "A chat 18 év feletti felhasználóknak szól."
       : a.user ? "Fejezd be a regisztrációt, és csevegj élőben a közvetítés alatt (18+)."
         : "Lépj be, és csevegj élőben a közvetítés alatt (18+).";
@@ -273,13 +278,16 @@ function liveChat(col, uid, fold) {
       if ((p.nick || "") !== msg.nick || ((p.photo && p.photo["64"]) || null) !== msg.photo) { me = p; retry = true; }
     } catch (e) { console.warn("chat profile:", e); }
     try {  // the sign-in token lacks the 18+ mark (the rules read it from there)
-      if ((await getIdTokenResult(account.user)).claims.a18 !== true) { await getIdToken(account.user, true); retry = true; }
+      if ((await withTimeout(getIdTokenResult(account.user), 10000, "ID token")).claims.a18 !== true) {
+        await withTimeout(getIdToken(account.user, true), 10000, "ID token");
+        retry = true;
+      }
     } catch (e) { console.warn("chat token:", e); }
     const had = skew;
     const d = await measureSkew();  // the browser's clock (the expiry)
     if (skew !== had) retry = true;
     if (retry) return { retry };
-    try { await getToken(appCheck, false); }  // the site check (reCAPTCHA): Firestore refuses requests without it
+    try { await withTimeout(getToken(appCheck, false), 15000, "App Check"); }  // the site check (reCAPTCHA): Firestore refuses requests without it
     catch (e) {
       console.warn("chat app check:", e);
       return { text: "Nem ment el: a böngésződet nem sikerült ellenőrizni (reCAPTCHA). Töltsd újra az oldalt, és próbáld újra." };
@@ -313,14 +321,21 @@ function liveChat(col, uid, fold) {
     last = Date.now();
     input.value = "";
     send.disabled = true;
+    // Firestore sends a write once it can, and only then answers: on a stalled connection the button would stay off.
+    // After 15 s it is back on, and the message still goes (it is not put back: that would send it twice).
+    const slow = setTimeout(() => {
+      toast("Lassú a kapcsolat: az üzenet elmegy, amint a szerver válaszol.");
+      send.disabled = false;
+    }, 15000);
     try {
       await deliver(text);
       list.scrollTop = list.scrollHeight;
     } catch (err) {
       console.warn("chat send:", err);
-      input.value = text;
+      if (!input.value) input.value = text;  // not over a newer one typed after the slow notice
       toast(err.text || "Nem ment el, próbáld újra.");
     } finally {
+      clearTimeout(slow);
       send.disabled = false;
       input.focus();
     }

@@ -6,7 +6,7 @@
   <title>Impresszum – Vitaradar</title>
   <meta name="description" content="Ki készíti a Vitaradart, hogyan működik az élő tényellenőrzés, miért csináljuk, és hogyan támogathatod.">
   <link rel="canonical" href="https://vitaradar.hu/impresszum.html">
-  <meta name="theme-color" content="#000000">
+  <meta name="theme-color" content="#040706">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Vitaradar">
   <meta property="og:locale" content="hu_HU">
@@ -26,6 +26,10 @@
   <link rel="icon" href="favicon.ico?v=202611262356" sizes="32x32">
   <link rel="icon" href="img/favicon.svg?v=202611262356" type="image/svg+xml">
   <link rel="apple-touch-icon" href="apple-touch-icon.png?v=202611262356">
+  <!-- the app on the phone's home screen (js/pwa.js) -->
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="apple-mobile-web-app-title" content="vitaradar">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
@@ -41,15 +45,15 @@
   <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check.js">
   <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js">
   <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js">
-  <link rel="modulepreload" href="js/firebase.js?v=202611260345">
+  <link rel="modulepreload" href="js/firebase.js?v=202611270600">
   <link rel="modulepreload" href="js/config.js?v=202611241021">
-  <link rel="modulepreload" href="js/common.js?v=202611262350">
-  <link rel="modulepreload" href="js/account.js?v=202611262350">
-  <link rel="modulepreload" href="js/cdn.js?v=202611260345">
+  <link rel="modulepreload" href="js/common.js?v=202611270600">
+  <link rel="modulepreload" href="js/account.js?v=202611270600">
+  <link rel="modulepreload" href="js/cdn.js?v=202611270600">
   <link rel="modulepreload" href="js/consent.js?v=202611241021">
-  <link rel="modulepreload" href="js/presence.js?v=202611260345">
+  <link rel="modulepreload" href="js/presence.js?v=202611270600">
   <link rel="modulepreload" href="js/menu.js?v=202611241206">
-  <link rel="stylesheet" href="css/style.css?v=202611270012">
+  <link rel="stylesheet" href="css/style.css?v=202611271100">
 </head>
 <body class="m-site">  <!-- the page's kind, for the phone layout from the first paint (css, js/mobile.js) -->
   <canvas id="rain" aria-hidden="true"></canvas>
@@ -178,7 +182,8 @@
           <li><b>Visszanézés (YouTube).</b> A korábbi ülések felvételét a YouTube lejátszója mutatja (youtube-nocookie.com). A YouTube a lejátszás indításakor a saját sütijeit és tárolóját használhatja. Lásd a <a href="https://policies.google.com/privacy?hl=hu" target="_blank" rel="noopener">Google adatvédelmi irányelveit</a>.</li>
           <li><b>Videó.</b> Ha a videó a cdn.vitaradar.hu-ról jön (archívum, támogatói lejátszás), egy aláírt süti (<code>Cloud-CDN-Cookie</code>, a lejárata a <code>vr-cdn-exp</code>-ben) engedi letölteni. Egy órán belül lejár, és az oldal megújítja.</li>
           <li><b>A Firebase működése.</b> A Firebase programkönyvtára feljegyzi, mely napokon használták az oldalon (<code>firebase-heartbeat-database</code>). Azonosítót nem tartalmaz.</li>
-          <li><b>A döntéseid.</b> A <code>vr-consent</code> a sütikről hozott döntésedet őrzi. A <code>vitaradar.leave-ok</code> csak akkor jön létre, ha egy külső linknél bejelölöd, hogy ne kérdezzünk rá többet. Az élő adás melletti chat alapból csukva van; a <code>vr-chat</code> azt jegyzi meg, ha kinyitod vagy becsukod.</li>
+          <li><b>A döntéseid.</b> A <code>vr-consent</code> a sütikről hozott döntésedet őrzi. A <code>vitaradar.leave-ok</code> csak akkor jön létre, ha egy külső linknél bejelölöd, hogy ne kérdezzünk rá többet. Az élő adás melletti chat alapból csukva van; a <code>vr-chat</code> azt jegyzi meg, ha kinyitod vagy becsukod. Telefonon a <code>vr-install</code> azt jegyzi meg, ha ebből a böngészőből telepítetted az appot, hogy ne ajánljuk újra. Ha egy app (például a Facebook) saját böngészőjében nyitod meg az oldalt, a <code>vr-escape</code> (csak a lap bezárásáig, sessionStorage) azt jegyzi meg, hogy az oldal egyszer már megpróbált átváltani a böngésződbe, hogy ne próbálja újra magától.</li>
+          <li><b>Offline oldal.</b> Az oldal egy service workert (<code>sw.js</code>) regisztrál a böngésződben. Ez a böngésző gyorsítótárában (<code>vr-offline-…</code>) egyetlen „nincs internetkapcsolat” oldalt tárol, és csak akkor mutatja, ha egy oldal internet nélkül nem töltődik be. Mást nem tárol, és nem küld adatot.</li>
         </ul>
         <p><b>Csak ha engeded:</b> <code>vr-presence-id</code>, egy véletlen azonosító, amitől a fejléc „N online” számlálója akkor is egyszer számol, ha több oldalt vagy lapot nyitsz meg. Ha nem engeded, az azonosító csak a megnyitott oldal memóriájában él, és nem tároljuk.</p>
         <p>A betűtípust a Google Fonts, a videólejátszót a jsDelivr szolgálja ki. Ezek semmit nem tárolnak a böngésződben, de mint minden letöltésnél, látják az IP-címedet.</p>
@@ -227,7 +232,8 @@
       <p class="muted"><a href="https://github.com/kenyerman/vitaradar.hu">&gt; forráskód a GitHubon</a></p>
     </div>
   </footer>
-  <script type="module" src="js/impresszum.js?v=202611262350"></script>
-  <script type="module" src="js/shell.js?v=202611262334"></script>
+  <script type="module" src="js/impresszum.js?v=202611270600"></script>
+  <script type="module" src="js/shell.js?v=202611260345"></script>
+  <script type="module" src="js/pwa.js?v=202611271000"></script>  <!-- the app: offline page, install sheet on phones -->
 </body>
 </html>

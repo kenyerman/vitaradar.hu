@@ -9,9 +9,9 @@
 // disappear for the user who blocked them.
 
 import { collection, query, where, orderBy, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { db, el } from "./common.js?v=202611262350";
-import { account, onAccount, onBlocks, isBlocked, api, needAccount, avatar, dialog, toast, blockUser } from "./account.js?v=202611262350";
-import { userCard } from "./usercard.js?v=202611262350";
+import { db, el } from "./common.js?v=202611270600";
+import { account, onAccount, onBlocks, isBlocked, api, needAccount, avatar, dialog, toast, blockUser } from "./account.js?v=202611270600";
+import { userCard } from "./usercard.js?v=202611270600";
 
 export const MAX_COMMENT = 250;
 const MAX_DEPTH = 2;          // a comment, a reply, a reply to the reply
@@ -263,7 +263,7 @@ export const LOREM = [
 export const LOREM_NICKS = ["lorem", "ipsum_dolor", "sit.amet", "consectetur", "adipiscing", "elit_sed", "tempor", "magna.aliqua"];
 
 // fake: placeholder content (it is blurred and hidden from screen readers); text: what to do to see the real thing.
-export function locked(fake, text, button) {
+export function locked(fake, text, button, onClick = needAccount) {
   const box = el("div", "locked");
   fake.classList.add("locked-fake");
   fake.setAttribute("aria-hidden", "true");
@@ -274,7 +274,7 @@ export function locked(fake, text, button) {
   if (button) {
     const b = el("button", "btn small", button);
     b.type = "button";
-    b.addEventListener("click", needAccount);
+    b.addEventListener("click", onClick);
     card.append(b);
   }
   cta.append(card);

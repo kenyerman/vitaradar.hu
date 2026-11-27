@@ -1,14 +1,26 @@
 // Shared by every page: Firebase, the digital rain behind the page, and small helpers.
 
 import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { db, getDoc, getDocs } from "./firebase.js?v=202611260345";
+import { db, getDoc, getDocs } from "./firebase.js?v=202611270600";
 import "./consent.js?v=202611241021";   // the cookie and storage bar at the bottom, on every page
-import "./presence.js?v=202611260345";  // the header's "N online" (visitors included), on every page
+import "./presence.js?v=202611270600";  // the header's "N online" (visitors included), on every page
 import "./menu.js?v=202611241206";      // the hamburger menu on phones, on every page
-import { CDN, cdnReady, cdnUrl } from "./cdn.js?v=202611260345";
+import "./netwatch.js?v=202611270600";  // a bar with "Újrapróbálás" when the server cannot be reached, on every page
+import { CDN, cdnReady, cdnUrl } from "./cdn.js?v=202611270600";
 
 export { db };  // set up once, with App Check, in firebase.js
 export { getDoc, getDocs };  // reads that wait for the server, not Firestore's own (firebase.js says why)
+
+// A load that failed or got no answer in time (js/net.js): what failed, and "Újrapróbálás", which loads the page again
+// (a new connection and a new reCAPTCHA check, what a stuck page needs; in the iPhone app there is no reload button).
+export function loadFailed(box, text) {
+  const b = el("button", "btn ghost", "Újrapróbálás");
+  b.type = "button";
+  b.addEventListener("click", () => { b.disabled = true; location.reload(); });
+  box.classList.add("load-failed");
+  box.replaceChildren(el("span", null, text), b);
+  box.hidden = false;
+}
 
 export const LABEL = {
   true: "IGAZ", partly_true: "RÉSZBEN IGAZ", misleading: "FÉLREVEZETŐ", false: "HAMIS", opinion: "VÉLEMÉNY",
@@ -17,6 +29,11 @@ export const LABEL = {
 
 // Verdicts that decide a stated fact (the others label an opinion, a promise, or what no evidence settles).
 export const FACT_VERDICTS = new Set(["true", "partly_true", "misleading", "false"]);
+
+// A conclusion check judges only the step from the speaker's stated facts to their conclusion, not a fact, so it has
+// the stream's words for its verdict: "[ KÖVETKEZTETÉS: MEGALAPOZATLAN ]", in orange (css), because unfounded is not
+// false. The pages don't count conclusions with the facts (js/app.js).
+export const CONCLUSION_LABEL = { true: "MEGALAPOZOTT", false: "MEGALAPOZATLAN", unverifiable: "NEM ELDÖNTHETŐ" };
 
 export function el(tag, cls, text) {
   const e = document.createElement(tag);
@@ -48,18 +65,21 @@ export function huDate(iso) {
 
 // A verdict badge like the stream's: [ IGAZ ]. While the check runs, the stream's loading sign sits inside the
 // brackets, "[ ELLENŐRZÉS ▒ ]" (the sign is CSS on an empty span, .v-sign), and a conclusion check keeps its title,
-// "[ KÖVETKEZTETÉS ▒ ]". js/mobile.js drops the [ ] on phones from the text at either end.
+// "[ KÖVETKEZTETÉS ▒ ]", then "[ KÖVETKEZTETÉS: MEGALAPOZOTT ]" (CONCLUSION_LABEL; data-kind gives it its colour).
+// js/mobile.js drops the [ ] on phones from the text at either end.
 export function badge(verdict, kind) {
   const v = kind === "fallacy" ? "fallacy" : verdict || "pending";
+  const conclusion = kind === "conclusion";
   const b = el("span", "verdict");
   b.dataset.v = v;
+  if (conclusion) b.dataset.kind = "conclusion";
   if (v === "pending") {
     const sign = el("span", "v-sign");
     sign.setAttribute("aria-hidden", "true");
-    b.append(`[ ${kind === "conclusion" ? "KÖVETKEZTETÉS" : LABEL.pending} `, sign, " ]");
+    b.append(`[ ${conclusion ? "KÖVETKEZTETÉS" : LABEL.pending} `, sign, " ]");
     return b;
   }
-  b.textContent = `[ ${kind === "conclusion" ? "KÖVETKEZTETÉS: " : ""}${LABEL[v] || v} ]`;
+  b.textContent = conclusion ? `[ KÖVETKEZTETÉS: ${CONCLUSION_LABEL[v] || LABEL[v] || v} ]` : `[ ${LABEL[v] || v} ]`;
   return b;
 }
 

@@ -7,14 +7,15 @@
 
 import { doc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { defaultStream } from "./config.js?v=202611241021";
-import { db, el, factBadge, LABEL, sourceList, setPhoto, mpHref, setLiveNav } from "./common.js?v=202611262350";
-import { mountAccount } from "./account.js?v=202611262350";
-import { factSocial } from "./social.js?v=202611262350";
-import { mountChat } from "./chat.js?v=202611270030";
+import { db, el, factBadge, LABEL, sourceList, setPhoto, mpHref, setLiveNav, loadFailed } from "./common.js?v=202611270600";
+import { mountAccount } from "./account.js?v=202611270600";
+import { factSocial } from "./social.js?v=202611270600";
+import { mountChat } from "./chat.js?v=202611270600";
 import { scrollHint } from "./scrollhint.js?v=202611241021";
-import { mountGame } from "./game.js?v=202611270012";
-import { cdnReady, cdnUrl, cdnXhr } from "./cdn.js?v=202611260345";
-import { useTwitch, mountTwitch, twitchNow } from "./twitch.js?v=202611270110";
+import { mountGame } from "./game.js?v=202611270600";
+import { cdnReady, cdnUrl, cdnXhr } from "./cdn.js?v=202611270600";
+import { useTwitch, mountTwitch, twitchNow } from "./twitch.js?v=202611270600";
+import { loadScript } from "./net.js?v=202611270600";
 
 const TWITCH = useTwitch();  // the stream from twitch.tv/vitaradar; ?player=cdn: our own CDN (supporters)
 if (!TWITCH) cdnReady();  // the stream is on cdn.vitaradar.hu, which needs its cookie: get it before the player asks
@@ -44,6 +45,9 @@ let failed = false;  // the stream could not be loaded (not live yet, or not rea
 
 // ------------------------------------------------------------------ live feed (Firestore)
 onSnapshot(doc(db, "live", "current"), (snap) => {
+  // Not the server's answer and nothing known yet (Firestore gave up waiting, js/netwatch.js says so): that is not
+  // "no broadcast", so the page keeps waiting instead of saying there is none.
+  if (snap.metadata.fromCache && !snap.exists()) { if (!live.url) note("kapcsolódás a szerverhez…"); return; }
   const d = snap.data() || {};
   live.active = Boolean(d.active);
   setLiveNav(live.active);  // the header's "Élő adás" link (it stays plain until this first answer)
@@ -56,7 +60,10 @@ onSnapshot(doc(db, "live", "current"), (snap) => {
     return;
   }
   if (url !== live.url || failed) loadStream(url);  // a new stream, or the broadcast (re)started
-}, (err) => console.warn("live feed:", err));
+}, (err) => {  // refused (App Check, the rules): the page gets nothing more; js/netwatch.js offers Újrapróbálás
+  console.warn("live feed:", err);
+  if (!live.url) note("nincs kapcsolat a szerverrel");
+});
 
 function follow(session) {
   unsub.forEach((u) => u());
@@ -86,13 +93,8 @@ const HLS_JS = "https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js";
 let hlsLib = null;
 function loadHls() {
   if (window.Hls) return Promise.resolve(window.Hls);
-  return hlsLib ||= new Promise((resolve) => {
-    const s = document.createElement("script");
-    s.src = HLS_JS;
-    s.onload = () => resolve(window.Hls || null);
-    s.onerror = () => { hlsLib = null; s.remove(); resolve(null); };  // Safari can still play it itself
-    document.head.append(s);
-  });
+  return hlsLib ||= loadScript(HLS_JS).then(() => window.Hls || null,
+    (e) => { console.warn(e); hlsLib = null; return null; });  // Safari can still play it itself
 }
 let loads = 0;
 
@@ -102,7 +104,7 @@ async function loadStream(url) {
   if (TWITCH) {  // Twitch shows its own offline screen; the player stays once it is there
     video.hidden = true;
     note(null);
-    mountTwitch(video.parentElement).catch(() => note("a Twitch lejátszó nem töltődött be"));
+    mountTwitch(video.parentElement).catch((e) => { console.warn(e); loadFailed(els.note, "a Twitch lejátszó nem töltődött be"); });
     return;
   }
   if (hls) { hls.destroy(); hls = null; }
@@ -238,12 +240,16 @@ function render() {
     if (tk && tk !== turnKey) { place(separator(tk, turn)); usedSeps.add(tk); }
     turnKey = tk;
     const v = verdictOf(c, now);
-    // a claim with its sentence's fallacy is the fallacy's card: one fallacy, in the tallies and the strip's latest rows
+    // a claim with its sentence's fallacy is the fallacy's card: one fallacy, in the tallies and the strip's latest rows.
+    // A conclusion check is not a fact (MEGALAPOZATLAN is not HAMIS, js/common.js): its card shows, it is not counted,
+    // as on the stream's overlay and in the speech tips (pfc counts only claims there).
     const k = v !== "pending" && fallacyShown(c, now) ? "fallacy" : v;
-    if (k in tally) tally[k] += 1;
-    if (cur && turn === cur && k in speech) speech[k] += 1;
-    if (k === "false" && (!lastFalse || c.show_at > lastFalse.show_at)) lastFalse = c;
-    if (k === "fallacy" && (!lastFallacy || c.show_at > lastFallacy.show_at)) lastFallacy = c;
+    if (c.kind !== "conclusion") {
+      if (k in tally) tally[k] += 1;
+      if (cur && turn === cur && k in speech) speech[k] += 1;
+      if (k === "false" && (!lastFalse || c.show_at > lastFalse.show_at)) lastFalse = c;
+      if (k === "fallacy" && (!lastFallacy || c.show_at > lastFallacy.show_at)) lastFallacy = c;
+    }
     let s = shown.get(c.id);
     if (!s) {
       s = { li: buildFact(c), verdict: null };
