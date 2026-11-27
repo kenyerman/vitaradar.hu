@@ -1528,6 +1528,7 @@ html[data-consent="open"] .m-game-note { bottom: calc(var(--consent-h, 0px) + 12
 /* the tabs under the pinned block: Állítások, Chat, Játék (js/mobile.js) */
 .m-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--line-dim);
   background: var(--panel-solid); }
+.m-tablist { display: contents; }  /* the tabs' own tablist (js/mobile.js pullUp): its tabs are the bar's grid cells */
 .m-tab { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 0 6px;
   background: transparent; border: 0; color: var(--muted); font: 700 12px/1 var(--mono); letter-spacing: 1.2px;
   text-transform: uppercase; white-space: nowrap; cursor: pointer; }
@@ -3109,12 +3110,16 @@ html:has(.install-sheet[open]) { overflow: hidden; }  /* the page behind does no
 @media (max-width: 860px) {
   :is(.m-live, .m-watch) .m-top > :is(.m-strip, .m-tabs, .m-ai, .m-audio) { touch-action: none; }  /* the drags are ours */
   :is(.m-live, .m-watch) .m-top > .m-tabs { position: relative; }
-  :is(.m-live, .m-watch) .m-pull { display: grid; place-items: center; position: absolute; z-index: 3; top: -7px; left: 50%;
-    width: 48px; height: 18px; margin-left: -24px; padding: 0; background: var(--panel-solid); border: 1px solid var(--line);
-    border-radius: 9px; cursor: pointer; }
-  .m-pull::before { content: ""; width: 22px; height: 3px; border-radius: 2px; background: rgba(213, 224, 218, .55); }
-  .m-pull::after { content: ""; position: absolute; inset: -14px -12px -6px; }  /* a 44 px tall target, mostly off the tab */
-  .m-pull:focus-visible { outline: 1px solid var(--green); outline-offset: 2px; }
+  /* the button is the whole 72 x 38 target (mostly off the tab); the pill (48 x 18, 7px over the tabs' top line) and its
+     grip are drawn inside it, where they always were */
+  :is(.m-live, .m-watch) .m-pull { display: block; position: absolute; z-index: 3; top: -21px; left: 50%;
+    width: 72px; height: 38px; margin-left: -36px; padding: 0; background: none; border: 0; cursor: pointer; }
+  .m-pull::before { content: ""; position: absolute; top: 14px; left: 12px; width: 48px; height: 18px;
+    background: var(--panel-solid); border: 1px solid var(--line); border-radius: 9px; }
+  .m-pull::after { content: ""; position: absolute; top: 21.5px; left: 25px; width: 22px; height: 3px; border-radius: 2px;
+    background: rgba(213, 224, 218, .55); }
+  .m-pull:focus-visible { outline: 0; }
+  .m-pull:focus-visible::before { outline: 1px solid var(--green); outline-offset: 2px; }
 
   body.m-pulled .m-top { overflow: hidden; }  /* the video under the panels never shows past their foot */
   body.m-pulled .m-top > :is(.stage, .player) { position: absolute; left: 0; right: 0; top: var(--m-vtop, 0px); z-index: 0; }

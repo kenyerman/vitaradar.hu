@@ -60,6 +60,9 @@ export function dropdown(root, { label, options, value, onChange }) {
 
   function render() {
     shown.textContent = options[selected].label;
+    // the name says the choice too, with the words on the button ("Rendezés: legtöbb állítás"): a screen reader hears
+    // what the list is sorted by, and voice control finds the button by what it shows
+    button.setAttribute("aria-label", `${label}: ${options[selected].label}`);
     items.forEach((li, i) => {
       li.setAttribute("aria-selected", String(i === selected));
       li.classList.toggle("active", i === active);
