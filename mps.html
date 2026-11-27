@@ -13,19 +13,19 @@
   <meta property="og:url" content="https://vitaradar.hu/mps.html">
   <meta property="og:title" content="Képviselők ellenőrzött állításai – Vitaradar">
   <meta property="og:description" content="Az országgyűlési képviselők ellenőrzött állításai: kinek mennyi igaz, hamis, nem ellenőrizhető vagy hibás érvelés.">
-  <meta property="og:image" content="https://vitaradar.hu/img/og.jpg?v=202611241124">
+  <meta property="og:image" content="https://vitaradar.hu/img/og.jpg?v=202611271300">
   <meta property="og:image:type" content="image/jpeg">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="vitaradar.hu – az Országgyűlés élőben, tényellenőrzéssel: igaz, hamis, nem ellenőrizhető, hibás érvelés">
+  <meta property="og:image:alt" content="vitaradar.hu – az Országgyűlés élőben, tényellenőrzéssel: igaz, részben igaz, félrevezető, hamis, vélemény, ígéret, nem ellenőrizhető, hibás érvelés">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Képviselők ellenőrzött állításai – Vitaradar">
   <meta name="twitter:description" content="Az országgyűlési képviselők ellenőrzött állításai: kinek mennyi igaz, hamis, nem ellenőrizhető vagy hibás érvelés.">
-  <meta name="twitter:image" content="https://vitaradar.hu/img/og.jpg?v=202611241124">
-  <meta name="twitter:image:alt" content="vitaradar.hu – az Országgyűlés élőben, tényellenőrzéssel: igaz, hamis, nem ellenőrizhető, hibás érvelés">
-  <link rel="icon" href="favicon.ico" sizes="32x32">
-  <link rel="icon" href="img/favicon.svg" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <meta name="twitter:image" content="https://vitaradar.hu/img/og.jpg?v=202611271300">
+  <meta name="twitter:image:alt" content="vitaradar.hu – az Országgyűlés élőben, tényellenőrzéssel: igaz, részben igaz, félrevezető, hamis, vélemény, ígéret, nem ellenőrizhető, hibás érvelés">
+  <link rel="icon" href="favicon.ico?v=202611271300" sizes="32x32">
+  <link rel="icon" href="img/favicon.svg?v=202611271300" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png?v=202611262356">
   <!-- the app on the phone's home screen (js/pwa.js) -->
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="apple-mobile-web-app-title" content="vitaradar">
@@ -61,7 +61,7 @@
     <div class="wrap header-row">
       <div class="brand-box">
         <a class="brand" href="./" aria-label="vitaradar.hu kezdőlap">
-          <img src="img/logo.svg" alt="" width="32" height="32">
+          <img src="img/logo.svg?v=202611271300" alt="" width="32" height="32">
           <svg class="m-logo" viewBox="0 0 240 138" aria-hidden="true" focusable="false"><path class="seat s1" d="M4 16 A116 118 0 0 0 50 109.8 L68 81.5 A84 84 0 0 1 36 16 Z"/><path class="seat s2" d="M62 117.6 A116 118 0 0 0 178 117.6 L161 88.8 A84 84 0 0 1 79 88.8 Z"/><path class="seat s3" d="M236 16 A116 118 0 0 1 190 109.8 L172 81.5 A84 84 0 0 0 204 16 Z"/><path class="seat s4" d="M46 16 A74 74 0 0 0 73.4 72.8 L88.6 49.5 A45.8 45.8 0 0 1 74.2 16 Z"/><path class="seat s5" d="M84 80 A74 74 0 0 0 156 80 L142 56 A45.8 45.8 0 0 1 98 56 Z"/><path class="seat s6" d="M194 16 A74 74 0 0 1 166.6 72.8 L151.4 49.5 A45.8 45.8 0 0 0 165.8 16 Z"/><circle class="spk-ring" cx="120" cy="18.5" r="15.2"/><circle class="spk" cx="120" cy="18.5" r="15.2"/></svg>
           <span class="brand-name">vitaradar<span class="brand-tld">.hu</span></span>
         </a>
@@ -80,62 +80,65 @@
     </div>
   </header>
 
-  <main class="wrap">
+  <main class="wrap mp-page">
     <h1 class="page-title">Képviselők</h1>
     <p class="page-sub">// az Országgyűlés minden képviselője, és amit ellenőriztünk a felszólalásaikból: állítások, minősítések, felszólalások</p>
+    <!-- wider screens (css, js/mps.js): the parties side by side, chips for one party, the table's head -->
+    <section id="mp-parties" class="mp-parties" aria-label="A pártok" hidden></section>
     <div class="toolbar">
       <input id="filter" class="field" type="search" placeholder="> név vagy párt…" aria-label="Szűrés név vagy párt szerint">
+      <div id="party" class="mp-chips" role="group" aria-label="Szűrés párt szerint" hidden></div>
       <div id="sort" class="dd"><button type="button" class="dd-button" disabled aria-label="Rendezés"><span class="dd-value">legtöbb állítás</span><span class="dd-caret" aria-hidden="true">▾</span></button></div>  <!-- js/dropdown.js replaces it; here for the toolbar's layout -->
       <button id="only-data" class="btn toggle" type="button" aria-pressed="false">csak akikről van adat</button>
     </div>
     <p id="mps-count" class="count-line"></p>
+    <div id="mps-head" class="mp-thead" hidden></div>
     <ol id="mps" class="mp-grid"></ol>
     <p id="mps-empty" class="empty" hidden>még nincs adat</p>
   </main>
   <footer class="site-footer">
-    <div class="wrap footer-links">
+    <div class="wrap footer-top">
+      <div class="footer-about">
+        <a class="footer-brand" href="./" aria-label="vitaradar.hu kezdőlap"><svg class="footer-mark" viewBox="0 0 240 138" aria-hidden="true" focusable="false"><path d="M4 16 A116 118 0 0 0 50 109.8 L68 81.5 A84 84 0 0 1 36 16 Z"/><path d="M62 117.6 A116 118 0 0 0 178 117.6 L161 88.8 A84 84 0 0 1 79 88.8 Z"/><path d="M236 16 A116 118 0 0 1 190 109.8 L172 81.5 A84 84 0 0 0 204 16 Z"/><path d="M46 16 A74 74 0 0 0 73.4 72.8 L88.6 49.5 A45.8 45.8 0 0 1 74.2 16 Z"/><path d="M84 80 A74 74 0 0 0 156 80 L142 56 A45.8 45.8 0 0 1 98 56 Z"/><path d="M194 16 A74 74 0 0 1 166.6 72.8 L151.4 49.5 A45.8 45.8 0 0 0 165.8 16 Z"/><circle cx="120" cy="18.5" r="15.2"/></svg><span class="footer-name">vitaradar<span class="brand-tld">.hu</span></span></a>
+        <p class="footer-tag">Az Országgyűlés élőben, tényellenőrzéssel.</p>
+        <a class="footer-support" href="https://www.patreon.com/vitaradar_hu" target="_blank" rel="noopener" aria-label="Támogass a Patreonon (új lapon nyílik)">Támogass a Patreonon</a>
+        <a class="footer-why" href="impresszum.html#tamogatas">Mire megy a pénz?</a>
+      </div>
       <nav aria-label="Oldalak">
-        <p class="footer-h">// oldalak</p>
+        <p class="footer-h">Oldalak</p>
         <ul>
           <li><a href="./">Élő adás</a></li>
-          <li><a href="mps.html">Képviselők</a></li>
+          <li><a href="mps.html" aria-current="page">Képviselők</a></li>
           <li><a href="archive.html">Archívum</a></li>
           <li><a href="impresszum.html">Impresszum</a></li>
         </ul>
       </nav>
+      <div>
+        <p class="footer-h">Kapcsolat</p>
+        <ul>
+          <li><a href="mailto:help@vitaradar.hu">help@vitaradar.hu</a></li>
+          <li><a href="https://github.com/kenyerman/vitaradar.hu/issues" target="_blank" rel="noopener">Hibakövető (GitHub)</a></li>
+        </ul>
+      </div>
       <nav aria-label="A készítő máshol">
-        <p class="footer-h">// a készítő</p>
+        <p class="footer-h">A készítő</p>
         <ul>
           <li><a href="https://github.com/kenyerman" target="_blank" rel="noopener">GitHub</a></li>
           <li><a href="https://www.linkedin.com/in/kenyerman/" target="_blank" rel="noopener">LinkedIn</a></li>
           <li><a href="https://www.youtube.com/kenyerman" target="_blank" rel="noopener">YouTube</a></li>
         </ul>
       </nav>
-      <div>
-        <p class="footer-h">// kapcsolat</p>
-        <ul>
-          <li><a href="mailto:help@vitaradar.hu">help@vitaradar.hu</a></li>
-          <li><a href="https://github.com/kenyerman/vitaradar.hu/issues" target="_blank" rel="noopener">hibakövető (GitHub)</a></li>
-        </ul>
-      </div>
-      <div>
-        <p class="footer-h">// támogatás</p>
-        <ul>
-          <li><a href="https://www.patreon.com/vitaradar_hu" target="_blank" rel="noopener">Patreon</a></li>
-          <li><a href="impresszum.html#tamogatas">Mire megy a pénz?</a></li>
-        </ul>
-      </div>
     </div>
-    <div class="wrap footer-row">
-      <p>© <span id="year">2026</span> vitaradar.hu. Minden jog fenntartva.</p>
-      <p class="muted">Felvétel: Országgyűlés. A minősítéseket mesterséges intelligencia készíti automatikusan, ezért tévedhet.</p>
-      <p class="muted"><a href="https://github.com/kenyerman/vitaradar.hu">&gt; forráskód a GitHubon</a></p>
+    <div class="wrap footer-row footer-bottom">
+      <p class="footer-copy">© <span id="year">2026</span> vitaradar.hu</p>
+      <a class="footer-source" href="https://github.com/kenyerman/vitaradar.hu">&gt; forráskód a GitHubon</a>
+      <p class="footer-note">Felvétel: Országgyűlés.<span class="foot-more"> A minősítéseket mesterséges intelligencia készíti automatikusan, ezért tévedhet.</span></p>
     </div>
   </footer>
 
-  <script type="module" src="js/mps.js?v=202611270600"></script>
+  <script type="module" src="js/mps.js?v=202611271300"></script>
 
-  <script type="module" src="js/shell.js?v=202611260345"></script>
-  <script type="module" src="js/pwa.js?v=202611271000"></script>  <!-- the app: offline page, install sheet on phones -->
+  <script type="module" src="js/shell.js?v=202611271300"></script>
+  <script type="module" src="js/pwa.js?v=202611271400"></script>  <!-- the app: offline page, install sheet on phones -->
 </body>
 </html>
