@@ -2555,6 +2555,89 @@ html:not([data-loaded]) #mps:empty { background-image: url("data:image/svg+xml,%
   .site-header > .wrap { max-width: none; }
   body:not(.m-live):not(.m-watch) > main.wrap, body:not(.m-live):not(.m-watch) > .site-footer > .wrap { max-width: 1200px; }
 }
+/* ------------------------------------------------------------------ wider screens: the MPs as a table (js/mps.js)
+   The phones' rows, wider: the place, the photo, the name with the party and the role, the bar of the verdicts, then
+   every count in its own column, and a click on a column's head sorts by it (the head stays under the header). Above
+   them the parties side by side, everything their MPs said added up, and by the search the same parties as chips: a
+   click on either shows one party's MPs. Phones have none of it: their rows, sort and search are as they were. */
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }  /* read, not seen */
+.mp-parties, .mp-chips, .mp-thead, .mp-rank, .mp-cols, .mp-grid > li.mp-sep { display: none; }
+@media (min-width: 861px) {
+  body:not(.m-live):not(.m-watch) > main.mp-page { max-width: 1200px; }  /* every page's width there (feat/archive-desktop) */
+  .mp-page { --mp-bar: clamp(150px, 19vw, 260px); --mp-cols: 26px 40px minmax(0, 1fr) 64px 52px 56px 70px 88px 52px 70px; }
+  /* the parties */
+  .mp-parties:not([hidden]) { display: block; margin: 20px 0 18px; }
+  .mp-parties-h { margin: 0 0 10px; color: var(--green); font: 700 11px/1 var(--display); letter-spacing: 1.6px; text-transform: uppercase; }
+  .mp-parties-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; }
+  .mp-party-card { display: flex; flex-direction: column; gap: 10px; min-width: 0; margin: 0; padding: 14px 16px; text-align: left;
+    background: #0a110e; border: 1px solid var(--line-dim); border-left: 4px solid var(--party, var(--green)); color: #e9f2ed;
+    font: inherit; cursor: pointer; }
+  .mp-party-card:is(:hover, :focus-visible) { border-color: var(--line); border-left-color: var(--party, var(--green)); }
+  .mp-party-card[aria-pressed="true"] { background: rgba(61, 240, 130, .07); border-color: var(--green); border-left-color: var(--party, var(--green)); }
+  .mp-party-top { display: flex; align-items: baseline; gap: 10px; }
+  .mp-party-top b { font: 700 15px/1 var(--display); letter-spacing: 1.2px; text-transform: uppercase; }
+  .mp-party-top span { margin-left: auto; color: var(--muted); font: 400 12px/1 var(--sans); white-space: nowrap; }
+  .mp-party-card .bar { height: 2px; margin: 0; border: 0; background: rgba(61, 240, 130, .1); }  /* every bar: a solid 2px line */
+  .mp-party-nums { display: flex; flex-wrap: wrap; gap: 8px 22px; }
+  .mp-party-nums > span { display: flex; flex-direction: column; gap: 5px; }
+  .mp-party-nums b { color: #e9f2ed; font: 700 19px/1 var(--display); font-variant-numeric: tabular-nums; }
+  .mp-party-nums small { color: var(--muted); font: 600 9.5px/1 var(--display); letter-spacing: 1.1px; text-transform: uppercase; }
+  .mp-party-nums .c-true b { color: var(--true); }
+  .mp-party-nums .c-false b { color: var(--false); }
+  .mp-party-nums .c-fallacy b { color: var(--fallacy); }
+  /* the search, the chips, and the switch at the right; the table's head sorts (the dropdown is the phones') */
+  .mp-page .toolbar { align-items: center; }
+  .mp-page .toolbar #filter { flex: 0 1 300px; min-height: 36px; }
+  .mp-page .toolbar #sort { display: none; }
+  .mp-page .toolbar #only-data { margin-left: auto; }
+  .mp-chips:not([hidden]) { display: flex; flex-wrap: wrap; gap: 6px; }
+  .mp-chip { display: inline-flex; align-items: center; gap: 7px; min-height: 36px; margin: 0; padding: 0 10px;
+    border: 1px solid transparent; background: #16231d; color: #e9f2ed; font: 700 10.5px/1 var(--display); letter-spacing: 1px;
+    text-transform: uppercase; cursor: pointer; }
+  .mp-chip:not([data-party="*"])::before { content: ""; flex: none; width: 7px; height: 7px; background: var(--party, var(--muted)); }
+  .mp-chip:is(:hover, :focus-visible) { background: #1d2d26; }
+  .mp-chip[aria-pressed="true"] { background: rgba(61, 240, 130, .14); border-color: var(--green); color: var(--green); }
+  .mp-chip-n { color: var(--muted); font-weight: 600; }
+  /* the head */
+  .mp-thead:not([hidden]) { display: grid; grid-template-columns: var(--mp-cols); align-items: center; gap: 0 14px; margin: 0 -16px;
+    padding: 4px 16px; position: sticky; top: var(--m-hdr, 0px); z-index: 3; background: var(--bg);
+    border-bottom: 1px solid var(--line-dim); }
+  :is(.mp-th, .mp-th-rank, .mp-th-label) { margin: 0; padding: 0; border: 0; background: none; color: var(--muted);
+    font: 700 10px/1.2 var(--display); letter-spacing: 1.1px; text-transform: uppercase; white-space: nowrap; }
+  .mp-th-rank { justify-self: end; }
+  .mp-th { justify-self: end; min-height: 32px; cursor: pointer; }
+  .mp-th:is(:hover, :focus-visible) { color: #e9f2ed; }
+  .mp-th[aria-pressed="true"] { color: var(--green); }
+  .mp-th[data-dir="first"]::after { content: " ▼"; }
+  .mp-th[data-dir="last"]::after { content: " ▲"; }
+  .mp-th-who { grid-column: 2 / 4; display: grid; grid-template-columns: minmax(0, 1fr) var(--mp-bar); align-items: center; }
+  .mp-th-who .mp-th { justify-self: start; }
+  /* the rows */
+  .mp-page .mp-grid > li.mp-sep { display: block; padding: 18px 16px 8px; color: var(--muted); font: 700 10.5px/1.2 var(--display);
+    letter-spacing: 1.3px; text-transform: uppercase; }
+  .mp-page .mp-card { grid-template-columns: var(--mp-cols); gap: 0 14px; padding: 8px 16px; }
+  .mp-page .mp-card:is(:hover, :focus-visible) { background: rgba(61, 240, 130, .04); }
+  .mp-rank { display: block; justify-self: end; color: var(--muted); font: 600 12px/1 var(--display); font-variant-numeric: tabular-nums; }
+  .mp-page .mp-thumb { width: 40px; height: 48px; }
+  .mp-page .mp-body { grid-template-columns: auto minmax(0, 1fr) var(--mp-bar); }
+  .mp-page .mp-card h2 { grid-column: 1 / 3; padding-right: 16px; font-size: 14px; }
+  .mp-page .mp-body .mp-role { padding-right: 16px; }
+  .mp-page .mp-body .bar { grid-column: 3; grid-row: 1 / 3; align-self: center; height: 2px; margin: 0; border: 0;
+    background: rgba(61, 240, 130, .1); }  /* every bar: a solid 2px line */
+  .mp-page .mp-cols { display: contents; }
+  .mp-col { justify-self: end; color: #e9f2ed; font: 600 13px/1 var(--display); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .mp-col-claims { font-size: 15px; font-weight: 700; }
+  .mp-col-true_share { color: var(--true); }
+  .mp-col-false_share { color: var(--false); }
+  .mp-col-fallacy { color: var(--fallacy); }
+  .mp-col-seconds, .mp-col-recent, .mp-card.no-data .mp-col { color: var(--muted); }
+  .mp-page .mp-total { display: none; }
+}
+@media (min-width: 861px) and (max-width: 1099px) {  /* a narrower window: no speeches and no speaking time */
+  .mp-page { --mp-bar: clamp(110px, 16vw, 170px); --mp-cols: 26px 40px minmax(0, 1fr) 60px 50px 54px 68px 66px; }
+  .mp-page :is(.mp-col-speeches, .mp-col-seconds), .mp-thead :is([data-sort="speeches"], [data-sort="seconds"]) { display: none; }
+  .mp-party-nums { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 16px; }  /* two by two */
+}
 /* the account in the header (wider screens), as in the phone menu: Belépés green, Regisztráció dark beside it */
 .site-header .acct { gap: 8px; }
 .acct .acct-new { background: #16231d; color: #e9f2ed; }
