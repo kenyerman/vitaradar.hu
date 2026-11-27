@@ -327,7 +327,7 @@ function steps() {
     : `Koppints alul a <b>Megosztás</b> <i class="is-i">${ICON.share}</i> gombra.`;
   const tiles = [ICON.share, ICON.add]
     .map((svg) => `<span class="is-tile">${svg}</span>`).join('<span class="is-arrow">›</span>');
-  return `<h2 class="is-title" id="is-view-title" tabindex="-1">Így kerül a főképernyőre</h2>
+  return `<h2 class="is-title" id="is-view-title" tabindex="-1">Telepítés</h2>
     <div class="is-pic" aria-hidden="true">${tiles}<span class="is-arrow">›</span><span class="is-tile is-home">${APP_ICON}</span></div>
     <ol class="is-list">
       ${VIEW ? `<li>Ha alul egy Safari <i class="is-i">${ICON.compass}</i> gomb van (egy app böngészője, például a Reddité), előbb arra koppints: a lap megnyílik a Safariban.</li>` : ""}
@@ -346,7 +346,7 @@ function guide() {
     `<b>Főképernyőhöz adás</b> <i class="is-i">${ICON.add}</i>`,
     "Jobb fent: <b>Hozzáadás</b>. Kész!",
   ];
-  return `<h2 class="is-title" id="is-view-title" tabindex="-1">Így kerül a főképernyőre</h2>
+  return `<h2 class="is-title" id="is-view-title" tabindex="-1">Telepítés</h2>
     ${VIEW ? `<p class="is-note">Ha alul egy Safari <i class="is-i">${ICON.compass}</i> gomb van (egy app böngészője, például a Reddité), előbb arra koppints: a lap megnyílik a Safariban.</p>` : ""}
     <div class="ig">
       <div class="ig-screen" data-step="1" aria-hidden="true">
