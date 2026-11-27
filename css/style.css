@@ -2600,3 +2600,47 @@ html:has(.install-sheet[open]) { overflow: hidden; }  /* the page behind does no
   @keyframes is-down { to { transform: translateY(100%); } }
   @keyframes is-out { to { opacity: 0; } }
 }
+
+/* ------------------------------------------------------------------ Telepítés in the phone header (js/pwa.js)
+   Between the name (with the "Élő" tag) and the heart, whenever the app is not installed. js/pwa.js picks the widest
+   form the row has room for, ☰ always on the line (.header-row[data-inst]): "label" a green TELEPÍTÉS tag cut like the
+   verdicts, "icon" the phone icon over a small APP (44px, as the heart and ☰), "bare" the same in the heart's place
+   (the menu has the support link), "menu" not in the header: the phone menu's "App telepítése" then. */
+.hdr-install, .nav a.nav-install { display: none; }
+.nav a.nav-install[hidden] { display: none !important; }
+@media (max-width: 860px) {
+  .site-header .hdr-install:not([hidden]) { order: 1; display: inline-flex; align-items: center; justify-content: center; flex: none;
+    margin-left: auto; padding: 0; border: 0; background: none; color: var(--green); cursor: pointer; }
+  .site-header .header-row[data-inst] > .hdr-support { margin-left: 0; }
+  .site-header .header-row[data-inst]:not([data-inst="menu"]) > .menu-btn { margin-left: 0; }
+  .hdr-install .hi-ico { display: block; flex: none; width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.7;
+    stroke-linecap: round; stroke-linejoin: round; }
+  .hdr-install:focus-visible { outline: 1px solid var(--green); outline-offset: 0; }
+  .hdr-install .hi-short { display: none; }
+  .site-header .header-row[data-inst="label"] > .hdr-install { gap: 6px; height: 32px; padding: 0 12px 0 9px; background: var(--green);
+    color: #021108; font: 700 11px/1 var(--display); letter-spacing: 1.2px; text-transform: uppercase;
+    clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 0 100%); }
+  .site-header .header-row[data-inst="label"] > .hdr-install .hi-ico { width: 16px; height: 16px; stroke-width: 2.1; }
+  .site-header .header-row[data-inst="label"] > .hdr-install:active { background: #5df59a; }
+  .site-header .header-row:is([data-inst="icon"], [data-inst="bare"]) > .hdr-install { flex-direction: column; gap: 3px; width: 44px; height: 44px; }
+  .site-header .header-row:is([data-inst="icon"], [data-inst="bare"]) .hi-label { display: none; }
+  .site-header .header-row:is([data-inst="icon"], [data-inst="bare"]) .hi-short { display: block; font: 700 8.5px/1 var(--display);
+    letter-spacing: 1.2px; text-transform: uppercase; }
+  .site-header .header-row[data-inst="bare"] > .hdr-support { display: none !important; }
+  .site-header .header-row[data-inst="menu"] > .hdr-install { display: none; }
+  .menu-panel .nav a.nav-install:not([hidden]) { display: flex; }
+}
+
+/* the sheet in apps' own browsers (Facebook, Messenger…): why, the way out (green), the app's menu steps, the link */
+.is-note { margin: 0 0 14px; color: #b9c7c0; font: 400 14.5px/1.45 var(--sans); }
+.is-wide { width: 100%; gap: 10px; }
+.is-wide svg { flex: none; width: 19px; height: 19px; stroke-width: 2; }
+.is-or { margin: 16px 0 8px; color: var(--muted); font: 600 11px/1.2 var(--display); letter-spacing: 1.2px; text-transform: uppercase; }
+.is-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.is-pair .btn { gap: 8px; padding: 0 10px; }
+.is-pair svg { flex: none; width: 18px; height: 18px; }
+.is-copied { margin: 10px 0 0; color: var(--green); font: 400 13px/1.4 var(--sans); }
+.is-copied:empty { display: none; }
+.is-copied.is-raw { color: #e9f2ed; overflow-wrap: anywhere; -webkit-user-select: all; user-select: all; }
+.is-hidden-copy { position: fixed; top: 0; left: 0; width: 1px; height: 1px; padding: 0; border: 0; opacity: 0; font-size: 16px; }
+.is-en { color: var(--muted); font-size: 13px; }
