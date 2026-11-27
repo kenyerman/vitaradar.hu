@@ -443,6 +443,10 @@ details[open] > summary .lvl-title::before { content: "▾ "; }
 .imp-toc-short { display: none; }
 .imp-toc a[aria-current] { color: var(--green); border-left-color: var(--green); }
 .imp-toc a[aria-current] .imp-toc-n { color: var(--green); }
+.imp-toc ol { position: relative; }
+.imp-toc ol[data-marker="on"]::before { content: ""; position: absolute; top: 0; left: -1px; width: 2px; height: var(--mk-h);
+  transform: translateY(var(--mk-y)); background: var(--green); pointer-events: none; }
+.imp-toc ol[data-marker="on"] a[aria-current] { border-left-color: transparent; }
 .imp-patreon { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px; margin: 4px 0 14px;
   border: 1px solid var(--green); color: var(--green); font: 700 11px/1 var(--display); letter-spacing: 1.2px;
   text-transform: uppercase; white-space: nowrap; text-decoration: none; }
@@ -537,6 +541,9 @@ details[open] > summary .lvl-title::before { content: "▾ "; }
   .imp-toc a { align-items: center; min-height: 36px; margin: 0; padding: 0 12px; border: 1px solid var(--line);
     font: 700 11px/1 var(--display); letter-spacing: 1.2px; text-transform: uppercase; }
   .imp-toc a[aria-current] { border-color: var(--green); background: rgba(61, 240, 130, .06); }
+  .imp-toc ol[data-marker="on"]::before { left: 0; width: var(--mk-w); height: var(--mk-h); transform: translateX(var(--mk-x));
+    box-sizing: border-box; border: 1px solid var(--green); background: rgba(61, 240, 130, .06); }
+  .imp-toc ol[data-marker="on"] a[aria-current] { border-color: var(--line); background: none; }
   .imp { gap: 14px; }
   .imp-sec { padding: 16px 14px; scroll-margin-top: calc(var(--m-hdr, 56px) + 70px); }
   .imp-contact { grid-template-columns: 1fr 1fr; gap: 14px 16px; }
@@ -553,6 +560,41 @@ details[open] > summary .lvl-title::before { content: "▾ "; }
   .imp-store > summary::after { content: "+" / ""; flex: none; color: var(--green); font: 700 18px/1 var(--mono); }  /* not read out */
   .imp-store[open] > summary::after { content: "\2013" / ""; }
   .imp-store > p { padding: 0 0 14px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  /* the impresszum's motion, in the site's words: the contents' marker glides to the section being read; a section
+     further down comes in as it is scrolled to, with the green offset shadow sliding away and its heading wiping in;
+     its rows follow one after another: the steps slide in and their line draws down, each verdict lands like a stamp;
+     the Patreon heart beats as the menu's does, and a light sweeps across the button once */
+  @keyframes imp-grow { from { transform: scaleY(0); } }
+  @keyframes imp-drop { from { opacity: 0; transform: translateY(-6px); } }
+  .imp-toc ol::before { transition: transform .45s var(--m-out), width .45s var(--m-out), height .45s var(--m-out); }
+  .imp-toc a { transition: color .25s; }
+  html.imp-anim .imp-sec:not(.imp-in) { opacity: 0; }
+  .imp-sec.imp-in { animation: m-fade .3s ease-out, m-shove .55s var(--m-out); }
+  .imp-sec.imp-in > h2 { animation: m-wipe .55s var(--m-in-out) .1s backwards; }
+  .imp-sec.imp-in :is(.imp-contact > div, .imp-people > .imp-me) {
+    animation: m-page .5s var(--m-out) calc(.12s + var(--i, 0) * 60ms) backwards; }
+  .imp-sec.imp-in .imp-steps > li { animation: m-from-left .5s var(--m-out) calc(.15s + var(--i, 0) * 90ms) backwards; }
+  .imp-sec.imp-in .imp-step-n { animation: m-stamp .4s var(--m-out) calc(.25s + var(--i, 0) * 90ms) backwards; }
+  .imp-steps > li::before { transform-origin: top; }
+  .imp-sec.imp-in .imp-steps > li::before { animation: imp-grow .45s ease-out calc(.45s + var(--i, 0) * 90ms) backwards; }
+  .imp-steps > li { --i: 0; }
+  .imp-sec.imp-in .imp-legend > li { animation: m-from-left .45s var(--m-out) calc(.1s + var(--i, 0) * 55ms) backwards; }
+  .imp-sec.imp-in .imp-legend .verdict { animation: m-stamp .4s var(--m-out) calc(.3s + var(--i, 0) * 55ms) backwards; }
+  .imp-legend > li { --i: 0; }
+  .imp-sec.imp-in .imp-callout { animation: m-page .5s var(--m-out) .55s backwards; }
+  .imp-sec.imp-in .imp-pledge li { animation: m-from-left .4s var(--m-out) calc(.25s + var(--i, 0) * 70ms) backwards; }
+  .imp-patreon { position: relative; overflow: hidden; transition: transform .15s var(--m-out), background-color .2s; }
+  .imp-patreon::before { display: inline-block; animation: m-heart 3.2s ease-in-out 1s infinite; }
+  .imp-patreon::after { content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 40%; pointer-events: none;
+    background: linear-gradient(100deg, transparent, rgba(61, 240, 130, .28), transparent); transform: translateX(-100%); }
+  .imp-aside .imp-patreon::after, .imp-sec.imp-in .imp-patreon::after { animation: m-shine .9s var(--m-in-out) .9s backwards; }
+  .imp-patreon:active { transform: scale(.97); }
+}
+@media (prefers-reduced-motion: no-preference) and (max-width: 860px) {
+  .imp-store[open] > p { animation: imp-drop .3s var(--m-out); }  /* an item opened: its text drops in */
+  .imp-store[open] > summary::after { display: inline-block; animation: m-stamp .3s var(--m-out); }
 }
 
 /* narrow screens */
