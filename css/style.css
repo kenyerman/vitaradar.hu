@@ -3123,7 +3123,7 @@ html:has(.install-sheet[open]) { overflow: hidden; }  /* the page behind does no
      grip are drawn inside it, where they always were */
   :is(.m-live, .m-watch) .m-pull { display: block; position: absolute; z-index: 3; top: -21px; left: 50%;
     width: 72px; height: 38px; margin-left: -36px; padding: 0; background: none; border: 0; cursor: pointer; }
-  .m-pull::before { content: ""; position: absolute; top: 14px; left: 12px; width: 48px; height: 18px;
+  .m-pull::before { content: ""; box-sizing: border-box; position: absolute; top: 14px; left: 12px; width: 48px; height: 18px;
     background: var(--panel-solid); border: 1px solid var(--line); border-radius: 9px; }
   .m-pull::after { content: ""; position: absolute; top: 21.5px; left: 25px; width: 22px; height: 3px; border-radius: 2px;
     background: rgba(213, 224, 218, .55); }
