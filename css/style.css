@@ -1878,10 +1878,11 @@ html.menu-open .menu-btn::before { content: "\2715"; font: 700 18px/1 var(--disp
 .fact { border-left-width: 3px; }
 .m-new { font-family: var(--display); font-size: 13px; letter-spacing: 1.2px;
   clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px)); }
-/* portraits: the photo on a plain panel, without the radar (sweep, rings, grid, scanlines) */
-.portrait { background: #16231d; }
-.portrait > :is(.pt-sweep, .pt-lines) { display: none; }
-.portrait.cutout > img { filter: none; }
+/* portraits: the photo on a plain panel, without the radar (sweep, rings, grid, scanlines); the two of us in the
+   impresszum's Rólunk keep the radar behind our photos */
+.portrait:not(.imp-photo) { background: #16231d; }
+.portrait:not(.imp-photo) > :is(.pt-sweep, .pt-lines) { display: none; }
+.portrait.cutout:not(.imp-photo) > img { filter: none; }
 .initials { color: var(--muted); text-shadow: none; }
 
 /* ------------------------------------------------------------------ phones: the live and replay pages, laid out
