@@ -1,5 +1,8 @@
 # Rebuilds sitemap.xml every day from Firestore's public data (tools/sitemap.py) and commits it if it changed, so new
 # replays and MPs with new data get into it. Run it by hand from the Actions tab ("Run workflow") after a sitting.
+# Firestore enforces App Check: the repository secret APP_CHECK_DEBUG_TOKEN is an App Check debug token of the site's
+# web app (Firebase console → App Check → Apps → Manage debug tokens, "GitHub Actions sitemap"); the reads are still
+# only what the security rules let any visitor read.
 name: sitemap
 
 on:
@@ -19,24 +22,32 @@ jobs:
   sitemap:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0  # each page's lastmod is its last commit
 
       - name: Rebuild sitemap.xml
+        env:
+          APP_CHECK_DEBUG_TOKEN: ${{ secrets.APP_CHECK_DEBUG_TOKEN }}
         run: python3 tools/sitemap.py
 
       - name: Commit and publish if it changed
         env:
           GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          BRANCH: ${{ github.ref_name }}
         run: |
           if git diff --quiet -- sitemap.xml; then
             echo "sitemap.xml unchanged"
             exit 0
           fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
-          git commit -m "sitemap.xml: refreshed from Firestore" -- sitemap.xml
-          git push origin HEAD:${{ github.ref_name }}
-          # a push made with the workflow's token may not start a Pages build by itself
-          gh api -X POST "repos/${{ github.repository }}/pages/builds" --silent
+          # Through the contents API, not git push: GitHub signs the commit (Verified), its author and committer are
+          # github-actions[bot], never a person, and the message follows Conventional Commits like every commit here.
+          gh api -X PUT "repos/$REPO/contents/sitemap.xml" \
+            -f message="chore(sitemap): refresh from Firestore" \
+            -f content="$(base64 -w0 sitemap.xml)" \
+            -f sha="$(git rev-parse HEAD:sitemap.xml)" \
+            -f branch="$BRANCH" \
+            --jq '.commit | "\(.sha[0:7]) \(.message) (\(.author.name))"'
+          # a commit made with the workflow's token may not start a Pages build by itself
+          gh api -X POST "repos/$REPO/pages/builds" --silent
