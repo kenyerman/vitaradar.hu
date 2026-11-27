@@ -138,11 +138,13 @@ function escapeUrl(way) {
 }
 
 // Sends the reader to the browser; resolves true when the page went to the background (the browser came up), false
-// when it stayed. Apps ask first ("You're leaving our app…"), a native dialog over the page: while it is up the page has
-// no focus, so the answer is waited for (up to 30 s); the page getting its focus back and staying in front means "no"
-// (Go back). Without such a question within 4 s, it did not work. An answer after that still counts: the sheet goes
-// when the page goes to the background (see below).
+// when it stayed. Apps ask first ("You're leaving our app…"), a native dialog over the page. Where the page loses its
+// focus meanwhile, the answer is waited for (up to 30 s), and the focus coming back with the page still in front means
+// "no" (Go back). Messenger's browser keeps the focus (seen on Android 16), so Meta's apps, which always ask, get 12 s
+// for an answer; the others 4 s for anything to happen. An answer after that still counts: the sheet goes when the page
+// goes to the background (see below).
 let lastTry = 0;
+const PATIENCE = IAB && ["facebook", "messenger", "instagram", "threads"].includes(IAB.id) ? 12000 : 4000;
 function leave() {
   lastTry = Date.now();
   return new Promise((done) => {
@@ -168,7 +170,7 @@ function leave() {
     tick = setInterval(() => {
       if (!document.hasFocus()) asked = true;
       const t = Date.now() - t0;
-      if ((!asked && t > 4000) || t > 30000) finish(false);
+      if ((!asked && t > PATIENCE) || t > 30000) finish(false);
     }, 250);
     const url = escapeUrl(WAY);
     try {
