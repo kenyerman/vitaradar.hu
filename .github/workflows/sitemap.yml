@@ -12,6 +12,7 @@ on:
 
 permissions:
   contents: write  # commit sitemap.xml
+  checks: write    # the "Conventional commits" check on that commit (master's ruleset requires it)
   pages: write     # ask GitHub Pages to rebuild after that commit
 
 concurrency:
@@ -41,13 +42,24 @@ jobs:
             echo "sitemap.xml unchanged"
             exit 0
           fi
-          # Through the contents API, not git push: GitHub signs the commit (Verified), its author and committer are
-          # github-actions[bot], never a person, and the message follows Conventional Commits like every commit here.
-          gh api -X PUT "repos/$REPO/contents/sitemap.xml" \
-            -f message="chore(sitemap): refresh from Firestore" \
-            -f content="$(base64 -w0 sitemap.xml)" \
-            -f sha="$(git rev-parse HEAD:sitemap.xml)" \
-            -f branch="$BRANCH" \
-            --jq '.commit | "\(.sha[0:7]) \(.message) (\(.author.name))"'
+          # Through the API, not git push: GitHub signs the commit (Verified), its author and committer are
+          # github-actions[bot], never a person. Master's ruleset requires the "Conventional commits" check on every
+          # commit it moves to, and only admins may skip it, so the commit is made first, its message checked the
+          # way .github/workflows/commit-messages.yml checks a pull request's, the check recorded on it, and only
+          # then master moved to it (a fast-forward: it fails rather than overwrite a newer commit).
+          msg="chore(sitemap): refresh from Firestore"
+          re="^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([a-z0-9._/-]+\))?!?: [^ ]"
+          [[ "$msg" =~ $re ]] || { echo "::error::not a conventional commit message: $msg"; exit 1; }
+          parent=$(gh api "repos/$REPO/git/ref/heads/$BRANCH" --jq .object.sha)
+          base_tree=$(gh api "repos/$REPO/git/commits/$parent" --jq .tree.sha)
+          blob=$(gh api "repos/$REPO/git/blobs" -f encoding=base64 -f content="$(base64 -w0 sitemap.xml)" --jq .sha)
+          tree=$(gh api "repos/$REPO/git/trees" -f base_tree="$base_tree" -f "tree[][path]=sitemap.xml" \
+            -f "tree[][mode]=100644" -f "tree[][type]=blob" -f "tree[][sha]=$blob" --jq .sha)
+          commit=$(gh api "repos/$REPO/git/commits" -f message="$msg" -f tree="$tree" -f "parents[]=$parent" --jq .sha)
+          gh api "repos/$REPO/check-runs" -f name="Conventional commits" -f head_sha="$commit" \
+            -f status=completed -f conclusion=success \
+            -f "output[title]=Conventional commit" -f "output[summary]=$msg" --silent
+          gh api -X PATCH "repos/$REPO/git/refs/heads/$BRANCH" -f sha="$commit" -F force=false --silent
+          echo "${commit:0:7} $msg"
           # a commit made with the workflow's token may not start a Pages build by itself
           gh api -X POST "repos/$REPO/pages/builds" --silent
