@@ -1,13 +1,26 @@
 // Shared by every page: Firebase, the digital rain behind the page, and small helpers.
 
 import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { db } from "./firebase.js?v=202611241021";
+import { db, getDoc, getDocs } from "./firebase.js?v=202611272300";
 import "./consent.js?v=202611241021";   // the cookie and storage bar at the bottom, on every page
-import "./presence.js?v=202611241206";  // the header's "N online" (visitors included), on every page
+import "./presence.js?v=202611272300";  // the header's "N online" (visitors included), on every page
 import "./menu.js?v=202611241206";      // the hamburger menu on phones, on every page
-import { CDN, cdnReady, cdnUrl } from "./cdn.js?v=202611241021";
+import "./netwatch.js?v=202611272300";  // a bar with "Újrapróbálás" when the server cannot be reached, on every page
+import { CDN, cdnReady, cdnUrl } from "./cdn.js?v=202611272300";
 
 export { db };  // set up once, with App Check, in firebase.js
+export { getDoc, getDocs };  // reads that wait for the server, not Firestore's own (firebase.js says why)
+
+// A load that failed or got no answer in time (js/net.js): what failed, and "Újrapróbálás", which loads the page again
+// (a new connection and a new reCAPTCHA check, what a stuck page needs; in the iPhone app there is no reload button).
+export function loadFailed(box, text) {
+  const b = el("button", "btn ghost", "Újrapróbálás");
+  b.type = "button";
+  b.addEventListener("click", () => { b.disabled = true; location.reload(); });
+  box.classList.add("load-failed");
+  box.replaceChildren(el("span", null, text), b);
+  box.hidden = false;
+}
 
 export const LABEL = {
   true: "IGAZ", partly_true: "RÉSZBEN IGAZ", misleading: "FÉLREVEZETŐ", false: "HAMIS", opinion: "VÉLEMÉNY",
@@ -16,6 +29,11 @@ export const LABEL = {
 
 // Verdicts that decide a stated fact (the others label an opinion, a promise, or what no evidence settles).
 export const FACT_VERDICTS = new Set(["true", "partly_true", "misleading", "false"]);
+
+// A conclusion check judges only the step from the speaker's stated facts to their conclusion, not a fact, so it has
+// the stream's words for its verdict: "[ KÖVETKEZTETÉS: MEGALAPOZATLAN ]", in orange (css), because unfounded is not
+// false. The pages don't count conclusions with the facts (js/app.js).
+export const CONCLUSION_LABEL = { true: "MEGALAPOZOTT", false: "MEGALAPOZATLAN", unverifiable: "NEM ELDÖNTHETŐ" };
 
 export function el(tag, cls, text) {
   const e = document.createElement(tag);
@@ -45,25 +63,35 @@ export function huDate(iso) {
   return d.toLocaleDateString("hu-HU", { year: "numeric", month: "long", day: "numeric" });
 }
 
-// A verdict badge like the stream's: [ IGAZ ]
+// A verdict badge like the stream's: [ IGAZ ]. While the check runs, the stream's loading sign sits inside the
+// brackets, "[ ELLENŐRZÉS ▒ ]" (the sign is CSS on an empty span, .v-sign), and a conclusion check keeps its title,
+// "[ KÖVETKEZTETÉS ▒ ]", then "[ KÖVETKEZTETÉS: MEGALAPOZOTT ]" (CONCLUSION_LABEL; data-kind gives it its colour).
+// js/mobile.js drops the [ ] on phones from the text at either end.
 export function badge(verdict, kind) {
   const v = kind === "fallacy" ? "fallacy" : verdict || "pending";
+  const conclusion = kind === "conclusion";
   const b = el("span", "verdict");
   b.dataset.v = v;
-  b.textContent = `[ ${kind === "conclusion" && v !== "pending" ? "KÖVETKEZTETÉS: " : ""}${LABEL[v] || v} ]`;
+  if (conclusion) b.dataset.kind = "conclusion";
+  if (v === "pending") {
+    const sign = el("span", "v-sign");
+    sign.setAttribute("aria-hidden", "true");
+    b.append(`[ ${conclusion ? "KÖVETKEZTETÉS" : LABEL.pending} `, sign, " ]");
+    return b;
+  }
+  b.textContent = conclusion ? `[ KÖVETKEZTETÉS: ${CONCLUSION_LABEL[v] || LABEL[v] || v} ]` : `[ ${LABEL[v] || v} ]`;
   return b;
 }
 
-// A fact's badge once the fallacy said in the same sentence shows on its card (pfc publish.link_docs): a decided
-// fact keeps its verdict and names the fallacy, "[ IGAZ · SZEMÉLYESKEDÉS ]"; an opinion or an unverifiable
-// statement shows the fallacy, "[ HIBÁS ÉRVELÉS: SZEMÉLYESKEDÉS ]". Without one it is the plain badge.
+// A fact's badge once the fallacy said in the same sentence shows on its card (pfc publish.link_docs): the card is
+// the fallacy's, whatever the fact's verdict, "[ HIBÁS ÉRVELÉS: SZEMÉLYESKEDÉS ]" (the fact's explanation stays on
+// it as context), and the pair counts once, as a fallacy. "[ IGAZ · SZALMABÁB ]" read as a contradiction. Without
+// one it is the plain badge.
 export function factBadge(c, v, fallacyShown) {
   if (!fallacyShown || !c.fallacy || v === "pending" || (c.kind && c.kind !== "claim")) return badge(v, c.kind);
-  const name = (c.fallacy.name || "").toUpperCase();
   const b = el("span", "verdict");
-  const fact = FACT_VERDICTS.has(v);
-  b.dataset.v = fact ? v : "fallacy";
-  b.textContent = fact ? `[ ${LABEL[v]} · ${name} ]` : `[ ${LABEL.fallacy}: ${name} ]`;
+  b.dataset.v = "fallacy";
+  b.textContent = `[ ${LABEL.fallacy}: ${(c.fallacy.name || "").toUpperCase()} ]`;
   return b;
 }
 
@@ -156,6 +184,7 @@ export function setPhoto(img, fallback, url, name, { id, color } = {}) {
 const GLYPHS = "0123456789ÁÉÍÓÖŐÚÜŰABCDEFGHIJKLMNOPRSTUVZ%§$#=+<>≠∑∆¿?!*/";
 
 export function startRain(canvas) {
+  if (!canvas || getComputedStyle(canvas).display === "none") return;  // the new look has none (css)
   const ctx = canvas.getContext("2d");
   const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const size = 16;
@@ -203,10 +232,14 @@ if (year) year.textContent = String(new Date().getFullYear());
 
 // The header's "Élő adás" link tells whether a broadcast is on: it glows red with a blinking dot while live and reads
 // "nincs adás" otherwise. Both labels are in the page from the start, stacked in one grid cell (css .live-stack), so the
-// link keeps the width of the longer one; until the state is known (data-live="loading") it reads "Élő adás", its dot
-// dim and still.
+// link keeps the width of the longer one; until the state is known (data-live="loading") it reads what the last page
+// knew (html[data-live], set in each page's head from localStorage), else "nincs adás".
 // The phone menu's hamburger follows its data-live (js/menu.js).
 export function setLiveNav(on) {
+  // remembered for the next page: it shows the same label from its first paint (each page's head, css), so a page
+  // change does not flip "Élő adás" to "nincs adás" while the state loads
+  try { localStorage.setItem("vr-live", on ? "on" : "off"); } catch { /* private mode: the loading label stays */ }
+  document.documentElement.dataset.live = on ? "on" : "off";
   for (const a of document.querySelectorAll(".nav-live")) {
     a.dataset.live = on ? "on" : "off";
     // the state in the accessible name (the visible label alone reads "nincs adás", or "Élő adás" either way)

@@ -4,7 +4,8 @@
 // signed in, only marks them as signed in. Only with the visitor's consent (consent.js) does the browser keep that id,
 // so that several pages and tabs count once; without it the id lives in this page's memory and nothing is stored.
 
-import { auth, appCheckHeaders } from "./firebase.js?v=202611241021";
+import { auth, appCheckHeaders } from "./firebase.js?v=202611272300";
+import { fetchT, withTimeout } from "./net.js?v=202611270600";
 import { apiUrl } from "./config.js?v=202611241021";
 import { consented, onConsentChange } from "./consent.js?v=202611241021";
 
@@ -91,9 +92,10 @@ async function beat() {
     const headers = { ...(await appCheckHeaders()), "Content-Type": "application/json" };
     const user = auth.currentUser;
     if (user) {
-      try { headers.Authorization = `Bearer ${await user.getIdToken()}`; } catch { /* counted as a visitor */ }
+      try { headers.Authorization = `Bearer ${await withTimeout(user.getIdToken(), 10000, "ID token")}`; } catch { /* a visitor */ }
     }
-    const r = await fetch(`${apiUrl}/presence`, { method: "POST", headers, body: JSON.stringify({ id, page }) });
+    // every wait has a limit: a beat that never ended kept "busy" set, and the count never came again
+    const r = await fetchT(`${apiUrl}/presence`, { method: "POST", headers, body: JSON.stringify({ id, page }) }, 15000);
     if (!r.ok) throw new Error(String(r.status));
     show(await r.json());
   } catch (e) {

@@ -1,18 +1,26 @@
-// Accounts: Google sign-in, registration (16+), profile and profile picture, and calls to the user API.
+// Accounts: Google sign-in, registration (16+), profile and profile picture, deleting the account, and calls to the
+// user API.
 //
 // The server decides everything that matters (age, nick uniqueness, rate limits, moderation): this module only
 // asks. Everything a user typed is put on the page with textContent, never as HTML.
 
-import { onAuthStateChanged, getIdToken } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import {
+  onAuthStateChanged, getIdToken, getIdTokenResult,
+} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { auth, db, appCheckHeaders, signInWithGoogle, signOut } from "./firebase.js?v=202611241021";
+import {
+  auth, db, appCheckHeaders, signInWithGoogle, signInAgain, readySignIn, signOut, signInLeavesPage, redirectError,
+  signInRefused,
+} from "./firebase.js?v=202611272300";
 import { apiUrl, avatarUrl, photoPrefix } from "./config.js?v=202611241021";
-import { el, initials, huDate } from "./common.js?v=202611250130";
-import { cdnReady, cdnUrl } from "./cdn.js?v=202611241021";
+import { el, initials, huDate } from "./common.js?v=202611272300";
+import { cdnReady, cdnUrl } from "./cdn.js?v=202611272300";
+import { fetchT, withTimeout, sleep } from "./net.js?v=202611270600";
 import { profileHref } from "./links.js?v=202611241021";
 
 export const account = {
   user: null, registered: false, a18: false, profile: null, private: null, ready: false,
+  failed: false,         // signed in, but the account did not load (/me): pages say so, and do not ask to register
   blocked: {},           // uid -> nick: users whose comments and chat messages this user does not see
   points: null,          // the game points (users/{uid}.points), shown on the header's avatar
   flagged: new Set(),    // comment ids this user flagged
@@ -71,7 +79,17 @@ export class ApiError extends Error {
 async function authHeaders(force = false) {
   const user = auth.currentUser;
   if (!user) throw new ApiError("signin", "Jelentkezz be.");
-  return { ...(await appCheckHeaders()), Authorization: `Bearer ${await getIdToken(user, force)}` };
+  const token = await withTimeout(getIdToken(user, force), 15000, "bejelentkezés").catch((e) => {
+    throw new ApiError(e.code === "timeout" ? "timeout" : "signin", "A bejelentkezésedet most nem sikerült ellenőrizni. Próbáld újra.");
+  });
+  return { ...(await appCheckHeaders()), Authorization: `Bearer ${token}` };
+}
+
+// Every call to our API has a limit: a request that gets no answer (a stalled phone connection) fails with this.
+const TIMEOUT_TEXT = "A szerver nem válaszolt időben. Próbáld újra.";
+async function post(url, options, ms) {
+  try { return await fetchT(url, options, ms); }
+  catch (e) { throw e.code === "timeout" ? new ApiError("timeout", TIMEOUT_TEXT) : e; }
 }
 
 async function readReply(r) {
@@ -82,9 +100,9 @@ async function readReply(r) {
 }
 
 export async function api(path, body = {}) {
-  const r = await fetch(apiUrl + path, {
+  const r = await post(apiUrl + path, {
     method: "POST", headers: { ...(await authHeaders()), "Content-Type": "application/json" }, body: JSON.stringify(body),
-  });
+  }, 20000);
   return readReply(r);
 }
 
@@ -95,15 +113,62 @@ export function safePhoto(url) {  // only the picture addresses our server write
 // Signed in but not registered: ask to sign in or to finish the registration first. Returns true if ready.
 export function needAccount() {
   if (account.registered) return true;
+  if (account.failed) { toast("A fiókodat most nem sikerült betölteni. Töltsd újra az oldalt."); return false; }
   if (!account.user) signIn();
   else openRegister({});
   return false;
 }
 
+// Google's G, in its own colours (Google's sign-in buttons keep it so), on a white disc (css)
+const GOOGLE_G = '<svg class="acct-g" viewBox="0 0 48 48" aria-hidden="true" focusable="false"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>';
+
 export async function signIn() {
+  if (signInRefused) { signInElsewhere(); return; }
   try { await signInWithGoogle(); }
   catch (e) { if (e.code !== "auth/popup-closed-by-user" && e.code !== "auth/cancelled-popup-request") toast(`Nem sikerült belépni (${e.code || e.message}).`); }
 }
+
+// Apps' own browsers (Facebook, Instagram, Messenger…): Google signs no one in there (js/firebase.js), so instead of
+// Google's refusal the reader learns how to open the page in the browser, where the sign-in works.
+function signInElsewhere() {
+  const android = /Android/.test(navigator.userAgent);
+  const note = el("p", "dlg-text");
+  note.setAttribute("role", "status");
+  const dlg = dialog("Belépés a böngészőben", [
+    el("p", "dlg-text", "Az appok saját böngészőjéből (Facebook, Instagram, Messenger…) a Google nem enged belépni."),
+    el("p", "dlg-text", `Nyisd meg az oldalt ${android ? "a böngésződben" : "a Safariban"}: az app menüjében (${android ? "⋮" : "•••"})`
+      + " válaszd a Megnyitás böngészőben (Open in browser) pontot, vagy másold ki a linket. Ott be tudsz lépni."),
+    note,
+  ], [
+    { label: "Link másolása", onClick: (e) => copyLink(e.currentTarget, note, dlg.el) },
+    { label: "Rendben", primary: true, onClick: () => dlg.close() },
+  ]);
+}
+
+// The old way first, inside the tap (apps' browsers often refuse the clipboard API); then the API; else the link shown.
+async function copyLink(button, note, box) {
+  const url = location.href;
+  let ok = false;
+  const t = el("textarea");
+  t.value = url;
+  t.setAttribute("readonly", "");
+  t.style.cssText = "position:fixed;opacity:0;pointer-events:none";
+  box.append(t);  // in the dialog: the page behind it is inert
+  t.select();
+  t.setSelectionRange(0, url.length);
+  try { ok = document.execCommand("copy"); } catch { ok = false; }
+  t.remove();
+  button.focus({ preventScroll: true });
+  if (!ok) {
+    try { await navigator.clipboard.writeText(url); ok = true; } catch { /* shown below to copy by hand */ }
+  }
+  note.textContent = ok ? "Kimásolva. Illeszd be a böngésző címsorába." : `A link: ${url}`;
+}
+
+// the iPhone app signs in by leaving the page (js/firebase.js): a sign-in that failed there is told when it is back
+redirectError().then((e) => {
+  if (e && e.code !== "auth/redirect-cancelled-by-user") toast(`Nem sikerült belépni (${e.code || e.message}).`);
+});
 
 async function load(user) {
   const me = await api("/me");
@@ -114,15 +179,21 @@ async function load(user) {
 }
 
 onAuthStateChanged(auth, async (user) => {
-  Object.assign(account, { user, registered: false, a18: false, profile: null, private: null });
+  Object.assign(account, { user, registered: false, a18: false, profile: null, private: null, failed: false });
   if (!user) { watchPrivate(null); emit(); return; }
   try {
-    const me = await load(user);
+    // a second try after a failed first (a dropped request); a refusal (4xx) is not tried again
+    const me = await load(user).catch(async (e) => {
+      if (e.data?.status >= 400 && e.data?.status < 500 && e.data.status !== 401) throw e;
+      await sleep(2000);
+      return load(user);
+    });
     watchPrivate(me.registered ? user.uid : null);
     emit();
     if (!me.registered) openRegister(me.suggest || {});
   } catch (e) {
     console.warn("account:", e);
+    account.failed = true;
     toast(e.message || "A fiók most nem érhető el.");
     emit();
   }
@@ -148,6 +219,7 @@ export function dialog(title, body, actions, { onClose } = {}) {
   const bar = el("div", "dlg-actions");
   for (const a of actions) {
     const b = el("button", a.primary ? "btn" : "btn ghost", a.label);
+    if (a.danger) b.classList.add("danger");
     b.type = a.submit ? "submit" : "button";
     b.value = a.value || "";
     if (a.onClick) b.addEventListener("click", (e) => { e.preventDefault(); a.onClick(e); });
@@ -262,14 +334,14 @@ export const PRIVACY = [
   ["name", "Teljes név a beceneved mellett", ""],
 ];
 
-// The privacy switches of the profile editor: ticked = others see it. Each change is saved at once.
+// The privacy switches of the profile editor: on = others see it. Each change is saved at once.
 function privacyBox() {
   const box = el("fieldset", "fld prof-privacy");
   box.append(el("legend", "fld-label", "Mások ezt látják a profilodon"));
   const boxes = {};
   const hidden = new Set(account.profile?.hide || []);
   for (const [key, label, hint] of PRIVACY) {
-    const cb = input("checkbox", { name: `show-${key}` });
+    const cb = input("checkbox", { name: `show-${key}`, role: "switch" });
     cb.checked = !hidden.has(key);
     boxes[key] = cb;
     const text = el("span", null, label);
@@ -280,7 +352,7 @@ function privacyBox() {
   }
   const msg = el("p", "prof-saved");
   msg.setAttribute("role", "status");
-  box.append(el("span", "fld-hint", "Ami nincs bejelölve, azt csak te látod. A változást azonnal mentjük."), msg);
+  box.append(msg);
   const show = (hide) => { for (const [k] of PRIVACY) boxes[k].checked = !hide.includes(k); };
   box.addEventListener("change", async (e) => {
     if (e.target.type !== "checkbox") return;
@@ -305,33 +377,111 @@ function privacyBox() {
   return box;
 }
 
-// The profile editor of one's own profile page (profile.html): picture, full name and nick; the e-mail address and the
-// birth date shown but fixed; who sees what on the profile; the blocked users, each with "feloldás"; and sign-out.
-// Saving goes through the API (/profile, /privacy and the picture service), which validates everything again.
-// Returns {el, destroy}.
-export function profileEditor() {
-  const p = account.profile || {};
-  const pic = el("div", "profile-pic");
-  pic.append(avatar(p.photo && p.photo["256"], p.nick, 96));
+// The profile editor of one's own profile page (profile.html): a sheet that comes up from the bottom on phones, a dialog
+// on wider screens (css .prof-sheet). Mégse and Mentés at the top on phones, at the foot on wider screens; Mentés only
+// once something changed. The picture is shown first and sent with Mentés; the nick has its count; the e-mail address
+// and the birth date are text. Who sees what and the blocked users open inside it, and save at once, as before. At the
+// bottom, away from Mentés: sign-out and deleting the account. Saving goes through the API (/profile and the picture
+// service), which validates everything again.
+const NICK_RE = /^[0-9A-Za-zÁÉÍÓÖŐÚÜŰáéíóöőúüű_.-]{3,40}$/;
+const VIEWS = { main: "Profil szerkesztése", privacy: "Ki látja?", blocked: "Letiltott felhasználók" };
+let editing = null;  // the open editor, {close}
+
+export function openProfileEditor() {
+  if (editing) return editing;
+  if (!account.registered) return null;
+  const now = () => account.profile || {};
+  const d = el("dialog", "dlg prof-sheet");
+  d.dataset.view = "main";
+  d.autofocus = true;  // the sheet itself takes the focus when it opens: no button lit up on a phone, Tab goes on from it
+  d.tabIndex = -1;
+  d.setAttribute("aria-labelledby", "sheet-title");
+  const form = el("form", "sheet-form");
+  form.noValidate = true;  // the checks below speak Hungarian; the server checks again
+
+  // the head: Mégse, the title, Mentés (phones); the title and × (wider screens); ‹ Vissza in the inner views
+  const head = el("div", "sheet-head");
+  const button = (cls, text, type = "button") => { const b = el("button", cls, text); b.type = type; return b; };
+  const cancel = button("sheet-cancel", "Mégse");
+  const back = button("sheet-back", "‹ Vissza");
+  const title = el("h2", "sheet-title", VIEWS.main);
+  title.id = "sheet-title";
+  const saveTop = button("btn small sheet-save", "Mentés", "submit");
+  const x = button("sheet-x", "×");
+  x.setAttribute("aria-label", "Bezárás");
+  head.append(el("span", "sheet-grab"), cancel, back, title, saveTop, x);
+
+  // the picture: the chosen one is shown at once and sent with Mentés
+  let pending = null, preview = "";
   const file = input("file", { name: "photo", accept: "image/jpeg,image/png,image/webp" });
-  const name = input("text", { name: "name", maxlength: "150", autocomplete: "name", required: "" });
-  name.value = p.name || "";
-  const nick = input("text", { name: "nick", maxlength: "40", autocomplete: "off", required: "" });
-  nick.value = p.nick || "";
-  const locked = (key, auto, value) => {  // private and fixed: shown, never sent back
-    const i = input("text", { name: key, autocomplete: auto, disabled: "", readonly: "" });
-    i.value = value || "–";
-    return i;
+  file.className = "sheet-file";  // out of sight: the button is its label
+  const choose = el("label", "btn ghost small sheet-choose");
+  choose.append(el("span", null, "Kép cseréje"), file);
+  const picSide = el("div", "sheet-pic-side");
+  picSide.append(choose, el("span", "fld-hint", "JPEG, PNG vagy WEBP, legfeljebb 2 MB. A Mentéssel kerül fel."));
+  const pic = el("div", "sheet-pic");
+  const drawPic = () => {
+    const face = avatar(now().photo && now().photo["256"], now().nick, 96);
+    if (preview) {
+      const img = el("img");
+      img.alt = "";
+      img.src = preview;
+      face.replaceChildren(img);
+    }
+    pic.replaceChildren(face, picSide);
   };
-  const email = field("E-mail · csak te látod", locked("email", "email", account.private?.email), "Nem módosítható.");
-  const born = field("Születési dátum · csak te látod", locked("birthdate", "bday", huDate(account.private?.birthdate)), "Nem módosítható.");
-  const blockedBox = el("div", "fld");
+
+  // the nick with its count, the name; what only its owner sees, as text
+  const nick = input("text", { name: "nick", maxlength: "40", autocomplete: "off", autocapitalize: "off", spellcheck: "false" });
+  const name = input("text", { name: "name", maxlength: "150", autocomplete: "name" });
+  nick.value = now().nick || "";
+  name.value = now().name || "";
+  const count = el("span", "sheet-count");
+  const nickFoot = el("span", "sheet-fieldfoot");
+  nickFoot.append(el("span", "fld-hint", "Betű, szám, pont, kötőjel, aláhúzás. Ezt látják mások."), count);
+  const nickField = el("label", "fld");
+  nickField.append(el("span", "fld-label", "Becenév"), nick, nickFoot);
+  const fact = (label, value) => { const l = el("p", null, `${label}: `); l.append(el("b", null, value || "–")); return l; };
+  const mine = el("div", "sheet-mine");
+  mine.append(el("span", "fld-label", "Csak te látod"), fact("E-mail", account.private?.email),
+    fact("Születési dátum", huDate(account.private?.birthdate)));
+  const fields = el("div", "sheet-fields");
+  fields.append(nickField, field("Teljes név", name), mine);
+  const top = el("div", "sheet-top");
+  top.append(pic, fields);
+  const err = el("p", "dlg-error");
+  err.setAttribute("role", "alert");
+  err.hidden = true;
+  const error = (msg) => { err.textContent = msg || ""; err.hidden = !msg; };
+
+  // the rows: who sees what and the blocked users inside the editor; sign-out and deleting the account apart
+  const row = (label, cls, onClick) => {
+    const b = button(`sheet-row${cls ? ` ${cls}` : ""}`, "");
+    const v = el("span", "sheet-row-v");
+    b.append(el("span", "sheet-row-k", label), v);
+    b.addEventListener("click", onClick);
+    return { b, v };
+  };
+  const privRow = row("Ki látja a profilodat?", "", (e) => go("privacy", e));
+  const blockRow = row("Letiltott felhasználók", "", (e) => go("blocked", e));
+  const outRow = row("Kilépés", "sheet-out", () => { close(); signOut(); });
+  const delRow = row("Fiók törlése", "sheet-del", () => { close(); deleteAccount(); });
+  const rows = el("div", "sheet-rows");
+  rows.append(privRow.b, blockRow.b);
+  const leave = el("div", "sheet-rows sheet-leave");
+  leave.append(outRow.b, delRow.b);
+  const main = el("div", "sheet-view sheet-main");
+  main.append(top, err, rows, leave);
+
+  const privacy = el("div", "sheet-view sheet-privacy");
+  privacy.append(el("p", "sheet-intro", "Ami ki van kapcsolva, azt csak te látod. A kapcsolók azonnal mentenek."), privacyBox());
+  const blocked = el("div", "sheet-view sheet-blocked");
   const drawBlocked = () => {
     const list = el("ul", "blocked-list");
-    for (const [uid, bnick] of Object.entries(account.blocked).sort((a, b) => String(a[1]).localeCompare(String(b[1]), "hu"))) {
+    const all = Object.entries(account.blocked).sort((a, b) => String(a[1]).localeCompare(String(b[1]), "hu"));
+    for (const [uid, bnick] of all) {
       const li = el("li", null);
-      const b = el("button", "link-btn", "feloldás");
-      b.type = "button";
+      const b = button("link-btn", "feloldás");
       b.addEventListener("click", async () => {
         b.disabled = true;
         try { await api("/block", { uid, block: false }); } catch (e) { toast(e.message); b.disabled = false; }
@@ -339,73 +489,211 @@ export function profileEditor() {
       li.append(el("span", null, bnick), b);
       list.append(li);
     }
-    if (!list.children.length) list.append(el("li", "muted", "senki"));
-    blockedBox.replaceChildren(el("span", "fld-label", "Letiltott felhasználók"), list);
+    if (!all.length) list.append(el("li", "muted", "Senkit nem tiltottál le."));
+    blocked.replaceChildren(el("p", "sheet-intro", "Akiket letiltottál: nem látod a hozzászólásaikat és a chatüzeneteiket."), list);
+    blockRow.v.textContent = all.length ? String(all.length) : "senki";
   };
+
+  // the foot on wider screens: Mégse and Mentés
+  const foot = el("div", "sheet-foot");
+  const cancelFoot = button("btn ghost", "Mégse");
+  const saveFoot = button("btn", "Mentés", "submit");
+  foot.append(cancelFoot, saveFoot);
+  const body = el("div", "sheet-body");
+  body.append(main, privacy, blocked);
+  form.append(head, body, foot);
+  d.append(form);
+
+  let busy = false;
+  const changed = () => Boolean(pending) || nick.value !== (now().nick || "") || name.value !== (now().name || "");
+  const refresh = () => {
+    count.textContent = `${[...nick.value].length}/40`;
+    nick.readOnly = name.readOnly = busy;
+    for (const b of [saveTop, saveFoot]) { b.disabled = busy || !changed(); b.textContent = busy ? "mentés…" : "Mentés"; }
+    const hidden = (now().hide || []).length;
+    privRow.v.textContent = hidden ? `${hidden} rejtve` : "mindenki";
+  };
+  const go = (view, e) => {
+    d.dataset.view = view;
+    title.textContent = VIEWS[view];
+    body.scrollTop = 0;
+    refresh();
+    // from the keyboard the focus goes on to the view's first button (a tap leaves it: a lit-up button there otherwise)
+    if (!e || e.detail === 0) (view === "main" ? cancel : back).focus({ preventScroll: true });
+  };
+  const close = () => { if (d.open) d.close(); };
+
+  drawPic();
   drawBlocked();
-  const stopBlocks = onBlocks(drawBlocked);
-  const form = el("form", "prof-form");
-  const err = el("p", "dlg-error");
-  err.setAttribute("role", "alert");
-  err.hidden = true;
-  const saved = el("p", "prof-saved");
-  saved.setAttribute("role", "status");
-  const bar = el("div", "dlg-actions");
-  const out = el("button", "btn ghost", "Kilépés");
-  out.type = "button";
-  out.addEventListener("click", () => signOut());
-  const save = el("button", "btn", "Mentés");
-  save.type = "submit";
-  bar.append(out, save);
-  form.append(pic, field("Profilkép", file, "JPEG, PNG vagy WEBP, legfeljebb 2 MB."),
-    field("Teljes név", name), field("Becenév", nick, "3–40 karakter: betű, szám, pont, kötőjel, aláhúzás. Ezt látják mások."),
-    email, born, privacyBox(), blockedBox, err, saved, bar);
-  const dlg = {  // the same calls as a dialog's, so the flows below stay as they were
-    form,
-    error: (msg) => { err.textContent = msg || ""; err.hidden = !msg; if (msg) saved.textContent = ""; },
-    busy: (on) => bar.querySelectorAll("button").forEach((b) => { b.disabled = on; }),
+  refresh();
+  // phones: the sheet keeps to what is visible (css --sheet-top, --sheet-h): with the keyboard up iOS moves the page
+  // under it, and its head with Mégse and Mentés went under the status bar
+  const vv = window.visualViewport;
+  const fit = () => {
+    d.style.setProperty("--sheet-top", `${Math.round(vv.offsetTop)}px`);
+    d.style.setProperty("--sheet-h", `${Math.round(vv.height)}px`);
   };
-  file.addEventListener("change", async () => {
+  if (vv) { fit(); vv.addEventListener("resize", fit); vv.addEventListener("scroll", fit); }
+  const opener = document.activeElement, y0 = scrollY;
+  const stopBlocks = onBlocks(drawBlocked);
+  const stopAccount = onAccount((a) => { if (!a.registered) close(); else refresh(); });
+  form.addEventListener("input", (e) => { if (e.target !== file) { error(""); refresh(); } });
+  file.addEventListener("change", () => {
     const f = file.files[0];
+    file.value = "";
     if (!f) return;
-    if (f.size > MAX_PHOTO) { dlg.error("A kép legfeljebb 2 MB lehet."); file.value = ""; return; }
-    if (!["image/jpeg", "image/png", "image/webp"].includes(f.type)) { dlg.error("Csak JPEG, PNG vagy WEBP kép tölthető fel."); file.value = ""; return; }
-    dlg.busy(true);
-    dlg.error("");
-    pic.replaceChildren(el("span", "muted", "feltöltés…"));
+    if (!["image/jpeg", "image/png", "image/webp"].includes(f.type)) { error("Csak JPEG, PNG vagy WEBP kép tölthető fel."); return; }
+    if (f.size > MAX_PHOTO) { error("A kép legfeljebb 2 MB lehet."); return; }
+    error("");
+    if (preview) URL.revokeObjectURL(preview);
+    pending = f;
+    preview = URL.createObjectURL(f);
+    drawPic();
+    refresh();
+  });
+  for (const b of [cancel, cancelFoot, x]) b.addEventListener("click", close);
+  back.addEventListener("click", (e) => go("main", e));
+  d.addEventListener("cancel", (e) => { if (busy) e.preventDefault(); });  // Escape closes, and the changes go
+  d.addEventListener("click", (e) => { if (e.target === d && !busy && !changed()) close(); });  // the page behind: when nothing is lost
+  d.addEventListener("close", () => {
+    if (preview) URL.revokeObjectURL(preview);
+    if (vv) { vv.removeEventListener("resize", fit); vv.removeEventListener("scroll", fit); }
+    stopBlocks();
+    stopAccount();
+    d.remove();
+    editing = null;
+    // the page as it was: where it was scrolled (the keyboard moved it), and no other button lit up when the one that
+    // opened the sheet was drawn anew meanwhile (a save redraws the profile's head)
+    if (Math.abs(scrollY - y0) > 1) scrollTo({ top: y0 });
+    if (!opener?.isConnected && document.activeElement !== document.body) document.activeElement?.blur?.();
+  });
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (busy || !changed()) return;
+    const n = nick.value.trim(), nm = name.value.trim();
+    if (!NICK_RE.test(n)) { error("A becenév 3–40 karakter lehet: betű, szám, pont, kötőjel, aláhúzás."); nick.focus(); return; }
+    if (!nm) { error("Add meg a teljes nevedet."); name.focus(); return; }
+    busy = true;
+    error("");
+    refresh();
     try {
-      const r = await fetch(avatarUrl, { method: "POST", headers: { ...(await authHeaders()), "Content-Type": f.type }, body: f });
-      const data = await readReply(r);
-      account.profile = { ...account.profile, photo: data.photo };
-      pic.replaceChildren(avatar(data.photo["256"], account.profile.nick, 96));
-      emit();
+      if (pending) {
+        let data;
+        try {
+          const r = await post(avatarUrl, { method: "POST", headers: { ...(await authHeaders()), "Content-Type": pending.type }, body: pending }, 60000);
+          data = await readReply(r);
+        } catch (err) {
+          throw new ApiError(err.code || "photo", PHOTO_ERRORS[err.data?.status] || err.message);
+        }
+        account.profile = { ...account.profile, photo: data.photo };
+        pending = null;
+        URL.revokeObjectURL(preview);
+        preview = "";
+        emit();
+      }
+      if (n !== (now().nick || "") || nm !== (now().name || "")) {
+        const r = await api("/profile", { name: nm, nick: n });
+        account.profile = { ...account.profile, ...r.profile };
+        emit();
+      }
+      close();
+      toast("Elmentve.");
     } catch (err) {
-      pic.replaceChildren(avatar(p.photo && p.photo["256"], p.nick, 96));
-      dlg.error(PHOTO_ERRORS[err.data?.status] || err.message);
+      error(err.message);
     } finally {
-      dlg.busy(false);
-      file.value = "";
+      busy = false;
+      if (d.open) { drawPic(); refresh(); }
     }
   });
+
+  document.body.append(d);
+  d.showModal();
+  d.focus({ preventScroll: true });  // the sheet itself: a dialog's autofocus is not honoured everywhere (Chrome focused Mégse)
+  editing = { close };
+  return editing;
+}
+
+// ------------------------------------------------------------------ deleting the account
+// Everything goes, server side (the API's /account/delete), which wants the typed word and a sign-in from the last 10
+// minutes. So the dialog asks for both: Google's sign-in window again when the last sign-in is over 5 minutes old.
+const DELETE_WORD = "TÖRLÉS";
+const RECENT_SIGNIN_MS = 5 * 60 * 1000;
+const fold = (s) => String(s || "").trim().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+const DELETED = [
+  "a profilodat: a nevedet, a becenevedet, a profilképedet, az e-mail címedet és a születési dátumodat",
+  "a hozzászólásaidat (ha valaki válaszolt rájuk, a helyükön egy üres helyőrző marad)",
+  "a szavazataidat (a számlálókból is levonjuk őket)",
+  "a játékokban adott válaszaidat és tippjeidet, a pontjaidat",
+  "a jelentéseidet, a letiltásaidat, a chatüzeneteidet és az elutasított hozzászólásaidat",
+  "a belépésedet a vitaradar.hu-ra (a Google-fiókod megmarad)",
+];
+const REAUTH_ERRORS = {
+  "auth/popup-closed-by-user": "A belépés megszakadt. A törléshez lépj be újra.",
+  "auth/cancelled-popup-request": "A belépés megszakadt. A törléshez lépj be újra.",
+  "auth/popup-blocked": "A böngésző nem engedte megnyitni a belépés ablakát. Engedélyezd, és próbáld újra.",
+  "auth/user-mismatch": "Azzal a Google-fiókkal lépj be, amelyikkel regisztráltál.",
+};
+
+async function signedInLately(user) {
+  try { return Date.now() - new Date((await getIdTokenResult(user)).authTime).getTime() < RECENT_SIGNIN_MS; }
+  catch { return false; }
+}
+
+// Asks first (what goes, the typed word, a new sign-in if needed), then deletes everything and signs out.
+export async function deleteAccount() {
+  const user = account.user;
+  if (!user) return;
+  let fresh = await signedInLately(user);
+  if (!fresh) readySignIn();  // the sign-in helper in while the word is typed: Google's window opens on the tap
+  const word = input("text", { name: "confirm", autocomplete: "off", autocapitalize: "characters", spellcheck: "false" });
+  const list = el("ul", "dlg-list");
+  for (const t of DELETED) list.append(el("li", null, t));
+  const again = el("p", "dlg-text", "Biztonsági okból a törlés előtt még egyszer be kell lépned a Google-fiókoddal."
+    + (signInLeavesPage ? " Az appban ehhez a Google oldalára lépsz; ha visszatértél, kezdd újra a törlést." : ""));
+  again.hidden = fresh;
+  const dlg = dialog("Fiók törlése", [
+    el("p", "dlg-text", "A fiókoddal együtt minden adatodat véglegesen töröljük:"), list,
+    el("p", "dlg-text", "Ez nem vonható vissza. Később újra regisztrálhatsz, de üres profillal."),
+    again, field(`A megerősítéshez írd be: ${DELETE_WORD}`, word),
+  ], [
+    { label: "Mégse", onClick: () => dlg.close() },
+    { label: "Végleges törlés", primary: true, danger: true, submit: true },
+  ]);
+  const go = dlg.form.querySelector('button[type="submit"]');
+  const typed = () => fold(word.value) === fold(DELETE_WORD);
+  const ready = () => { go.disabled = !typed(); };
+  word.addEventListener("input", ready);
+  ready();
+  word.focus();
   dlg.form.addEventListener("submit", async (e) => {
     e.preventDefault();
-    if (!dlg.form.reportValidity()) return;
+    if (!typed()) return;
     dlg.busy(true);
     dlg.error("");
     try {
-      const r = await api("/profile", { name: name.value, nick: nick.value });
-      account.profile = { ...account.profile, ...r.profile };
-      name.value = account.profile.name || "";
-      nick.value = account.profile.nick || "";
-      emit();
-      saved.textContent = "Elmentve.";
+      if (!fresh) {  // first, straight from the click: browsers open the sign-in window only then
+        await signInAgain(user);
+        fresh = true;
+        again.hidden = true;
+      }
+      await getIdToken(user, true);
+      for (let call = 1; ; call++) {  // a long history may take more than one call; each goes on where the last stopped
+        const r = await api("/account/delete", { confirm: word.value });
+        if (r.deleted) break;
+        if (!r.more || call >= 20) throw new ApiError("server", "Nem sikerült mindent törölni, próbáld újra.");
+      }
+      dlg.close();
+      try { await signOut(); } catch { /* the account is gone already */ }
+      toast("A fiókodat és minden adatodat töröltük.");
     } catch (err) {
-      dlg.error(err.message);
-    } finally {
+      if (err.code === "recent_signin") { fresh = false; again.hidden = false; readySignIn(); }
+      const code = String(err.code || "");
+      dlg.error(REAUTH_ERRORS[code] || (code.startsWith("auth/") ? `Nem sikerült belépni (${code}).` : err.message));
       dlg.busy(false);
+      ready();
     }
   });
-  return { el: form, destroy: stopBlocks };
 }
 
 // Blocks a user after asking: their comments and chat messages disappear for this user.
@@ -441,8 +729,13 @@ export function mountAccount() {
       if (known === "out") localStorage.removeItem(ACCT_KEY); else localStorage.setItem(ACCT_KEY, known);
     } catch { /* no storage: the placeholder stays the visitor's */ }
     box.replaceChildren();
+    // Signed out: one button, "Belépés Google-lel", with Google's G: signing in is Google's, and a newcomer is asked
+    // for a nickname after it (there was a "Regisztráció" beside it, doing the same). The phone menu shows more of the
+    // other states (css: hidden in the header): why the registration waits, the nick and the points.
     if (!a.user) {
-      const b = el("button", "btn acct-btn", "Belépés");
+      const b = el("button", "btn acct-btn acct-google");
+      b.innerHTML = GOOGLE_G;  // fixed markup of this file
+      b.append(" Belépés Google-lel");
       b.type = "button";
       b.addEventListener("click", signIn);
       box.append(b);
@@ -452,13 +745,16 @@ export function mountAccount() {
       b.type = "button";
       b.title = "Regisztráció befejezése";
       b.addEventListener("click", () => openRegister({}));
-      box.append(b);
+      box.append(el("span", "acct-hint", "Már csak a beceneved hiányzik."), b);
     } else {
       const b = el("a", "acct-me");  // to one's own profile page, where it can be edited
       b.href = profileHref(null);
       const pts = el("span", "acct-points");
       pts.hidden = true;
-      b.append(avatar(a.profile?.photo && a.profile.photo["64"], a.profile?.nick, 32), pts);
+      const sub = el("span", "acct-sub", "profil");
+      const text = el("span", "acct-text");
+      text.append(el("b", "acct-nick", a.profile?.nick || "Profil"), sub);
+      b.append(avatar(a.profile?.photo && a.profile.photo["64"], a.profile?.nick, 32), pts, text);
       const label = (p) => {
         b.title = p == null ? "Profil" : `Profil · ${p.toLocaleString("hu-HU")} pont`;
         b.setAttribute("aria-label", b.title);
@@ -470,6 +766,7 @@ export function mountAccount() {
         pts.dataset.points = String(p);
         pts.textContent = p.toLocaleString("hu-HU");
         pts.hidden = false;
+        sub.textContent = `${p.toLocaleString("hu-HU")} pont · profil`;
         label(p);
         if (before != null && p > before) { pts.classList.remove("bump"); void pts.offsetWidth; pts.classList.add("bump"); }
       });

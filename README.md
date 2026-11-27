@@ -4,9 +4,9 @@ The public website of Vitaradar: the Hungarian Parliament's live stream with aut
 each claim appears with its verdict (true, false, unverifiable, fallacy) the moment it is said in the video, and the
 current speaker's photo is shown beside them.
 
-Plain HTML, CSS and JavaScript, no build step, hosted on GitHub Pages. Two libraries load from public CDNs:
-[hls.js](https://github.com/video-dev/hls.js) for the video and the
-[Firebase web SDK](https://firebase.google.com/docs/web/setup) for the live feed.
+Plain HTML, CSS and JavaScript, no build step, hosted on GitHub Pages. The
+[Firebase web SDK](https://firebase.google.com/docs/web/setup) loads from Google's CDN for the live feed. The live
+video is Twitch's embedded player (twitch.tv/vitaradar), and replays are YouTube's.
 
 ## Pages
 
@@ -25,13 +25,15 @@ Plain HTML, CSS and JavaScript, no build step, hosted on GitHub Pages. Two libra
 ## How it works
 
 ```
-parliament's stream ──► fact-check pipeline (GPU VM) ──► HLS video pieces ──► Cloud Storage ──► the player
+parliament's stream ──► fact-check pipeline (GPU VM) ──► HLS video pieces ──► Twitch relay ──► Twitch's player
                                    │
                                    ├──► Firestore: live facts + speaker turns ──► live page (live updates)
                                    └──► Firestore: speeches, MP totals, passage vectors ──► MP pages, search
 ```
 
-- **Video:** an HLS stream (`live/current.hls_url`), a fixed broadcast delay behind the sitting.
+- **Video:** the pipeline's HLS stream, a fixed broadcast delay behind the sitting. A relay sends its pieces to
+  twitch.tv/vitaradar unchanged, and the live page shows Twitch's player. After a sitting, the pipeline uploads the
+  archived run to YouTube, and the replay page plays it from there.
 - **Live facts and speakers:** Firestore documents the pipeline writes as it goes:
   - `live/current`: the running session, the stream address, whether it is live;
   - `sessions/{session}/claims/{id}`: one fact each, with `show_at` / `verdict_at`;
@@ -42,8 +44,8 @@ parliament's stream ──► fact-check pipeline (GPU VM) ──► HLS video p
     lit, a click on a word jumps there (`js/transcript.js`). The speaker is who the picture showed, never the
     transcription's guess.
 - **In sync with the picture:** every time is on the stream's own clock (the playlist's
-  `EXT-X-PROGRAM-DATE-TIME`). The page compares it with the date of the frame on screen, so a fact appears when the
-  viewer's video reaches it, not when the server found it.
+  `EXT-X-PROGRAM-DATE-TIME`). The page compares it with the date of the frame on screen (Twitch's player hides it:
+  `js/twitch.js` estimates it), so a fact appears when the viewer's video reaches it, not when the server found it.
 - **MP history:** when a run ends, the pipeline groups it into speeches (one MP's consecutive turns, the chair's
   remarks left out) and writes `speeches/{id}` (claims, verdicts, transcript) and `mps/{id}` (totals).
 - **Search:** each speech is cut into ~120-word passages, embedded with Vertex AI's multilingual model
@@ -52,6 +54,12 @@ parliament's stream ──► fact-check pipeline (GPU VM) ──► HLS video p
 - **Accounts** (`js/account.js`): Google sign-in only; a profile (name, nick, picture) after a one-time registration,
   16+ only. E-mail and birth date are visible to their owner only. The sign-in popup runs on `auth.vitaradar.hu`
   (Firebase Hosting, connected to the project, DNS a CNAME at DotRoll), so Google's account chooser names our domain.
+  The iPhone app signs in by a redirect through `vitaradar.hu/__/auth/` instead: Firebase's own helper files, copied
+  by `tools/auth-helper.sh` and refreshed every week by `.github/workflows/auth-helper.yml` (Safari keeps a helper on
+  another address apart from the page's storage, and the redirect's result never arrived). Apps' own browsers
+  (Facebook, Instagram…) say how to open the page in the browser: Google refuses sign-ins inside them.
+  "Fiók törlése" on one's own profile deletes the account with everything it left (the user API's `/account/delete`),
+  after the user typed TÖRLÉS and, if their last sign-in is over 5 minutes old, signed in again with Google.
 - **Votes and comments** (`js/social.js`): thumbs up/down on every fact check and comment; comments (250 characters,
   replies two levels deep) for registered users, who can delete their own, flag others' and block users. Every
   write goes through the backend's user API, which checks rate limits and decides whether a comment is published.
@@ -66,6 +74,12 @@ parliament's stream ──► fact-check pipeline (GPU VM) ──► HLS video p
   (`users/{uid}.points`). The answer key never reaches the browser before the window closes: the pipeline keeps it,
   the user API accepts answers only in time (8 seconds past the lock on the stream's clock, about a player's delay),
   and the pipeline settles each game the moment the answers close. Visitors can play along, unscored.
+- **App** (`js/pwa.js`, `manifest.webmanifest`, `sw.js`): installable on phones. A bottom sheet offers it on phones in a
+  browser tab (Android: the browser's install dialog; iPhone: the Share → Add to Home Screen steps), at a calm moment,
+  and not again for 30 days after "Folytatás". The service worker only shows `offline.html` when a page cannot load:
+  pages come from the network, everything else (scripts, Firestore, sign-in, video, Twitch, YouTube) never passes
+  through it. In the iPhone app Google sign-in is a redirect (through `__/auth/`, see Accounts) instead of a popup.
+  Icons: `tools/app-icons.py`.
 - **Protected:** the page uses Firebase App Check with reCAPTCHA Enterprise (invisible, score-based), so only this
   site, not scripts, can use the search; Firestore's security rules make the public data read-only for browsers. The
   Firebase config and the reCAPTCHA site key in `js/config.js` are public by design.
@@ -87,7 +101,9 @@ Then open http://localhost:8099/.
 
 ## License
 
-- The code in this repository is [MIT](LICENSE).
+- The code in this repository is [MIT](LICENSE), except `__/auth/`.
+- `__/auth/` is Firebase's sign-in helper (Google's code, copied unchanged by `tools/auth-helper.sh`), under the
+  [Firebase terms](https://firebase.google.com/terms/) and the licenses named in its files (Apache-2.0 and others).
 - The fact-check texts, the Vitaradar name and logo, and the video stream: © vitaradar.hu, all rights reserved.
 - The footage is the Hungarian Parliament's (Országgyűlés).
 - The MP portraits in `img/mps/` are the Hungarian Parliament's official photos (parlament.hu), with the

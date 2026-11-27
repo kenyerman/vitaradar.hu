@@ -6,19 +6,23 @@
 // click on a fact's time jumps there, the latest fact said is highlighted, and the speaker card follows the video:
 // whoever had the floor, the chair included (the archive's floor turns; runs archived before them have only the
 // fact-checked speeches, so their card is empty while the chair speaks).
-// Beside them, the playing speech's Gemini transcript follows the video word by word (transcript.js).
-// ?t= opens the video at that second (the MP page's fact links).
+// A fallacy said in the same sentence as a checked claim shows on that claim's card, as on the live page.
+// ?t= opens the video at that second (the MP page's fact links); ?f=<claim id> opens that fact (a shared link,
+// js/share.js): at its moment, the video waiting for a tap, the card opened and framed.
+// The Leirat tab shows the playing speech's Gemini transcript, the word being said lit, a click on a word jumps there
+// (js/transcript.js).
 
-import { doc, getDoc, onSnapshot, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { db, el, badge, sourceList, setPhoto, hms, huDate, mpHref, watchLiveNav } from "./common.js?v=202611250130";
-import { mountAccount } from "./account.js?v=202611250130";
-import { factSocial } from "./social.js?v=202611250130";
+import { doc, onSnapshot, collection, query, where } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { db, getDoc, getDocs, el, factBadge, LABEL, sourceList, setPhoto, hms, huDate, mpHref, watchLiveNav, loadFailed } from "./common.js?v=202611272300";
+import { mountAccount } from "./account.js?v=202611280100";
+import { factSocial } from "./social.js?v=202611280100";
+import { addShare, FOCUS, revealFact, liveUrl } from "./share.js?v=202611272100";
 import { watchHref } from "./links.js?v=202611241021";
-import { cdnReady, cdnUrl, cdnXhr } from "./cdn.js?v=202611241021";
+import { cdnReady, cdnUrl } from "./cdn.js?v=202611272300";
 import { scrollHint } from "./scrollhint.js?v=202611241021";
 import { setPageMeta } from "./meta.js?v=202611241124";
-import { youtubeMedia } from "./ytplayer.js?v=202611241433";
-import { AI_NOTE, loadTranscript, paragraphs, wordCount } from "./transcript.js?v=202611251600";
+import { youtubeMedia } from "./ytplayer.js?v=202611271300";
+import { AI_NOTE, loadTranscript, paragraphs, wordCount } from "./transcript.js?v=202611280200";
 
 watchLiveNav();
 mountAccount();
@@ -26,14 +30,15 @@ scrollHint(document.querySelector(".below"), document.querySelector(".player"));
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
 const session = params.get("s") || "";
-const startAt = Math.max(0, parseFloat(params.get("t") || "0") || 0);
+let startAt = Math.max(0, parseFloat(params.get("t") || "0") || 0);  // or the linked fact's moment (load)
 const video = $("video");
-let media = video;  // the <video>, or the YouTube player behind the same calls (ytplayer.js)
-let facts = [];      // {c, speech, li}, newest first (those past the end of the video at the top)
+let media = video;  // the YouTube player behind a <video>'s calls (ytplayer.js); until it comes, the poster's <video>
+let facts = [];      // {c, speech, fallacy, li}, newest first (those past the end of the video at the top)
 let speakers = [];   // archive doc's speeches: {mp_id, name, party, start_s, end_s}
 let turns = [];      // archive doc's floor turns: {speaker_id, name, party, role, color, photo, chair, start_s, end_s}
 const mps = new Map();  // mp id -> mps doc (photo, colour, role)
 let showAll = false;  // the "összes állítás" toggle
+let focus = null;     // the fact a link opened (?f=, js/share.js): shown whatever the video's time, and framed
 
 function note(text) {
   $("player-note").hidden = !text;
@@ -49,28 +54,77 @@ function seek(t, play = true) {
   if (play) media.play().catch(() => {});
 }
 
+// The fallacies said in the same sentence as a checked claim: {claim id -> the claim's `fallacy` ({id, name,
+// explanation})}. The archive keeps such a fallacy as a fact of its own; the run's claims (sessions/{session}/claims,
+// as the live page reads them) link it to its claim. Empty when the run kept no claims, and the fallacy stays a card.
+async function fallacyLinks() {
+  try {
+    const snap = await getDocs(query(collection(db, "sessions", session, "claims"), where("fallacy.id", "!=", null)));
+    return new Map(snap.docs.map((d) => [d.data().id || d.id, d.data().fallacy]));
+  } catch (e) {
+    console.warn("fallacies:", e);
+    return new Map();
+  }
+}
+
+// a fact's card; with its fallacy (f.fallacy) as on the live page (common.js factBadge): the card is the fallacy's,
+// whatever the fact's verdict, with the reasoning under the fact's explanation. The card has it from the start: the
+// two are said within seconds of each other.
 function factItem(f) {
-  const { c, speech } = f;
+  const { c, speech, fallacy } = f;
   const v = c.kind === "fallacy" ? "fallacy" : c.verdict || "pending";
+  const withFallacy = Boolean(fallacy) && v !== "pending";
   const li = el("li", "fact");
-  li.dataset.verdict = v;
+  li.dataset.verdict = withFallacy ? "fallacy" : v;
   const top = el("div", "fact-top");
   const at = el("button", "t-btn", c.video_s == null ? "nincs a videóban" : `▶ ${hms(c.video_s)}`);
   at.type = "button";
   at.disabled = c.video_s == null;
   at.title = c.video_s == null ? "ez az állítás a felvétel vége után hangzott el" : "ugrás ehhez a pillanathoz";
-  at.addEventListener("click", () => seek(c.video_s));
+  at.addEventListener("click", () => {
+    picked = { f, since: Date.now() };
+    seek(c.video_s);
+    renderFacts(media.currentTime);
+  });
   const who = el("span", "fact-who");
   const a = el("a", null, speech.name);
   a.href = mpHref(speech.mp_id);
   who.append(a);
-  top.append(at, badge(v, c.kind), who);
+  top.append(at, factBadge({ ...c, fallacy }, v, withFallacy), who);
   li.append(top, el("p", "fact-bullet", c.bullet || c.claim));
   if (c.claim && c.claim !== c.bullet) li.append(el("p", "fact-claim", c.claim));
   if (c.explanation) li.append(el("p", "fact-expl", c.explanation));
+  if (withFallacy) {
+    li.append(el("p", "fact-fallacy", `» ${LABEL.fallacy.toLowerCase()} (${fallacy.name}): ${fallacy.explanation || ""}`));
+  }
   li.append(sourceList(c.sources));
-  if (c.id && v !== "pending") li.append(factSocial(session, c.id));  // votes and comments, as on the MP page
+  // votes and comments, as on the MP page, and the share button
+  if (c.id && v !== "pending") li.append(addShare(factSocial(session, c.id), session, c.id));
   return li;
+}
+
+// A speech's facts under it in the speakers list (shown on phones, when the speech is opened; js/mobile.js opens it
+// and says so with a "speech-open" event): the same cards as the facts list, in the order they were said, built the
+// first time the speech opens.
+function fillSpeech(li) {
+  const list = li.querySelector(":scope > .speech-facts");
+  if (!list || list.children.length || !facts.length) return;
+  const mine = facts.filter((f) => f.speech.id === li.dataset.id)
+    .sort((x, y) => (x.c.video_s ?? Infinity) - (y.c.video_s ?? Infinity));
+  list.append(...mine.map((f) => (f.sli = factItem(f))));  // f.sli: its card here, marked with f.li (renderFacts)
+  current?.sli?.classList.add("now");
+  if (!mine.length) list.append(el("li", "empty", "ebben a felszólalásban nem volt ellenőrizhető állítás"));
+}
+
+// A link to a moment (?t=, as an MP's page links each speech): on phones the Felszólalók tab opens on the speech it
+// falls into, with its facts (js/mobile.js has the tab and opens the speech on a tap); wider screens stay as they are.
+function showSpeechAt(t) {
+  if (!params.has("t")) return;
+  const s = speakerAt(t);
+  const li = s && [...$("speakers").children].find((x) => x.dataset.id === s.speech_id);
+  if (!li) return;
+  document.getElementById("m-tab-speakers")?.click();
+  li.click();  // opens it and brings it into view (js/mobile.js)
 }
 
 function speakerAt(t) {
@@ -111,13 +165,16 @@ function renderSpeaker(t) {
   const sk = s ? s.speech_id : null;
   if (sk === shownSpeech) return;
   shownSpeech = sk;
-  document.querySelectorAll(".speaker-list li").forEach((li) => li.classList.toggle("now", li.dataset.id === sk));
+  // the speeches only: an opened speech's facts under it have their own mark (renderFacts)
+  document.querySelectorAll(".speaker-list > li").forEach((li) => li.classList.toggle("now", li.dataset.id === sk));
   showTranscript(s);
 }
 
-// The playing speech's Gemini transcript beside the video: the word being said is lit, a click on a word jumps there.
+// The playing speech's Gemini transcript (the Leirat tab): the word being said is lit, a click on a word jumps there.
+// A word's video second is its speech's start in the video + its time from the speech's start.
 let trWords = [];  // {t (video seconds), span}, in order
 let trLit = null;
+let trTouched = 0;  // when the reader last scrolled it: it does not move under their finger
 async function showTranscript(s) {
   const box = $("transcript"), empty = $("transcript-empty");
   trWords = [];
@@ -150,6 +207,15 @@ async function showTranscript(s) {
   litWord(media.currentTime);
 }
 
+// The panel the transcript scrolls in: the sidebar's or the phone's panel (css), else the window.
+function scroller(node) {
+  for (let n = node.parentElement; n && n !== document.body; n = n.parentElement) {
+    const o = getComputedStyle(n).overflowY;
+    if ((o === "auto" || o === "scroll") && n.scrollHeight > n.clientHeight) return n;
+  }
+  return null;
+}
+
 function litWord(t) {
   if (!trWords.length) return;
   let lo = 0, hi = trWords.length - 1, i = -1;
@@ -163,27 +229,37 @@ function litWord(t) {
   trLit = w;
   if (!w) return;
   w.classList.add("now");
-  const box = $("transcript");
-  if (box.matches(":hover")) return;  // the reader is scrolling it: leave it
-  if (w.offsetTop < box.scrollTop || w.offsetTop > box.scrollTop + box.clientHeight - 24) {
-    box.scrollTop = Math.max(0, w.offsetTop - box.clientHeight / 3);
-  }
+  if (performance.now() - trTouched < 4000 || !w.getClientRects().length) return;  // being read, or its tab is not open
+  const box = scroller(w);
+  if (!box) return;
+  const view = box.getBoundingClientRect(), at = w.getBoundingClientRect();
+  if (at.top < view.top + 8 || at.bottom > view.bottom - 24) box.scrollTop += at.top - view.top - view.height / 3;
+}
+for (const ev of ["wheel", "touchmove", "pointerdown"]) {
+  $("transcript").parentElement.addEventListener(ev, () => { trTouched = performance.now(); }, { passive: true });
 }
 
 let current = null;
+// A fact started with its time button ({f, since}): the player takes a moment to report the new time, and facts said
+// in the same second would otherwise mark the first of them.
+let picked = null;
 function renderFacts(t) {
   let now = null, shown = 0;
   for (const f of facts) {  // newest first: the first one already said is the latest
     const said = f.c.video_s != null && f.c.video_s <= t + 0.5;
     f.li.classList.toggle("future", !said);
-    f.li.hidden = !said && !showAll;
+    f.li.hidden = !said && !showAll && f !== focus;
     if (!f.li.hidden) shown += 1;
     if (said && !now) now = f;
   }
-  if (now !== current) {
-    if (current) current.li.classList.remove("now");
+  if (picked) {  // started from its time: marked while the player gets there, and while the video is at its moment
+    if (Date.now() - picked.since < 1500 || (now && now.c.video_s === picked.f.c.video_s)) now = picked.f;
+    else picked = null;
+  }
+  if (now !== current) {  // the fact playing: in the facts list, and under its speech (Felszólalók)
+    for (const x of [current?.li, current?.sli]) x?.classList.remove("now");
     current = now;
-    if (current) current.li.classList.add("now");
+    for (const x of [current?.li, current?.sli]) x?.classList.add("now");
   }
   $("fact-count").textContent = facts.length
     ? `[${String(shown).padStart(2, "0")}${shown < facts.length ? `/${String(facts.length).padStart(2, "0")}` : ""}]` : "";
@@ -205,11 +281,16 @@ function shareUrl() {
 
 async function load() {
   if (!session) { $("w-title").textContent = "Ismeretlen adás"; note("nincs ilyen adás"); return; }
-  const [aSnap, spSnap] = await Promise.all([
+  const [aSnap, spSnap, links] = await Promise.all([
     getDoc(doc(db, "archive", session)),
     getDocs(query(collection(db, "speeches"), where("session", "==", session))),
+    fallacyLinks(),
   ]);
   const a = aSnap.data();
+  if (!a && FOCUS && FOCUS.session === session) {  // a link to a fact of the sitting on air: the live page has it
+    const cur = await getDoc(doc(db, "live", "current")).then((d) => d.data(), () => null);
+    if (cur && cur.session === session) { location.replace(liveUrl(session, FOCUS.claim)); return; }
+  }
   if (!a) { $("w-title").textContent = "Nincs ilyen adás"; note("ez az adás nincs az archívumban"); return; }
   setPageMeta({
     title: `Ülés visszanézése: ${huDate(a.date)} – Vitaradar`,
@@ -223,25 +304,43 @@ async function load() {
   speakers = (a.speakers || []).filter((s) => s.start_s != null);
   turns = (a.turns || []).filter((u) => u.start_s != null).sort((x, y) => x.start_s - y.start_s);
 
-  // the speeches list: who spoke when, a click jumps there
+  // the facts, newest first (those said after the end of the video at the very top); a fallacy said with a claim is
+  // on the claim's card, not on one of its own (when the archive has both)
+  const speeches = spSnap.docs.map((d) => d.data());
+  const all = speeches.flatMap((sp) => (sp.claims || []).map((c) => ({ c, speech: sp, fallacy: links.get(c.id) })));
+  const ids = new Set(all.map((f) => f.c.id));
+  for (const f of all) if (f.fallacy && !ids.has(f.fallacy.id)) f.fallacy = null;
+  const folded = new Set(all.filter((f) => f.fallacy).map((f) => f.fallacy.id));
+  const foldedIn = new Map();  // speech id -> how many of its facts are on another card
+  for (const f of all) if (folded.has(f.c.id)) foldedIn.set(f.speech.id, (foldedIn.get(f.speech.id) || 0) + 1);
+  const at = (f) => f.c.video_s ?? Number.MAX_SAFE_INTEGER;
+  facts = all.filter((f) => !folded.has(f.c.id)).sort((x, y) => at(y) - at(x));
+
+  // the speeches list: who spoke when, a click on the time jumps there
   $("speakers").replaceChildren(...speakers.map((s) => {
     const li = el("li");
     li.dataset.id = s.speech_id;
     const b = el("button", "t-btn", `▶ ${hms(s.start_s)}`);
     b.type = "button";
     b.addEventListener("click", () => seek(s.start_s));
-    li.append(b, el("span", null, s.name), el("span", "count", `${s.claims} állítás`));
+    const n = (s.claims || 0) - (foldedIn.get(s.speech_id) || 0);
+    li.append(b, el("span", null, s.name), el("span", "count", `${n} állítás`), el("ol", "speech-facts"));
     return li;
   }));
-
-  // the facts, newest first (those said after the end of the video at the very top)
-  const speeches = spSnap.docs.map((d) => d.data());
-  const at = (f) => f.c.video_s ?? Number.MAX_SAFE_INTEGER;
-  facts = speeches.flatMap((sp) => (sp.claims || []).map((c) => ({ c, speech: sp })))
-    .sort((x, y) => at(y) - at(x));
+  $("speakers").addEventListener("speech-open", (e) => fillSpeech(e.target));
   for (const f of facts) f.li = factItem(f);
   $("facts").replaceChildren(...facts.map((f) => f.li));
+  // a link to a fact: the video waits at its moment (unless ?t= says another); a fallacy said with a claim is on the
+  // claim's card
+  if (FOCUS && (!FOCUS.session || FOCUS.session === session)) {
+    focus = facts.find((f) => f.c.id === FOCUS.claim) || facts.find((f) => f.fallacy && f.fallacy.id === FOCUS.claim) || null;
+    // (up to the next whole second: YouTube starts there, and the fact counts as said from its own second on)
+    if (focus && !params.has("t") && focus.c.video_s != null) startAt = Math.ceil(focus.c.video_s);
+  }
+  for (const li of $("speakers").querySelectorAll(":scope > li.open")) fillSpeech(li);  // opened before the facts came
+  showSpeechAt(startAt);
   renderFacts(startAt);  // the speaker card waits for the MPs' photos (play() ticks)
+  if (focus) revealFact(focus.li);
 
   // the MPs' photos and roles for the speaker card
   await Promise.all([...new Set(speakers.map((s) => s.mp_id))].map(async (id) => {
@@ -249,20 +348,10 @@ async function load() {
   }));
 
   // The recording plays from YouTube (pfc uploads every archived run there). Until it is up, the poster and every
-  // fact; the player comes as soon as the upload lands. ?yt=<id> plays a given YouTube video (testing); ?player=cdn
-  // our own archive on cdn.vitaradar.hu (which serves only images for now).
-  const yt = params.get("yt") || (params.get("player") === "cdn" ? null : a.youtube);
-  if (yt) {
-    await mountYoutube(yt);
-    return;
-  }
-  if (params.get("player") !== "cdn") {
-    waitForUpload(a);
-    return;
-  }
-  wire(video);
-  await Promise.all([loadHls(), cdnReady()]);  // the recording is on cdn.vitaradar.hu, which needs its cookie
-  play(cdnUrl(a.video));
+  // fact; the player comes as soon as the upload lands. ?yt=<id> plays a given YouTube video (testing).
+  const yt = params.get("yt") || a.youtube;
+  if (yt) await mountYoutube(yt);
+  else waitForUpload(a);
 }
 
 async function mountYoutube(id) {
@@ -272,12 +361,12 @@ async function mountYoutube(id) {
   note(null);
   $("player-note").classList.remove("over-poster");
   tick();
+  if (startAt && !focus) media.play();  // a link to a moment plays from there; one to a fact waits for a tap
 }
 
 // Not on YouTube yet: the poster, every fact listed (none is "said" before the video plays), and the player once the
 // upload lands (archive/{session}.youtube is written when YouTube has processed the video).
 function waitForUpload(a) {
-  video.controls = false;
   if (a.poster) cdnReady().then(() => { video.poster = cdnUrl(a.poster); }).catch(() => {});
   note("a felvétel feltöltése folyamatban, hamarosan itt visszanézhető");
   $("player-note").classList.add("over-poster");
@@ -292,39 +381,10 @@ function waitForUpload(a) {
   }, () => {});
 }
 
-// hls.js (about 100 KB) only for ?player=cdn; Safari plays HLS itself
-const HLS_JS = "https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js";
-function loadHls() {
-  if (window.Hls) return Promise.resolve();
-  return new Promise((resolve) => {
-    const s = document.createElement("script");
-    s.src = HLS_JS;
-    s.onload = s.onerror = () => resolve();
-    document.head.append(s);
-  });
-}
-
 function wire(m) {
   m.addEventListener("timeupdate", tick);
   m.addEventListener("seeked", tick);
   m.addEventListener("pause", () => history.replaceState(null, "", watchHref(session, media.currentTime)));
-}
-
-function play(url) {
-  const start = () => { if (startAt) video.currentTime = startAt; tick(); };
-  if (window.Hls && Hls.isSupported()) {
-    const hls = new Hls({ startPosition: startAt || -1, xhrSetup: cdnXhr });
-    hls.loadSource(url);
-    hls.attachMedia(video);
-    hls.on(Hls.Events.MANIFEST_PARSED, () => { note(null); start(); if (startAt) video.play().catch(() => {}); });
-    hls.on(Hls.Events.ERROR, (_, e) => { if (e.fatal) note("a felvétel most nem érhető el"); });
-  } else if (video.canPlayType("application/vnd.apple.mpegurl")) {  // Safari plays HLS itself
-    video.src = url;
-    video.addEventListener("loadedmetadata", () => { note(null); start(); }, { once: true });
-    video.addEventListener("error", () => note("a felvétel most nem érhető el"), { once: true });
-  } else {
-    note("ez a böngésző nem tudja lejátszani a felvételt");
-  }
 }
 
 $("transcript").addEventListener("click", (e) => {
@@ -342,4 +402,4 @@ $("show-all").addEventListener("click", () => {
   renderFacts(media.currentTime);
 });
 
-load().catch((e) => { note("az adás most nem tölthető be"); console.warn(e); });
+load().catch((e) => { loadFailed($("player-note"), "az adás most nem tölthető be"); console.warn(e); });

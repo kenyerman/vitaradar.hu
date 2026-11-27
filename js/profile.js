@@ -14,16 +14,16 @@
 //
 // The page is by uid, not by nick: a nick can change, a uid doesn't, and the nick list stays unreadable for browsers.
 // Only registered users can read profiles and comments (Firestore rules); everyone else gets a prompt. Your own profile
-// has the editor (js/account.js profileEditor: picture, name, nick, who sees what, blocked users, sign-out).
+// has ✎ for the editor (js/account.js openProfileEditor: picture, name, nick, who sees what, blocked users, sign-out).
 
 import {
-  doc, getDoc, onSnapshot, collection, query, where, orderBy, limit, startAfter, getDocs,
+  doc, onSnapshot, collection, query, where, orderBy, limit, startAfter,
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { db, el, badge, huDate, watchLiveNav, mpHref } from "./common.js?v=202611250130";
+import { db, getDoc, getDocs, el, badge, huDate, watchLiveNav, mpHref } from "./common.js?v=202611272300";
 import {
-  account, onAccount, onBlocks, isBlocked, avatar, profileEditor, mountAccount, signIn, openRegister, blockUser, api, toast,
-} from "./account.js?v=202611250130";
-import { linkify } from "./social.js?v=202611250130";
+  account, onAccount, onBlocks, isBlocked, avatar, openProfileEditor, mountAccount, signIn, openRegister, blockUser, api, toast,
+} from "./account.js?v=202611280100";
+import { linkify } from "./social.js?v=202611280100";
 import { watchHref, profileHref, withComment } from "./links.js?v=202611241021";
 
 watchLiveNav();
@@ -214,6 +214,7 @@ function pagedList({ title, more: moreLabel, empty, failed, fetchPage, render, n
       if (mine !== gen) return;
       list.append(...items);
       cursor = page.next;
+      more.textContent = moreLabel;
       more.hidden = !page.next;
       msg.hidden = list.children.length > 0;
       msg.textContent = empty;
@@ -222,6 +223,8 @@ function pagedList({ title, more: moreLabel, empty, failed, fetchPage, render, n
       if (mine !== gen) return;
       msg.hidden = false;
       msg.textContent = failed;
+      more.textContent = "Újrapróbálás";  // the same page again
+      more.hidden = false;
     } finally {
       busy = false;
       more.disabled = false;
@@ -318,7 +321,7 @@ async function gameItem(g, own) {
   const kind = g.type === "challenge" ? g.kind : g.type;
   li.dataset.kind = kind;
   const what = el("div", "pc-fact");
-  const tag = el("span", "pg-tag", `[ ${TAG[kind] || "játék"} ]`);
+  const tag = el("span", "pg-tag", TAG[kind] || "játék");  // "[ … ]" around it on wider screens (css)
   let text = "", who = "";
   if (g.type === "challenge") {
     text = (g.kind === "truth" ? g.claim || g.summary : g.summary) || "";
@@ -383,14 +386,16 @@ function fromDoc(p, own) {
   };
 }
 
+// The counts: a table on wider screens, three tiles on phones (css): the points, the games won, the likes.
 function stats(p) {
   const games = Number(p.won || 0) + Number(p.lost || 0);
+  const rate = games ? `${Math.round((100 * Number(p.won || 0)) / games)}%` : "–";
   const dl = el("dl", "mp-stats prof-stats");
   for (const [label, value, cls] of [
     ["pont", num(p.points), "c-true"],
     ["megnyert játék", num(p.won), ""],
     ["elvesztett játék", num(p.lost), ""],
-    ["nyerési arány", games ? `${Math.round((100 * Number(p.won || 0)) / games)}%` : "–", ""],
+    ["nyerési arány", rate, ""],
     ["kapott like", num(p.likes), "c-true"],
     ["kapott dislike", num(p.dislikes), "c-false"],
     ["hozzászólás", num(p.comments), ""],
@@ -399,7 +404,48 @@ function stats(p) {
     row.append(el("dt", null, label), el("dd", cls, value));
     dl.append(row);
   }
-  return dl;
+  const tile = (label, value, sub, cls) => {
+    const t = el("div", "prof-tile");
+    t.append(el("span", "prof-tile-label", label), el("b", cls, value), el("span", "prof-tile-sub", sub));
+    return t;
+  };
+  const tiles = el("div", "prof-tiles");
+  tiles.append(tile("Pont", num(p.points), "", "c-true"),
+    tile("Nyerés", rate, games ? `${num(p.won)} / ${num(games)}` : "még nincs játék"),
+    tile("Like", num(p.likes), `${num(p.dislikes)} dislike`));
+  const box = el("div", "prof-numbers");
+  box.append(dl, tiles);
+  return box;
+}
+
+// Phones: the two lists as tabs (css shows the chosen one, .prof[data-tab]), each with how many there are; wider
+// screens show both lists and no tabs.
+function listTabs(sectionBox, own) {
+  const bar = el("div", "prof-tabs");
+  bar.setAttribute("role", "tablist");
+  bar.setAttribute("aria-label", "Listák");
+  const tabs = [["games", own ? "Játékaim" : "Játékok"], ["comments", own ? "Hozzászólásaim" : "Hozzászólások"]].map(([k, label]) => {
+    const b = el("button", "prof-tab");
+    b.type = "button";
+    b.setAttribute("role", "tab");
+    b.dataset.tab = k;
+    b.append(el("span", null, label), el("span", "prof-tab-n"));
+    b.addEventListener("click", () => select(k));
+    bar.append(b);
+    return b;
+  });
+  function select(k) {
+    sectionBox.dataset.tab = k;
+    for (const b of tabs) b.setAttribute("aria-selected", String(b.dataset.tab === k));
+  }
+  select("games");
+  return {
+    el: bar,
+    counts(p) {  // from the stats, when they are shown: the games with a result, the comments
+      const n = p ? { games: Number(p.won || 0) + Number(p.lost || 0), comments: Number(p.comments || 0) } : {};
+      for (const b of tabs) b.querySelector(".prof-tab-n").textContent = n[b.dataset.tab] == null ? "" : num(n[b.dataset.tab]);
+    },
+  };
 }
 
 let shown = null;  // {uid, own, stop, sections, editor, sig}
@@ -408,7 +454,6 @@ let blockedSig = "";  // the blocked users when the profile was drawn: a change 
 function close() {
   if (!shown) return;
   shown.stop();
-  if (shown.editor) shown.editor.destroy();
   shown = null;
 }
 
@@ -422,6 +467,8 @@ function drawSections(v) {
   if (own) {
     if (!shown.sections) {
       shown.sections = { games: gamesView(uid, true), comments: commentsView(uid, true) };
+      shown.sections.games.el.dataset.kind = "games";  // phones show one at a time (listTabs)
+      shown.sections.comments.el.dataset.kind = "comments";
       shown.sectionBox.replaceChildren(shown.sections.games.el, shown.sections.comments.el);
       shown.sections.games.next();
       shown.sections.comments.draw();
@@ -432,6 +479,8 @@ function drawSections(v) {
   const games = hidden("games") ? hiddenSection("Játékok", "A játékait nem teszi közzé.") : gamesView(uid, false);
   const comments = hidden("comments") ? hiddenSection("Hozzászólások", "A hozzászólásai listáját nem teszi közzé.")
     : commentsView(uid, false);
+  games.el.dataset.kind = "games";
+  comments.el.dataset.kind = "comments";
   shown.sections = { games, comments };
   shown.sectionBox.replaceChildren(games.el, comments.el);
   if (games.next) games.next();
@@ -451,6 +500,12 @@ function drawHead(v) {
   }
   if (v.createdAt) {
     who.append(el("p", "prof-since", `tag ${new Date(v.createdAt).toLocaleDateString("hu-HU", { year: "numeric", month: "long", day: "numeric" })} óta`));
+  }
+  if (own) {  // wider screens: a button under the name (phones: ✎ in the corner, below)
+    const b = el("button", "btn ghost small prof-edit-text", "✎ Profil szerkesztése");
+    b.type = "button";
+    b.addEventListener("click", () => openProfileEditor());
+    who.append(b);
   }
   if (!own) {
     const blocked = isBlocked(uid);
@@ -474,14 +529,24 @@ function drawHead(v) {
   } else {
     side = el("p", "prof-side prof-side-note", "A pontjait és a statisztikáit nem teszi közzé.");
   }
-  headBox.replaceChildren(avatar(v.photo && v.photo["256"], v.nick, 96), who, side);
+  const parts = [avatar(v.photo && v.photo["256"], v.nick, 96), who, side];
+  if (own) {  // phones: ✎ in the corner of the head opens the editor
+    const edit = el("button", "prof-edit-btn");
+    edit.type = "button";
+    edit.title = "Profil szerkesztése";
+    edit.setAttribute("aria-label", edit.title);
+    edit.addEventListener("click", () => openProfileEditor());
+    parts.push(edit);
+  }
+  headBox.replaceChildren(...parts);
 }
 
 function draw(v) {
   if (!shown) return;
   drawHead(v);
   drawSections(v);
-  shown.editBox.hidden = shown.sectionBox.hidden = false;  // shown with the head, so nothing moves (CLS)
+  shown.tabs.counts(v.stats);
+  shown.sectionBox.hidden = shown.tabs.el.hidden = false;  // shown with the head, so nothing moves (CLS)
 }
 
 function show(uid, own) {
@@ -491,20 +556,11 @@ function show(uid, own) {
   const me = document.querySelector(".nav-profile");
   if (me) { if (own) me.setAttribute("aria-current", "page"); else me.removeAttribute("aria-current"); }
   const headBox = el("section", "prof-head panel");
-  const editBox = el("div");
   const sectionBox = el("div", "prof");
-  editBox.hidden = sectionBox.hidden = true;
-  box.replaceChildren(headBox, editBox, sectionBox);
-  shown = { uid, own, headBox, editBox, sectionBox, sections: null, sig: null, editor: null, last: null, stop: () => {} };
-
-  if (own) {  // the editor, folded until opened
-    const det = el("details", "prof-edit panel");
-    det.append(el("summary", null, "Profil szerkesztése"));
-    const ed = profileEditor();
-    det.append(ed.el);
-    editBox.append(det);
-    shown.editor = ed;
-  }
+  const tabs = listTabs(sectionBox, own);
+  sectionBox.hidden = tabs.el.hidden = true;
+  box.replaceChildren(headBox, tabs.el, sectionBox);
+  shown = { uid, own, headBox, sectionBox, tabs, sections: null, sig: null, last: null, stop: () => {} };
 
   const unavailable = () => { close(); gate("Profil", "Ez a profil nem érhető el."); };
   const mine = shown;
@@ -541,6 +597,11 @@ onAccount((a) => {
     close();
     gate("Profil", wanted ? "Ez a profil nem érhető el. Lépj be, és megnézheted a felhasználók profilját."
       : "Lépj be, és itt látod a profilodat, a játékaidat és a hozzászólásaidat.", "Belépés", signIn);
+    return;
+  }
+  if (a.failed) {  // signed in, but the account did not load (js/account.js)
+    close();
+    gate("Profil", "A fiókodat most nem sikerült betölteni.", "Újrapróbálás", () => location.reload());
     return;
   }
   if (!a.registered) {

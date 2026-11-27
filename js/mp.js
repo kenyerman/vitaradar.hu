@@ -1,15 +1,17 @@
 // vitaradar.hu MP page: one MP's fact-checked speeches, their overall scores, and a search over what they said.
 
-import { doc, getDoc, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { doc, collection, query, where } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { searchUrl } from "./config.js?v=202611241021";
-import { appCheckHeaders } from "./firebase.js?v=202611241021";
-import { db, el, badge, sourceList, setPhoto, hms, huDate, watchLiveNav } from "./common.js?v=202611250130";
-import { mountAccount } from "./account.js?v=202611250130";
-import { factSocial } from "./social.js?v=202611250130";
+import { appCheckHeaders } from "./firebase.js?v=202611272300";
+import { db, getDoc, getDocs, el, factBadge, LABEL, sourceList, setPhoto, hms, huDate, watchLiveNav, loadFailed } from "./common.js?v=202611272300";
+import { fetchT } from "./net.js?v=202611270600";
+import { mountAccount } from "./account.js?v=202611280100";
+import { factSocial } from "./social.js?v=202611280100";
+import { addShare } from "./share.js?v=202611272100";
 import { calendar } from "./calendar.js?v=202611241021";
 import { watchHref } from "./links.js?v=202611241021";
 import { setPageMeta } from "./meta.js?v=202611241124";
-import { AI_NOTE, loadTranscript, transcriptBody, wordCount } from "./transcript.js?v=202611251600";
+import { AI_NOTE, loadTranscript, transcriptBody, wordCount } from "./transcript.js?v=202611280200";
 
 watchLiveNav();
 mountAccount();
@@ -20,10 +22,19 @@ function pct(n, total) {
   return total ? `${Math.round((100 * n) / total)}%` : "";
 }
 
+// The verdicts, in the live page's tally order: the bars and every count list beside them. The first four always show;
+// the extended ones only when there are any (older sittings have none).
+const BAR = ["true", "partly_true", "misleading", "false", "opinion", "promise", "unverifiable", "fallacy"];
+const BASE = new Set(["true", "false", "unverifiable", "fallacy"]);
+const NAMES = { true: "Igaz", partly_true: "Részben igaz", misleading: "Félrevezető", false: "Hamis", opinion: "Vélemény",
+  promise: "Ígéret", unverifiable: "Nem ellenőrizhető", fallacy: "Hibás érvelés" };
+const SHORT = { ...NAMES, unverifiable: "N. e.", fallacy: "H. é." };  // the count lines
+const listed = (t) => BAR.filter((k) => BASE.has(k) || t[k] > 0);
+
 function bar(target, t) {
   target.replaceChildren();
-  const total = t.true + t.unverifiable + t.false + t.fallacy;
-  for (const k of ["true", "unverifiable", "false", "fallacy"]) {
+  const total = BAR.reduce((n, k) => n + (t[k] || 0), 0);
+  for (const k of BAR) {
     if (!t[k]) continue;
     const s = el("span", `b-${k}`);
     s.style.width = `${(100 * t[k]) / total}%`;
@@ -31,13 +42,12 @@ function bar(target, t) {
   }
 }
 
-const COUNTS = () => ({ true: 0, false: 0, unverifiable: 0, fallacy: 0 });
+const COUNTS = () => Object.fromEntries(BAR.map((k) => [k, 0]));  // a day sums its speeches' counts over these keys
 const weekday = (iso) => new Date(`${iso}T12:00:00`).toLocaleDateString("hu-HU", { weekday: "long" });
 
 function nums(t) {
   const n = el("span", "nums");
-  n.append(el("span", "c-true", `${t.true} igaz`), el("span", "c-false", `${t.false} hamis`),
-    el("span", "c-unverifiable", `${t.unverifiable} n.e.`), el("span", "c-fallacy", `${t.fallacy} h.é.`));
+  n.append(...listed(t).map((k) => el("span", `c-${k}`, `${t[k]} ${SHORT[k].toLowerCase().replace(". ", ".")}`)));
   return n;
 }
 
@@ -53,36 +63,56 @@ function factTime(c, session) {
   return el("span", "fact-time", `T+${hms(c.at_s)}`);
 }
 
+// A speech's facts as its cards: a fallacy said with a claim is on the claim's card (pfc history: `fallacy` on the
+// claim, `merged_into` on the fallacy), so it is one fact, not two.
+const factsOf = (s) => (s.claims || []).filter((c) => !c.merged_into);
+
 // level 3: a fact. Collapsed it shows the verdict and the headline; open, the claim, the explanation and the sources.
+// A claim with its sentence's fallacy is the fallacy's card, as on the live page (common.js factBadge).
 function factItem(c, session) {
   const li = el("li", "fact");
   const v = c.kind === "fallacy" ? "fallacy" : c.verdict || "pending";
-  li.dataset.verdict = v;
+  const withFallacy = Boolean(c.fallacy) && v !== "pending";
+  li.dataset.verdict = withFallacy ? "fallacy" : v;
   const det = el("details", "fact-d");
   const sum = el("summary", "fact-sum");
-  sum.append(badge(v, c.kind), el("span", "fact-bullet", c.bullet || c.claim), factTime(c, session));
+  sum.append(factBadge(c, v, withFallacy), el("span", "fact-bullet", c.bullet || c.claim), factTime(c, session));
   const body = el("div", "fact-body");
   if (c.claim && c.claim !== c.bullet) body.append(el("p", "fact-claim", c.claim));
   if (c.explanation) body.append(el("p", "fact-expl", c.explanation));
+  if (withFallacy) {
+    body.append(el("p", "fact-fallacy", `» ${LABEL.fallacy.toLowerCase()} (${c.fallacy.name}): ${c.fallacy.explanation || ""}`));
+  }
   body.append(sourceList(c.sources));
-  if (session && c.id && v !== "pending") body.append(factSocial(session, c.id));  // votes and comments (social.js)
+  // votes and comments (social.js), and the share button (share.js; the speaker is this page's MP)
+  if (session && c.id && v !== "pending") {
+    body.append(addShare(factSocial(session, c.id), session, c.id, { speaker: () => $("mp-name").textContent }));
+  }
   det.append(sum, body);
   li.append(det);
   return li;
 }
 
-// a paragraph's moment: into the replay when the speech is in the archive's video, else its time in the sitting
+// Where a speech's replay starts: a second into it. The link's time is whole seconds, rounded down, and the replay
+// names whoever has the floor at that moment, so a start like 1263.6 s opened on the previous speaker.
+function replayAt(s) {
+  return s.video_start_s == null ? null : Math.ceil(s.video_start_s) + 1;
+}
+
+// A transcript paragraph's moment (`rel`: seconds from the speech's start): into the replay when the speech is in the
+// archive's video (never before the speech's own start, replayAt), else its time in the sitting.
 function speechTime(s, rel) {
   if (s.video_start_s != null) {
+    const at = Math.max(replayAt(s), Math.floor(s.video_start_s + rel));
     const a = el("a", "fact-time", `▶ ${hms(s.video_start_s + rel)}`);
-    a.href = watchHref(s.session, s.video_start_s + rel);
+    a.href = watchHref(s.session, at);
     a.title = "visszanézés ettől a pillanattól";
     return a;
   }
   return el("span", "fact-time", `T+${hms(s.start_s + rel)}`);
 }
 
-// the speech's Gemini transcript (sessions/{session}/transcripts/{speech id}), loaded when it is opened
+// The speech's Gemini transcript (sessions/{session}/transcripts/{speech id}, js/transcript.js), loaded when it is opened.
 function geminiTranscript(s) {
   const det = el("details", "transcript-d gtranscript-d");
   const sum = el("summary", null, "Gemini-leirat");
@@ -119,15 +149,15 @@ function speechItem(s, open) {
   const b = el("div", "bar");
   bar(b, t);
   sum.append(el("span", "lvl-title", `T+${hms(s.start_s)} → T+${hms(s.end_s)}`),
-    el("span", "meta", `${hms(s.duration_s)} perc · ${(s.claims || []).length} állítás`), nums(t), b);
+    el("span", "meta", `${hms(s.duration_s)} perc · ${factsOf(s).length} állítás`), nums(t), b);
   const body = el("div", "speech-body");
   if (s.video_start_s != null) {  // the whole speech in the archive's replay
     const w = el("a", "t-btn", `▶ visszanézés (${hms(s.video_start_s)})`);
-    w.href = watchHref(s.session, s.video_start_s);
+    w.href = watchHref(s.session, replayAt(s));
     body.append(w);
   }
   const list = el("ol", "facts");
-  (s.claims || []).slice().sort((a, b2) => a.at_s - b2.at_s).forEach((c) => list.append(factItem(c, s.session)));
+  factsOf(s).sort((a, b2) => a.at_s - b2.at_s).forEach((c) => list.append(factItem(c, s.session)));
   if (list.children.length) body.append(list);
   else body.append(el("p", "empty", "ebben a felszólalásban nem volt ellenőrizhető állítás"));
   if (s.has_transcript && s.text) {
@@ -146,7 +176,7 @@ function dayItem(date, speeches, open) {
   let claims = 0;
   for (const s of speeches) {
     for (const k of Object.keys(t)) t[k] += (s.counts || {})[k] || 0;
-    claims += (s.claims || []).length;
+    claims += factsOf(s).length;
   }
   const det = el("details", "day panel");
   det.id = `day-${date}`;
@@ -161,6 +191,90 @@ function dayItem(date, speeches, open) {
   speeches.forEach((s, i) => body.append(speechItem(s, open && i === 0)));
   det.append(sum, body);
   return det;
+}
+
+// Phones (css): no facts or quotes, only the statistics and the sitting days, newest first, one card each: the day's
+// counts, and when opened, its speeches in the order they were given, each opening its replay in the archive.
+function countLine(t) {
+  const line = el("span", "replay-counts");
+  for (const k of listed(t)) {
+    const c = el("span", null, SHORT[k]);
+    c.append(el("b", `c-${k}`, String(t[k])));
+    line.append(c);
+  }
+  return line;
+}
+
+function clockOf(ms) {
+  return new Date(ms).toLocaleTimeString("hu-HU", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Budapest" });
+}
+
+// When a speech began, by the clock: its recording's start (archive/{session}.started_at) plus where it is in it.
+// Recordings without a start time (replays of a file) fall back to their order on the day.
+const starts = new Map();  // session -> started_at (ms) or null
+
+function replays(speeches) {
+  let list = document.getElementById("replays");
+  if (!list) {
+    list = el("ol", "replays");
+    list.id = "replays";
+    $("speeches").before(list);
+  }
+  // started_at is where the recording begins: the speech's place in the video (start_s counts from the run's start)
+  const at = (s) => (starts.get(s.session) != null ? starts.get(s.session) + (s.video_start_s ?? s.start_s) * 1000 : null);
+  const days = new Map();  // speeches come newest first: so do the days
+  for (const s of speeches) {
+    if (!days.has(s.date)) days.set(s.date, []);
+    days.get(s.date).push(s);
+  }
+  const open = new Set([...list.querySelectorAll(".replay-day")].filter((d) => d.open).map((d) => d.dataset.date));
+  list.replaceChildren(...[...days.entries()].map(([date, day]) => {
+    day = day.slice().sort((x, y) => (at(x) ?? Infinity) - (at(y) ?? Infinity)
+      || x.session.localeCompare(y.session) || x.start_s - y.start_s);
+    const t = COUNTS();
+    let claims = 0, secs = 0;
+    for (const s of day) {
+      for (const k of Object.keys(t)) t[k] += (s.counts || {})[k] || 0;
+      claims += factsOf(s).length;
+      secs += s.duration_s || 0;
+    }
+    const li = el("li");
+    const det = el("details", "replay-day");
+    det.dataset.date = date || "";
+    det.open = open.has(det.dataset.date);  // all closed at first, then as the reader left them
+    const sum = el("summary", "replay-sum");
+    const b = el("div", "bar");
+    bar(b, t);
+    sum.append(el("span", "replay-date", date ? huDate(date) : "ismeretlen nap"),
+      el("span", "replay-meta", `${day.length} felszólalás · ${claims} állítás · ${hms(secs)} perc`),
+      el("span", "replay-chev"), countLine(t), b);
+    const rows = el("ol", "replay-list");
+    day.forEach((s, n) => {
+      const st = { ...COUNTS(), ...(s.counts || {}) };
+      const from = at(s);
+      const row = el("li");
+      const a = el("a", "replay");
+      a.href = watchHref(s.session, replayAt(s));
+      a.append(el("span", "replay-title", from != null
+        ? `${clockOf(from)}–${clockOf(from + (s.duration_s || 0) * 1000)}` : `${n + 1}. felszólalás`),
+      el("span", "replay-meta", `${hms(s.duration_s)} perc · ${factsOf(s).length} állítás`),
+      el("span", "replay-go"), countLine(st));
+      a.setAttribute("aria-label", `${a.querySelector(".replay-title").textContent} visszanézése`);
+      row.append(a);
+      rows.append(row);
+    });
+    det.append(sum, rows);
+    li.append(det);
+    return li;
+  }));
+  // the recordings' start times, once: then the rows again, in the order they were given, with their times
+  const missing = [...new Set(speeches.map((s) => s.session))].filter((x) => !starts.has(x));
+  if (!missing.length) return;
+  missing.forEach((x) => starts.set(x, null));
+  Promise.all(missing.map((x) => getDoc(doc(db, "archive", x)).then((snap) => {
+    const a = snap.data() || {};
+    starts.set(x, a.replay || !a.started_at ? null : a.started_at);
+  }).catch(() => {}))).then(() => replays(speeches));
 }
 
 // ------------------------------------------------------------------ days: calendar filter, expand / collapse all
@@ -221,7 +335,7 @@ async function load() {
   $("mp-name").textContent = m.name;
   $("mp-meta").textContent = [m.party, m.role].filter(Boolean).join(" · ");
   setPhoto($("mp-img"), $("mp-initials"), m.photo, m.name, { id: m.id, color: m.color });
-  const t = { true: 0, false: 0, unverifiable: 0, fallacy: 0, ...(m.totals || {}) };
+  const t = { ...COUNTS(), ...(m.totals || {}) };
   setPageMeta({
     title: `${m.name} ellenőrzött állításai – Vitaradar`,
     description: `${m.name}${m.party ? ` (${m.party})` : ""} ${m.claims || 0} ellenőrzött állítása ` +
@@ -229,13 +343,26 @@ async function load() {
       `${t.unverifiable} nem ellenőrizhető, ${t.fallacy} hibás érvelés.`,
     path: `mp.html?id=${encodeURIComponent(id)}`,
   });
-  const checked = t.true + t.false + t.unverifiable;
-  for (const k of ["true", "false", "unverifiable"]) {
-    const dd = $(`s-${k}`);
-    dd.textContent = String(t[k]);
-    dd.append(el("small", null, pct(t[k], checked)));
-  }
-  $("s-fallacy").textContent = String(t.fallacy);
+  // a tile per verdict, as the bar has them; the share is of the statements (a fallacy is about the reasoning).
+  // Phones show them as rows, each with its own bar (css): as long as its share, the fallacies' on the same scale.
+  const said = BAR.filter((k) => k !== "fallacy").reduce((n, k) => n + (t[k] || 0), 0);
+  $("scores").replaceChildren(...listed(t).map((k) => {
+    const n = t[k] || 0;
+    const tile = el("div");
+    tile.dataset.v = k;
+    const track = el("span", "bar score-bar");
+    track.setAttribute("aria-hidden", "true");
+    if (n && said) {
+      const fill = el("span", `b-${k}`);
+      fill.style.width = `${Math.min(100, (100 * n) / said)}%`;
+      track.append(fill);
+    }
+    const dd = el("dd", `c-${k}`);
+    dd.append(track, el("span", null, String(n)));
+    if (k !== "fallacy") dd.append(el("small", null, pct(n, said)));
+    tile.append(el("dt", null, NAMES[k]), dd);
+    return tile;
+  }));
   bar($("mp-bar"), t);
   $("mp-line").textContent = `// ${m.claims || 0} állítás ${m.speeches || 0} felszólalásban, összesen ${hms(m.seconds)} perc` +
     (m.last_date ? ` · utoljára: ${huDate(m.last_date)}` : "");
@@ -249,6 +376,7 @@ async function load() {
   for (const list of byDay.values()) list.sort((a, b) => a.start_s - b.start_s);  // in the order they were given
   const box = $("speeches");
   box.replaceChildren(...[...byDay.entries()].map(([date, list], i) => dayItem(date, list, i === 0)));
+  replays(speeches);
   $("speech-count").textContent = speeches.length ? `[${String(speeches.length).padStart(2, "0")}]` : "";
   $("speeches-empty").hidden = speeches.length > 0;
   $("days-tools").hidden = speeches.length === 0;
@@ -271,17 +399,16 @@ $("search").addEventListener("submit", async (ev) => {
   note.hidden = false;
   note.textContent = "keresés…";
   try {
-    const r = await fetch(`${searchUrl}?mp=${encodeURIComponent(id)}&q=${encodeURIComponent(q)}`,
-      { headers: await appCheckHeaders() });  // only the site may search: App Check (reCAPTCHA Enterprise)
+    const r = await fetchT(`${searchUrl}?mp=${encodeURIComponent(id)}&q=${encodeURIComponent(q)}`,
+      { headers: await appCheckHeaders() }, 20000);  // only the site may search: App Check (reCAPTCHA Enterprise)
     if (!r.ok) throw new Error(String(r.status));
     const data = await r.json();
     note.textContent = data.hits.length ? `${data.hits.length} találat, a legközelebbi jelentésűek elöl` : "nincs találat";
     for (const h of data.hits) {
       const li = el("li", "hit panel");
       const top = el("div", "hit-top");
-      const a = el("a", null, `${huDate(h.date)} · T+${hms(h.at_s)}`);
-      a.href = `#speech-${h.speech_id}`;
-      top.append(el("span", "hit-score", `${Math.round(h.score * 100)}% egyezés`), a);
+      // when it was said (the days with their speeches are the replay rows now; ▶ opens it in the replay)
+      top.append(el("span", "hit-score", `${Math.round(h.score * 100)}% egyezés`), el("span", null, `${huDate(h.date)} · T+${hms(h.at_s)}`));
       const at = h.video_s ?? h.at_s;  // the passage's moment in the archive's video
       if (h.session && at != null) {
         const w = el("a", "fact-time", `▶ ${hms(at)}`);
@@ -301,4 +428,10 @@ $("search").addEventListener("submit", async (ev) => {
 $("expand-all").addEventListener("click", () => setAll(true));
 $("collapse-all").addEventListener("click", () => setAll(false));
 
-load().catch((e) => { $("mp-name").textContent = "Az adatok most nem tölthetők be"; console.warn(e); });
+load().catch((e) => {
+  $("mp-name").textContent = "Nem sikerült betölteni";
+  const p = el("p", "empty");
+  $("mp-name").after(p);
+  loadFailed(p, "a képviselő adatai most nem tölthetők be");
+  console.warn(e);
+});

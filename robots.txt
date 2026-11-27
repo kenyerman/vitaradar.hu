@@ -1,4 +1,5 @@
 User-agent: *
 Allow: /
+Disallow: /__/
 
 Sitemap: https://vitaradar.hu/sitemap.xml

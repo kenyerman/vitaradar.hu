@@ -12,8 +12,8 @@
 // unscored, and are asked to sign in.
 
 import { collection, doc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { db, el } from "./common.js?v=202611250130";
-import { account, onAccount, api, needAccount, toast } from "./account.js?v=202611250130";
+import { db, el } from "./common.js?v=202611272300";
+import { account, onAccount, api, needAccount, toast } from "./account.js?v=202611280100";
 
 const TRUTH = { true: "IGAZ", false: "HAMIS" };
 const MASKED = "Hibás érvelés?";
@@ -25,6 +25,8 @@ const TIP_RESULT_MS = 60000; // the tip's card stays this long once its result i
 const MAX_BEHIND_MS = 30000; // a delay behind the stream's clock beyond this (a wrong computer clock, a paused video)
                              // is not trusted for the server's close
 const SEND_MS = 500;         // an answer given at the last moment needs this long to reach the server
+const RESULT_LAG_MS = 1500;  // when a result is due after the server's close (26 Nov: settled 0.6-0.8 s after it, on a
+                             // page 0.7-0.9 s after): the wait's bar ends just after, a slow page gets no spinner flash
 const VOTE_SEND_MS = 1500;   // a vote prediction without a band is sent this long before the lock (a band sends it at once)
 
 const label = (ch, option) => (ch.kind === "truth" ? TRUTH[option] || option : option);
@@ -39,6 +41,19 @@ function lockOf(item, lock, now) {
   const behind = Date.now() - now;
   if (!item.closes_wall || behind < 0 || behind > MAX_BEHIND_MS) return lock;
   return Math.min(lock, item.closes_wall - SEND_MS - behind);
+}
+
+// After "jön az eredmény…", while the answers are closed and the result has not come: a thin bar (css) that runs down
+// from this viewer's lock to when the result is due, the server's close (`closes_wall`) and RESULT_LAG_MS, on the
+// stream's clock as in lockOf. With no time to go by (no close time, an untrusted delay) or once that time has passed
+// and the result is late, a small spinner instead.
+function showWait(status, item, lock, now, waiting) {
+  if (!waiting) { delete status.dataset.wait; return; }
+  const behind = Date.now() - now;
+  const due = item.closes_wall && behind >= 0 && behind <= MAX_BEHIND_MS ? item.closes_wall + RESULT_LAG_MS - behind : null;
+  if (due == null || now >= due || due <= lock) { status.dataset.wait = "late"; return; }
+  status.dataset.wait = "bar";
+  status.style.setProperty("--left", pct(due - now, due - lock));
 }
 
 function scoreTip(tip, actual) {  // the server's rule (live/game.py score_tip): 10 exact, 4 off by one, +10 all exact
@@ -113,6 +128,7 @@ class ChallengeView {
 
   build(session, ch) {
     this.session = session;
+    this.bodyKey = null;  // its status and what is below it are new and empty
     const b = this.box;
     b.dataset.kind = ch.kind;
     const head = el("div", "game-head");
@@ -178,6 +194,13 @@ class ChallengeView {
       btn.style.setProperty("--share", r && r.total ? `${(100 * n) / total}%` : "0%");
     }
     const status = b.querySelector(".game-status"), after = b.querySelector(".game-after");
+    showWait(status, ch, lock, now, !r && !open && !(pick && pick.error));  // on every tick, the text below only on a change
+    // the rest changes only with these. Written anew on every tick (five a second), a sign-in button was new content
+    // to iOS Safari, which then took a tap for a hover and sent no click (the Chat tab or an answer did nothing), and
+    // the "+N pont" line restarted its animation and shook
+    const key = `${ch.id}|${open}|${r ? JSON.stringify(r) : "-"}|${pick ? `${pick.choice}|${pick.sent}|${pick.error}` : "-"}|${account.registered}|${Boolean(account.user)}`;
+    if (key === this.bodyKey) return;
+    this.bodyKey = key;
     after.replaceChildren();
     delete status.dataset.right;
     if (!r) {
@@ -188,7 +211,7 @@ class ChallengeView {
       return;
     }
     const right = Boolean(pick && pick.choice === r.answer);
-    status.dataset.right = String(right);
+    if (pick) status.dataset.right = String(right);  // no answer: neither right nor wrong (it showed in the wrong colour)
     status.textContent = !pick ? `A helyes válasz: ${label(ch, r.answer)}.`
       : right ? "Eltaláltad!" : `Nem talált. A helyes válasz: ${label(ch, r.answer)}.`;
     if (pick) {
@@ -366,6 +389,7 @@ class VoteView {
       chip.setAttribute("aria-pressed", String(Boolean(pick && pick.band === i)));
     }
     const status = b.querySelector(".game-status"), after = b.querySelector(".game-after");
+    showWait(status, v, lock, now, !r && !open && !(pick && pick.error));  // on every tick, the text below only on a change
     const label = (o) => ((v.labels || {})[o] || o);
     const key = `${v.id}|${open}|${Boolean(r)}|${pick ? `${pick.choice}|${pick.band}|${pick.sent}|${pick.sending}|${pick.error}` : "-"}|${account.registered}`;
     if (key === this.bodyKey) return;
@@ -387,7 +411,7 @@ class VoteView {
     const choice = pick && pick.choice, rightOutcome = choice === r.outcome;
     const rightBand = Boolean(pick && pick.band != null && pick.band === r.band);
     const pts = (rightOutcome ? v.points || 0 : 0) + (rightBand ? v.band_points || 0 : 0);
-    status.dataset.right = String(Boolean(choice) && rightOutcome);
+    if (choice) status.dataset.right = String(rightOutcome);  // no prediction: neither right nor wrong
     status.textContent = !choice ? `${past}: ${counts}.`
       : rightOutcome ? `Eltaláltad! ${past}: ${counts}.` : `Nem talált. ${past}: ${counts}.`;
     if (choice && pick.sent && account.registered) {
@@ -533,9 +557,12 @@ class TipView {
   update() {
     const tip = this.tip, now = this.now, b = this.box, entry = this.mine.get(tip.id), r = tip.result;
     const lock = lockOf(tip, tip.tip_until, now), running = now < lock, open = running && !entry;
+    // the speech is over (the stream's clock): its result follows once its last claims are checked, about 1.5 min later
+    const ended = tip.ended_at != null && now >= tip.ended_at;
     if (r && !this.seen.has(tip.id)) this.seen.set(tip.id, now);
     const folded = this.folded();
     b.dataset.state = open ? "open" : r ? "result" : "sent";
+    b.dataset.ended = String(ended);
     b.dataset.folded = String(folded);
     this.toggle.textContent = folded ? "▴" : "▾";
     this.toggle.setAttribute("aria-expanded", String(!folded));
@@ -551,7 +578,7 @@ class TipView {
     worth.textContent = open ? "max +40 pont" : pts != null && entry.sent ? (pts ? `+${pts} pont` : "0 pont") : "";
     worth.classList.toggle("tip-points", pts != null && entry.sent);
     const status = b.querySelector(".game-status"), after = b.querySelector(".game-after");
-    const key = `${tip.id}|${open}|${Boolean(r)}|${entry ? `${entry.sent}|${entry.error}` : "-"}|${account.registered}`;
+    const key = `${tip.id}|${open}|${ended}|${Boolean(r)}|${entry ? `${entry.sent}|${entry.error}` : "-"}|${account.registered}`;
     if (key === this.bodyKey) return;  // the rest changes only with these
     this.bodyKey = key;
     after.replaceChildren();
@@ -562,7 +589,10 @@ class TipView {
     }
     if (!entry) { status.textContent = "Lejárt az idő."; return; }
     if (entry.error) { status.textContent = entry.error; return; }
-    if (!r) { status.textContent = "Tipp rögzítve! A felszólalás végén kiderül."; return; }
+    if (!r) {
+      status.textContent = ended ? "Véget ért a felszólalás, jön az eredmény…" : "Tipp rögzítve! A felszólalás végén kiderül.";
+      return;
+    }
     const a = r.actual || {};
     status.textContent = `Valójában: ${a.true || 0} igaz · ${a.false || 0} hamis · ${a.fallacy || 0} hibás érvelés.`;
     if (entry.sent) after.append(el("p", "game-won", pts ? `+${pts} pont` : "ezúttal 0 pont"));
@@ -574,13 +604,14 @@ class TipView {
 // mountGame({now}): now() is the date (ms) of the frame on screen. The dock spans the bottom of the window: the speech
 // tip on the left, the challenge on the right (on a phone, one above the other).
 export function mountGame({ now: streamNow }) {
-  const dock = el("div", "game-dock");
-  document.body.append(dock);
+  // in the page already (index.html), so js/mobile.js can take it into the phone's Játék tab from the start
+  const dock = document.querySelector(".game-dock") || document.body.appendChild(el("div", "game-dock"));
   const pop = new ChallengeView(dock);
   const tipView = new TipView(dock);
   const voteView = new VoteView(dock);
   let session = null, unsub = [];
   const challenges = new Map(), tips = new Map(), votes = new Map(), seen = new Map(), looked = new Set();
+  let lastNow = null;  // the last frame seen on screen, for mask() while the stream's clock is unknown
 
   function follow(s) {
     if (s === session) return;
@@ -598,7 +629,12 @@ export function mountGame({ now: streamNow }) {
 
   function tick() {
     const now = streamNow();
-    if (now == null || !session) { pop.hide(); tipView.hide(); voteView.hide(); return; }
+    if (now != null) lastNow = now;
+    if (now == null || !session) { pop.hide(); tipView.hide(); voteView.hide(); delete dock.dataset.played; return; }
+    // how many games this broadcast has had so far: "challenges tips votes" (the phones' Játék tab shows it)
+    const so = (games) => [...games.values()].filter((g) => g.opens_at <= now).length;
+    const played = `${so(challenges)} ${so(tips)} ${so(votes)}`;
+    if (dock.dataset.played !== played) dock.dataset.played = played;
     // the challenge on screen: from its opening until its result has been shown for a while
     let current = null;
     for (const ch of challenges.values()) {
@@ -647,10 +683,16 @@ export function mountGame({ now: streamNow }) {
   }
   setInterval(tick, 200);
 
-  // A fact that is part of a challenge shows as still being checked (a fallacy without its name) until its reveal.
+  // A fact that is part of a challenge shows as still being checked (a fallacy without its name) until its reveal on
+  // this viewer's video. With no frame on screen (the broadcast has ended, Twitch waits for a tap, the video is
+  // paused), the reveal goes by the last frame seen or by the wall clock less MAX_BEHIND_MS, whichever is later: a
+  // player that far behind has shown it by then. Otherwise every challenged fact stays "being checked" for good once
+  // the stream stops. Nothing playable is given away: the publisher writes the answer into the fact only after
+  // answers have closed for everyone (`closes_wall`).
   function mask(c, now) {
     const at = c.challenge && c.challenge.reveal_at;
-    if (!at || (now != null && now >= at)) return c;
+    const seenAt = now ?? Math.max(lastNow ?? 0, Date.now() - MAX_BEHIND_MS);
+    if (!at || seenAt >= at) return c;
     const fallacy = c.kind === "fallacy";
     return { ...c, kind: fallacy ? "claim" : c.kind, bullet: fallacy ? MASKED : c.bullet,
       verdict: "pending", verdict_at: null, explanation: "", sources: [] };

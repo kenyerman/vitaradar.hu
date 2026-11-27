@@ -1,5 +1,4 @@
-// The live stream from twitch.tv/vitaradar: the site's main player. Our own CDN stream (cdn.js, hls.js) is the
-// opt-in for supporters (?player=cdn until supporter access exists).
+// The live stream from twitch.tv/vitaradar: the live page's player.
 //
 // The player loads with the page (the owner's choice); Twitch's own cookies come with it (impresszum.html#sutik).
 //
@@ -10,57 +9,132 @@
 // screen = viewer clock - 6.3 s - reported latency, steady to ±25 ms. The player's reported latency jumps around
 // (1.0-1.9 s at a steady delay), so it is only used averaged, to follow a viewer who falls further behind.
 //
-//   useTwitch()              Twitch is the player here (anything but ?player=cdn)
+// Starting (measured in Chrome, 26 Nov 2026): a playback Twitch starts by itself (autoplay) is held to the embed's
+// visibility rules. It starts only while nothing on the page is drawn over the iframe, pauses as soon as something
+// is, and about 30 s after the tab goes to the background it stops loading ("Playhead stalling" in its console; it
+// went on, 13 s behind, when the tab came back). A playback the viewer started with a click plays on whatever
+// covers it and in a background tab, with sound. So the first player waits for the viewer's click (autoplay off,
+// sound on, as on YouTube), and only a player rebuilt in a visible tab (below) starts by itself, with the viewer's
+// mute. For that start the Twitch player has no corner marks (even the panel's 12 px ones count, css/style.css), and
+// ?debug=1 shows its line off the video; the closed chat's button, a game card or the cookie bar over the video
+// still hold it until they go.
+//
+// Recovery: some playback errors stop Twitch's player for good until the viewer clicks "Click Here to Reload
+// Player" (26 Nov 2026: "Your browser encountered an error while decoding the video. (Error #3000)" in a viewer's
+// Chrome, while our pieces, the relay's feed and Twitch's own recording of those minutes were clean; one corrupt
+// piece gives the same). Neither play() nor setChannel() brings it back. The embed then reports a PAUSE,
+// isPaused(), and a 0x0 picture (a network error, #2000, too, also before it ever played), where a viewer's pause
+// (or Twitch's own, above) keeps the picture's size and a player waiting for its first click is not paused. So a
+// watchdog builds a new player when it is in that state for DEAD_MS, or when it played and its time has not moved
+// for STALL_MS without a pause, while Twitch says the channel is live and the tab is visible (a hidden tab's player
+// is never rebuilt: its check waits until the tab is back). Rebuilds back off (BACKOFF_MS) and keep the viewer's
+// mute. The new player starts by itself where nothing covers it (above); otherwise it waits with Twitch's play
+// button instead of the error. A first player still waiting for its click is left alone.
+//
 //   mountTwitch(box)         the player into box, once
 //   twitchNow()              the date (ms) of the frame on screen, on the stream's clock; null before playback
+//   "vr-playing" event       on window, detail true / false: the player plays, or has stopped (js/mobile.js says so
+//                            while the video is hidden under the panels)
 //
-// ?tw_lead=<ms> overrides the relay's lead, ?debug=1 shows the estimate over the player's corner.
+// ?tw_lead=<ms> overrides the relay's lead, ?debug=1 shows the estimate (and any rebuilds) at the window's top left.
+
+import { loadScript } from "./net.js?v=202611270600";
 
 const EMBED_JS = "https://player.twitch.tv/js/embed/v1.js";
 const CHANNEL = "vitaradar";
 const params = new URLSearchParams(location.search);
 const LEAD_MS = Number(params.get("tw_lead") || -6295);  // measured with the relay's 4 s hand-over delay
 const DEBUG = params.has("debug");
+const DEAD_MS = 3000;       // an errored player is rebuilt after this long
+const STALL_MS = 20000;     // an unpaused player whose time stands still this long is rebuilt
+const BACKOFF_MS = [0, 15000, 30000, 60000, 120000, 300000];  // the wait before the 1st, 2nd... rebuild
+const HEALTHY_MS = 120000;  // this long playing again resets the backoff
 
 let player = null;
+let holder = null;
 let mounting = null;
 let playing = false;
 let latency = null;  // seconds, averaged
-
-export function useTwitch() {
-  return params.get("player") !== "cdn";
-}
+let online = null;   // Twitch's ONLINE / OFFLINE (ENDED), null before either
+let ready = false;   // this player's READY came
+let played = false;  // this player has played
+let auto = false;    // this player starts by itself (a rebuilt one); the first one waits for the viewer's click
+let rebuilds = 0, lastRebuild = 0, playingSince = 0;
+let lastTime = null, lastMove = 0, deadSince = 0;
 
 function loadEmbed() {
   if (window.Twitch && window.Twitch.Player) return Promise.resolve(window.Twitch);
-  return new Promise((resolve, reject) => {
-    const s = document.createElement("script");
-    s.src = EMBED_JS;
-    s.onload = () => resolve(window.Twitch);
-    s.onerror = reject;
-    document.head.append(s);
-  });
+  return loadScript(EMBED_JS).then(() => window.Twitch);  // fails after 20 s without it
 }
 
 export function mountTwitch(box) {
-  return (mounting ||= embed(box));
+  return (mounting ||= embed(box).catch((e) => { mounting = null; throw e; }));  // a failed one may be tried again
 }
 
 async function embed(box) {
-  const Twitch = await loadEmbed();
-  const holder = document.createElement("div");
+  await loadEmbed();
+  holder = document.createElement("div");
   holder.id = "twitch";
   box.prepend(holder);
-  player = new Twitch.Player("twitch", {
-    channel: CHANNEL, width: "100%", height: "100%", muted: true, autoplay: true,
-    parent: [location.hostname],
-  });
-  const P = Twitch.Player;
-  player.addEventListener(P.PLAYING, () => { playing = true; });
-  for (const ev of [P.PAUSE, P.OFFLINE, P.ENDED]) player.addEventListener(ev, () => { playing = false; });
+  create(false, false);
   setInterval(sample, 1000);
-  if (DEBUG) { showDebug(box); window.__twitch = player; }
+  setInterval(watch, 1000);
+  document.addEventListener("visibilitychange", () => { lastMove = Date.now(); deadSince = 0; });
+  if (DEBUG) showDebug();
   return player;
+}
+
+// A player in the holder: the first one (autoplay false: the viewer's click starts it), or one that starts by itself
+// in place of a dead one.
+const signal = (on) => dispatchEvent(new CustomEvent("vr-playing", { detail: on }));
+
+function create(muted, autoplay) {
+  const P = window.Twitch.Player;
+  holder.replaceChildren();
+  playing = played = ready = false;
+  signal(false);
+  auto = autoplay;
+  lastTime = null;
+  lastMove = Date.now();
+  deadSince = 0;
+  const p = player = new P(holder.id, {
+    channel: CHANNEL, width: "100%", height: "100%", muted, autoplay, parent: [location.hostname],
+  });
+  const on = (ev, f) => p.addEventListener(ev, () => { if (p === player) f(); });  // not a replaced player's
+  on(P.READY, () => { ready = true; });
+  on(P.PLAYING, () => { playing = played = true; playingSince = lastMove = Date.now(); signal(true); });
+  on(P.PAUSE, () => { playing = false; signal(false); });
+  on(P.ENDED, () => { playing = false; online = false; signal(false); });
+  on(P.OFFLINE, () => { playing = false; online = false; signal(false); });
+  on(P.ONLINE, () => { online = true; });
+  // Unmuted, the new player may not be let to start by itself (the viewer clicked the old one): muted it may.
+  on(P.PLAYBACK_BLOCKED, () => { p.setMuted(true); p.play(); });
+  if (DEBUG) window.__twitch = p;
+}
+
+// Once a second: a new player for one that errored or stalled (see the top).
+function watch() {
+  if (!player || document.hidden || online === false || !ready || !(played || auto)) return;
+  const now = Date.now();
+  let paused, t, size;
+  try {
+    paused = player.isPaused();
+    t = player.getCurrentTime();
+    size = player.getPlaybackStats().videoResolution;
+  } catch { return; }
+  if (t !== lastTime) { lastTime = t; lastMove = now; }
+  const dead = paused && (!size || size === "0x0");
+  deadSince = dead ? deadSince || now : 0;
+  const stalled = played && !paused && lastTime > 0 && now - lastMove > STALL_MS;  // > 0: once the stream moved
+  if (playing && now - playingSince > HEALTHY_MS) rebuilds = 0;
+  if (!(dead && now - deadSince >= DEAD_MS) && !stalled) return;
+  if (now - lastRebuild < BACKOFF_MS[Math.min(rebuilds, BACKOFF_MS.length - 1)]) return;
+  rebuilds++;
+  lastRebuild = now;
+  let muted = true;
+  try { muted = player.getMuted(); } catch { /* keep it muted */ }
+  console.info(`twitch: a new player (${dead ? "error" : "stalled"}), #${rebuilds}`);
+  create(muted, true);
 }
 
 function sample() {
@@ -76,15 +150,16 @@ export function twitchNow() {
   return Date.now() + LEAD_MS - latency * 1000;
 }
 
-function showDebug(box) {
-  const d = document.createElement("div");
-  d.style.cssText = "position:absolute;right:0;bottom:0;z-index:5;font:12px monospace;background:#000c;color:#ff0;" +
+function showDebug() {
+  const d = document.createElement("div");  // fixed at the window's corner: over the video it would stop autoplay
+  d.style.cssText = "position:fixed;left:0;top:0;z-index:100;font:12px monospace;background:#000c;color:#ff0;" +
     "padding:2px 6px;pointer-events:none";
-  box.append(d);
+  document.body.append(d);
   const tick = () => {
     const t = twitchNow();
-    d.textContent = t == null ? "twitch: waiting" :
-      `pdt ${new Date(t).toISOString().slice(11, 23)} lat ${latency.toFixed(2)}s now ${Date.now()}`;
+    d.textContent = (t == null ? "twitch: waiting" :
+      `pdt ${new Date(t).toISOString().slice(11, 23)} lat ${latency.toFixed(2)}s now ${Date.now()}`) +
+      (rebuilds ? ` · new player ×${rebuilds}` : "");
     requestAnimationFrame(tick);
   };
   tick();
