@@ -9,12 +9,12 @@
 //   Telepítés. Folytatás (or "Maradok itt" in an app's browser) is remembered (vr-install in localStorage): from then
 //   on it never comes by itself, only from the menu. Closed any other way (beside it, Escape, the steps' Rendben) it
 //   stays closed on that page only. An install is remembered too, and then nothing is offered.
-// - "App telepítése" in the phone menu, any time: it brings the sheet back. Not in the header: the bar keeps the
-//   name, the heart and ☰.
+// - "App telepítése" in the phone menu, any time: a button with the phone icon beside Támogatás, as weighty as it;
+//   it brings the sheet back. Not in the header: the bar keeps the name, the heart and ☰.
 // Where the reader is decides what Telepítés does:
 // - Android (Chrome, Samsung Internet, Edge): the browser's own install dialog (beforeinstallprompt). Without that event
 //   (another browser, or the app is installed already) nothing is offered; once the dialog was used on a page, the
-//   menu's item shows where Chrome's menu has the install.
+//   menu's button shows where Chrome's menu has the install.
 // - iPhone: Safari has no install dialog, so it shows the steps (Megosztás → Hozzáadás a főképernyőhöz).
 // - Apps' own browsers (Facebook, Messenger, Instagram, TikTok…): nothing can be installed in them, so the same sheet's
 //   Telepítés opens the page in the real browser (Android: an intent: link, iOS: x-safari-https: or the app's own
@@ -221,7 +221,7 @@ function offer() {
 }
 
 addEventListener("beforeinstallprompt", (e) => {
-  e.preventDefault();  // not the browser's own bar as well: the sheet and the menu's item ask
+  e.preventDefault();  // not the browser's own bar as well: the sheet and the menu's button ask
   bip = e;
   seen = true;
   if (installed()) try { localStorage.removeItem(KEY); } catch { /* the browser offers it: not installed (any more) */ }
@@ -290,19 +290,22 @@ function arrive() {
   setTimeout(look, 400);
 }
 
-// ------------------------------------------------------------------ the phone menu's item
+// ------------------------------------------------------------------ the phone menu's button
 let item = null;
 
 function mountItem() {
   if (inApp()) return;
-  const nav = document.querySelector("#menu .nav") || document.querySelector(".site-header .nav");
-  if (!nav) return;
-  item = el("a", "nav-install", "App telepítése");
-  item.href = "#app";
-  item.setAttribute("role", "button");
+  const panel = document.getElementById("menu");
+  if (!panel) return;
+  item = el("button", "menu-install", `${ICON.get}<span>App<span class="mi-more"> telepítése</span></span>`);
+  item.type = "button";
+  item.setAttribute("aria-label", "App telepítése");  // the narrowest phones show "App" only (css)
   item.hidden = true;
-  item.addEventListener("click", (e) => { e.preventDefault(); setTimeout(go, 50); });  // the menu closes first
-  nav.append(item);
+  item.addEventListener("click", () => {
+    panel.querySelector(".menu-close")?.click();  // the menu closes first (js/menu.js), then the sheet comes
+    setTimeout(go, 50);
+  });
+  (panel.querySelector(".m-menu-calls") || panel).prepend(item);  // beside Támogatás (js/shell.js)
   PHONE.addEventListener("change", sync);
   APP.addEventListener("change", sync);
   sync();
@@ -330,6 +333,7 @@ const ICON = {
   add: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="M12 8.5v7M8.5 12h7"/></svg>',
   more: '<svg class="is-fill" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="6" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="18" cy="12" r="1.7"/></svg>',
   down: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 9.5l6 6 6-6"/></svg>',
+  get: '<svg class="mi-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="6.5" y="2.5" width="11" height="19" rx="2.6"/><path d="M12 7v7M9 11l3 3 3-3M10.5 18h3"/></svg>',
   out: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M13.5 4.5h6v6M19.5 4.5L11 13M17.5 14v5.5h-13v-13H10"/></svg>',
   compass: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.5"/><path d="M15.5 8.5l-2.2 4.8-4.8 2.2 2.2-4.8z"/></svg>',
   link: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg>',
@@ -596,7 +600,7 @@ function swap(view) {
 }
 
 // Android's install dialog (straight from a tap: browsers want that). It comes once per page; after a no the menu's
-// item shows Chrome's menu instead.
+// button shows Chrome's menu instead.
 function ask() {
   const p = bip;
   bip = null;

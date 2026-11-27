@@ -10,7 +10,7 @@
 
 import { doc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { db, getDoc, el } from "./common.js?v=202611272300";
-import { account, avatar, api } from "./account.js?v=202611272300";
+import { account, avatar, api } from "./account.js?v=202611270343";
 import { profileHref } from "./links.js?v=202611241021";
 
 const KEEP_MS = 60_000;

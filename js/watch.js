@@ -12,8 +12,8 @@
 
 import { doc, onSnapshot, collection, query, where } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { db, getDoc, getDocs, el, factBadge, LABEL, sourceList, setPhoto, hms, huDate, mpHref, watchLiveNav, loadFailed } from "./common.js?v=202611272300";
-import { mountAccount } from "./account.js?v=202611272300";
-import { factSocial } from "./social.js?v=202611272300";
+import { mountAccount } from "./account.js?v=202611270343";
+import { factSocial } from "./social.js?v=202611270343";
 import { addShare, FOCUS, revealFact, liveUrl } from "./share.js?v=202611272100";
 import { watchHref } from "./links.js?v=202611241021";
 import { cdnReady, cdnUrl } from "./cdn.js?v=202611272300";
