@@ -4,6 +4,7 @@
 // youtube-nocookie.com: YouTube sets no cookies until the video plays.
 //
 //   youtubeMedia(box, id, startAt)   -> Promise of that object, the player put into box
+//   "vr-playing" event               on window, detail true / false: it plays, or has paused or ended (as js/twitch.js)
 
 const API = "https://www.youtube.com/iframe_api";
 let api = null;
@@ -40,7 +41,11 @@ export async function youtubeMedia(box, id, startAt = 0) {
         onStateChange: (e) => {
           if (e.data === YT.PlayerState.PLAYING) {
             if (!timer) timer = setInterval(() => emit("timeupdate"), 250);
+            dispatchEvent(new CustomEvent("vr-playing", { detail: true }));
             return;
+          }
+          if (e.data === YT.PlayerState.PAUSED || e.data === YT.PlayerState.ENDED) {
+            dispatchEvent(new CustomEvent("vr-playing", { detail: false }));
           }
           clearInterval(timer);
           timer = null;

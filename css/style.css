@@ -2631,3 +2631,35 @@ html:has(.install-sheet[open]) { overflow: hidden; }  /* the page behind does no
 .is-copied.is-raw { color: #e9f2ed; overflow-wrap: anywhere; -webkit-user-select: all; user-select: all; }
 .is-hidden-copy { position: fixed; top: 0; left: 0; width: 1px; height: 1px; padding: 0; border: 0; opacity: 0; font-size: 16px; }
 .is-en { color: var(--muted); font-size: 13px; }
+
+/* ------------------------------------------------------------------ phones: the panels pulled up over the video
+   js/mobile.js pullUp. A pull button on the line between the speaker strip and the tabs; pulled up, the video and the
+   strip are under the tabs and the open panel (the player stays where it is, out of the flow, under them: moving it
+   in the page would reload its iframe), and a line in their place says the video plays on, heard and not seen. */
+.m-pull, .m-audio { display: none; }
+@media (max-width: 860px) {
+  :is(.m-live, .m-watch) .m-top > :is(.m-strip, .m-tabs, .m-ai, .m-audio) { touch-action: none; }  /* the drags are ours */
+  :is(.m-live, .m-watch) .m-top > .m-tabs { position: relative; }
+  :is(.m-live, .m-watch) .m-pull { display: grid; place-items: center; position: absolute; z-index: 3; top: -7px; left: 50%;
+    width: 48px; height: 18px; margin-left: -24px; padding: 0; background: var(--panel-solid); border: 1px solid var(--line);
+    border-radius: 9px; cursor: pointer; }
+  .m-pull::before { content: ""; width: 22px; height: 3px; border-radius: 2px; background: rgba(213, 224, 218, .55); }
+  .m-pull::after { content: ""; position: absolute; inset: -14px -12px -6px; }  /* a 44 px tall target, mostly off the tab */
+  .m-pull:focus-visible { outline: 1px solid var(--green); outline-offset: 2px; }
+
+  body.m-pulled .m-top { overflow: hidden; }  /* the video under the panels never shows past their foot */
+  body.m-pulled .m-top > :is(.stage, .player) { position: absolute; left: 0; right: 0; top: var(--m-vtop, 0px); z-index: 0; }
+  body.m-pulled .m-top > :not(.stage, .player) { position: relative; z-index: 1; }
+  body.m-pulled .m-top > .m-strip { display: none; }
+  body.m-pulled .m-audio { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 32px; margin: 0; padding: 0 14px;
+    background: #0f1814; border: 0; border-bottom: 1px solid var(--line-dim); color: #8af5b4; font: 700 10.5px/1 var(--display);
+    letter-spacing: 1.2px; text-align: left; text-transform: uppercase; cursor: pointer; }
+  body.m-pulled .m-audio[data-playing="false"] { color: var(--muted); }  /* stopped: no longer heard either */
+  .m-audio-dot { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--muted); }
+  .m-audio[data-playing="true"] .m-audio-dot { background: var(--false); }
+  .m-audio-hint { margin-left: auto; color: var(--muted); }
+  .m-audio-hint::after { content: " \25BE"; }
+}
+@media (max-width: 860px) and (prefers-reduced-motion: no-preference) {
+  .m-audio[data-playing="true"] .m-audio-dot { animation: blink 1s steps(1) infinite; }
+}

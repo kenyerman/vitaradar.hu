@@ -35,6 +35,8 @@
 //   useTwitch()              Twitch is the player here (anything but ?player=cdn)
 //   mountTwitch(box)         the player into box, once
 //   twitchNow()              the date (ms) of the frame on screen, on the stream's clock; null before playback
+//   "vr-playing" event       on window, detail true / false: the player plays, or has stopped (js/mobile.js says so
+//                            while the video is hidden under the panels)
 //
 // ?tw_lead=<ms> overrides the relay's lead, ?debug=1 shows the estimate (and any rebuilds) at the window's top left.
 
@@ -94,10 +96,13 @@ async function embed(box) {
 
 // A player in the holder: the first one (autoplay false: the viewer's click starts it), or one that starts by itself
 // in place of a dead one.
+const signal = (on) => dispatchEvent(new CustomEvent("vr-playing", { detail: on }));
+
 function create(muted, autoplay) {
   const P = window.Twitch.Player;
   holder.replaceChildren();
   playing = played = ready = false;
+  signal(false);
   auto = autoplay;
   lastTime = null;
   lastMove = Date.now();
@@ -107,10 +112,10 @@ function create(muted, autoplay) {
   });
   const on = (ev, f) => p.addEventListener(ev, () => { if (p === player) f(); });  // not a replaced player's
   on(P.READY, () => { ready = true; });
-  on(P.PLAYING, () => { playing = played = true; playingSince = lastMove = Date.now(); });
-  on(P.PAUSE, () => { playing = false; });
-  on(P.ENDED, () => { playing = false; online = false; });
-  on(P.OFFLINE, () => { playing = false; online = false; });
+  on(P.PLAYING, () => { playing = played = true; playingSince = lastMove = Date.now(); signal(true); });
+  on(P.PAUSE, () => { playing = false; signal(false); });
+  on(P.ENDED, () => { playing = false; online = false; signal(false); });
+  on(P.OFFLINE, () => { playing = false; online = false; signal(false); });
   on(P.ONLINE, () => { online = true; });
   // Unmuted, the new player may not be let to start by itself (the viewer clicked the old one): muted it may.
   on(P.PLAYBACK_BLOCKED, () => { p.setMuted(true); p.play(); });
